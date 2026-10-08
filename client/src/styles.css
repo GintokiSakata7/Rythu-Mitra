@@ -3115,3 +3115,523 @@ button, input, select, textarea {
   color: #15803d;
 }
 
+/* ============================================================
+   BUYER DIRECTORY & MODERN BUYER CARD STYLES
+   ============================================================ */
+.buyer-directory-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+/* Trust Hero Banner */
+.buyer-trust-hero-card {
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 24px;
+  padding: 28px 32px;
+  color: white;
+  margin-bottom: 24px;
+  box-shadow: 0 16px 36px rgba(6, 78, 59, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+@media (min-width: 860px) {
+  .buyer-trust-hero-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.bth-left {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  max-width: 680px;
+}
+
+.bth-icon-orbit {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(110, 231, 183, 0.4);
+  color: #6ee7b7;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.bth-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #a7f3d0;
+  margin-bottom: 6px;
+}
+
+.bth-text h2 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 22px;
+  margin: 0 0 8px;
+  color: white;
+}
+
+.bth-text p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #d1fae5;
+  line-height: 1.6;
+}
+
+.bth-stats-strip {
+  display: flex;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 16px 20px;
+  flex-shrink: 0;
+}
+
+.bth-stat-item {
+  text-align: center;
+  padding: 0 8px;
+}
+
+.bth-stat-item strong {
+  display: block;
+  font-family: 'Manrope', sans-serif;
+  font-size: 19px;
+  color: #6ee7b7;
+}
+
+.bth-stat-item span {
+  display: block;
+  font-size: 10px;
+  color: #a7f3d0;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Filter Toolbar */
+.buyer-filter-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 680px) {
+  .buyer-filter-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.bft-search-lead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.count-pill {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+}
+
+.bft-pills-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.crop-filter-pill {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crop-filter-pill:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.crop-filter-pill.active {
+  background: #075c32;
+  color: white;
+  border-color: #075c32;
+  box-shadow: 0 4px 12px rgba(7, 92, 50, 0.2);
+}
+
+/* Directory Grid */
+.buyer-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .buyer-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Modern Buyer Card */
+.buyer-directory-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+
+.buyer-directory-card:hover {
+  border-color: #86efac;
+  box-shadow: 0 10px 28px rgba(7, 92, 50, 0.08);
+  transform: translateY(-2px);
+}
+
+.bdc-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.bdc-company-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: #ecfdf5;
+  border: 1px solid #d1fae5;
+  color: #059669;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.bdc-title-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.bdc-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bdc-name-row h3 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 17px;
+  color: #0f172a;
+  margin: 0;
+}
+
+.bdc-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.bdc-sub-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+.bdc-city {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.bdc-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 99px;
+  padding: 3px 9px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.status-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+/* Trust Strip */
+.bdc-trust-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 11px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.bdc-trust-lead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.bdc-trust-lead .shield-icon {
+  color: #10b981;
+}
+
+.bdc-trust-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gov-id-tag {
+  color: #475569;
+}
+
+.gov-id-tag strong {
+  color: #0f172a;
+}
+
+.trust-score-tag {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+/* Metric Ledger Grid */
+.bdc-ledger-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.bdc-cell {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.bdc-cell.price-cell {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.cell-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.bdc-cell strong {
+  display: block;
+  font-family: 'Manrope', sans-serif;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.bdc-cell strong.price-text {
+  color: #047857;
+  font-size: 18px;
+}
+
+.bdc-cell strong.price-text small {
+  font-size: 12px;
+  color: #065f46;
+}
+
+.bdc-cell small {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Features Row */
+.bdc-features-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.bdc-feature-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.bdc-feature-pill.pickup-yes {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.bdc-feature-pill.pickup-no {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.bdc-feature-pill.payment-guarantee {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+/* Action Footer */
+.bdc-action-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: auto;
+  gap: 10px;
+}
+
+.bdc-officer-hint {
+  font-size: 11px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bdc-match-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #075c32;
+  color: white;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.bdc-match-btn:hover {
+  background: #044224;
+  transform: translateX(2px);
+}
+
+/* Loading & Empty States */
+.buyer-loading-state,
+.buyer-empty-state {
+  text-align: center;
+  padding: 50px 20px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: #64748b;
+}
+
+.buyer-empty-state svg {
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.buyer-empty-state h3 {
+  font-family: 'Manrope', sans-serif;
+  color: #0f172a;
+  margin: 0 0 8px;
+}
+
+.buyer-empty-state p {
+  margin: 0 0 20px;
+  font-size: 14px;
+}
+
+.buyer-directory-footer-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: 12.5px;
+  color: #475569;
+  line-height: 1.55;
+  margin-top: 28px;
+}
+
+.buyer-directory-footer-note svg {
+  color: #059669;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+

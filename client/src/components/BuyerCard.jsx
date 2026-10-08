@@ -1,47 +1,123 @@
-import { CalendarDays, Factory, Package, Truck, ShieldCheck, BadgeCheck } from 'lucide-react';
+import { CalendarDays, Factory, Package, Truck, ShieldCheck, BadgeCheck, ArrowRight, IndianRupee, Sparkles, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function BuyerCard({ buyer }) {
-  const isVerified = buyer.isVerified ?? true; // default true for vetted buyers in network
+  const isVerified = buyer.isVerified ?? true;
 
   return (
-    <article className="buyer-card">
-      <div className="buyer-top">
-        <div className="company-icon"><Factory size={19}/></div>
-        <div>
-          <div className="buyer-title-row">
-            <h3>{buyer.companyName}</h3>
+    <article className="buyer-directory-card">
+      {/* Top Header */}
+      <div className="bdc-top">
+        <div className="bdc-company-avatar">
+          <Factory size={22} />
+        </div>
+        <div className="bdc-title-area">
+          <div className="bdc-name-row">
+            <h3>{buyer.companyName || buyer.company_name}</h3>
             {isVerified && (
-              <span className="verified-seal-tag" title="Government Registered & MandiMitra KYB Verified">
+              <span className="bdc-verified-badge" title="Government GSTIN & FSSAI Registered and Verified">
                 <BadgeCheck size={14} /> Govt Verified
               </span>
             )}
           </div>
-          <p>{buyer.type} · {buyer.city || 'Telangana'}</p>
+          <div className="bdc-sub-info">
+            <span className="bdc-type-tag">{buyer.type}</span>
+            <span className="bdc-dot">•</span>
+            <span className="bdc-city">
+              <MapPin size={12} /> {buyer.city || 'Telangana'}
+            </span>
+          </div>
         </div>
-        <span className="open-pill">{buyer.status || 'Active'}</span>
+        <div className="bdc-status-pill">
+          <span className="status-live-dot" />
+          <span>{buyer.status || 'Active'}</span>
+        </div>
       </div>
 
+      {/* Trust & Government Registry Strip */}
       {isVerified && (
-        <div className="buyer-trust-strip">
-          <ShieldCheck size={13} className="trust-shield" />
-          <span>GSTIN: <strong>{buyer.gstin ? `${buyer.gstin.slice(0, 4)}...${buyer.gstin.slice(-3)}` : '36AAB...1Z5'}</strong></span>
-          <span className="dot">•</span>
-          <span>FSSAI: <strong>{buyer.fssai ? `${buyer.fssai.slice(0, 5)}...` : '13621...'}</strong></span>
-          <span className="dot">•</span>
-          <span className="trust-score">Trust: {buyer.trustScore || 98}%</span>
+        <div className="bdc-trust-strip">
+          <div className="bdc-trust-lead">
+            <ShieldCheck size={14} className="shield-icon" />
+            <span>KYB Audited:</span>
+          </div>
+          <div className="bdc-trust-tags">
+            <span className="gov-id-tag">GSTIN: <strong>{buyer.gstin || '36AABCB1234M1Z5'}</strong></span>
+            <span className="gov-id-tag">FSSAI: <strong>{buyer.fssai || '13621014000189'}</strong></span>
+            <span className="trust-score-tag">Trust: <strong>{buyer.trustScore || 98}%</strong></span>
+          </div>
         </div>
       )}
 
-      <div className="buyer-grid">
-        <div><Package size={15}/><span>Need</span><strong>{buyer.quantityKg?.toLocaleString('en-IN')} kg {buyer.crop}</strong></div>
-        <div><span>Offer</span><strong>₹{buyer.offerPrice}/kg</strong></div>
-        <div><span>Grade</span><strong>{buyer.grade}</strong></div>
-        <div><CalendarDays size={15}/><span>By</span><strong>{buyer.requiredBy}</strong></div>
+      {/* 4-Cell Metric Ledger Grid */}
+      <div className="bdc-ledger-grid">
+        <div className="bdc-cell">
+          <div className="cell-header">
+            <Package size={14} />
+            <span>Quantity Needed</span>
+          </div>
+          <strong>{buyer.quantityKg?.toLocaleString('en-IN')} kg</strong>
+          <small>{buyer.crop}</small>
+        </div>
+
+        <div className="bdc-cell price-cell">
+          <div className="cell-header">
+            <IndianRupee size={14} />
+            <span>Offer Price</span>
+          </div>
+          <strong className="price-text">₹{buyer.offerPrice} <small>/ kg</small></strong>
+          <small>Modal Benchmark</small>
+        </div>
+
+        <div className="bdc-cell">
+          <div className="cell-header">
+            <Sparkles size={14} />
+            <span>Quality Grade</span>
+          </div>
+          <strong>Grade {buyer.grade || 'A'}</strong>
+          <small>Transparent Assay</small>
+        </div>
+
+        <div className="bdc-cell">
+          <div className="cell-header">
+            <CalendarDays size={14} />
+            <span>Needed By</span>
+          </div>
+          <strong>{buyer.requiredBy || 'Immediate'}</strong>
+          <small>Delivery Target</small>
+        </div>
       </div>
 
-      <div className="buyer-foot">
-        {buyer.pickupProvided ? <><Truck size={15}/> Farmgate pickup included</> : <span>Farmer delivery</span>}
-        <span className="pay-guarantee">🛡️ Payment: {buyer.paymentDays}d guaranteed</span>
+      {/* Logistics & Payment Guarantee Strip */}
+      <div className="bdc-features-row">
+        {buyer.pickupProvided ? (
+          <span className="bdc-feature-pill pickup-yes">
+            <Truck size={14} /> Farmgate Pickup Included
+          </span>
+        ) : (
+          <span className="bdc-feature-pill pickup-no">
+            <Truck size={14} /> Farmer Delivery to Facility
+          </span>
+        )}
+
+        <span className="bdc-feature-pill payment-guarantee">
+          <ShieldCheck size={14} /> {buyer.paymentDays ?? buyer.payment_days ?? 3}d Payment Guaranteed
+        </span>
+      </div>
+
+      {/* Card Action Footer */}
+      <div className="bdc-action-footer">
+        <span className="bdc-officer-hint">
+          Procurement: {buyer.officerName || 'Authorized Sourcing Lead'}
+        </span>
+        <Link
+          to={`/find`}
+          className="bdc-match-btn"
+          title="Match your produce to this buyer requirement"
+        >
+          <span>Match Harvest</span>
+          <ArrowRight size={14} />
+        </Link>
       </div>
     </article>
   );

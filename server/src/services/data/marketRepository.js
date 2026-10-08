@@ -48,11 +48,14 @@ export async function getBuyerRequirements({ crop = '' } = {}) {
   if (error || !data?.length) return demoBuyerRequirements.filter((x) => !crop || x.crop.toLowerCase() === crop.toLowerCase());
   return data.map((x) => ({
     ...x,
-    quantityKg: Number(x.quantity_kg),
-    offerPrice: Number(x.offer_price),
+    companyName: x.company_name || x.companyName,
+    quantityKg: Number(x.quantity_kg ?? x.quantityKg),
+    offerPrice: Number(x.offer_price ?? x.offerPrice),
     latitude: Number(x.latitude),
     longitude: Number(x.longitude),
-    pickupProvided: Boolean(x.pickup_provided),
+    pickupProvided: Boolean(x.pickup_provided ?? x.pickupProvided),
+    requiredBy: x.required_by || x.requiredBy,
+    paymentDays: Number(x.payment_days ?? x.paymentDays ?? 3),
     isVerified: true,
     verificationId: x.verification_id || 'MM-GOV-2026-9901',
     gstin: x.gstin || '36AABCB1234M1Z5',

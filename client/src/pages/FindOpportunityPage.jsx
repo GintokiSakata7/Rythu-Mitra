@@ -18,7 +18,7 @@ const locations = {
 };
 
 export default function FindOpportunityPage() {
-  const [mode, setMode] = useState('voice');
+  const [mode, setMode] = useState('manual');
 
   const [form, setForm] = useState({
     crop: 'Tomato',
