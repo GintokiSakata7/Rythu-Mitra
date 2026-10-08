@@ -1,0 +1,20 @@
+{
+  "name": "mandimitra",
+  "private": true,
+  "version": "1.0.0",
+  "description": "MandiMitra — progressive market-search optimizer for agricultural net realization.",
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev": "concurrently -n client,server -c cyan,green \"npm run dev --workspace client\" \"npm run dev --workspace server\"",
+    "build": "npm run build --workspace client",
+    "start": "npm run start --workspace server",
+    "lint": "npm run lint --workspace client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

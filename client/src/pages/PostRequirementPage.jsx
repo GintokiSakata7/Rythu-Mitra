@@ -1,0 +1,23 @@
+import { useState } from 'react';
+import { Building2, CheckCircle2, Factory, MapPinned, Truck } from 'lucide-react';
+import SectionHeader from '../components/SectionHeader.jsx';
+import { api } from '../lib/api.js';
+
+export default function PostRequirementPage() {
+  const [form, setForm] = useState({ companyName:'Deccan Fresh Foods', type:'Food Processor', crop:'Tomato', quantityKg:5000, grade:'A', offerPrice:29, city:'Hyderabad', latitude:17.39, longitude:78.48, pickupProvided:true, requiredBy:'2026-10-12', paymentDays:3 });
+  const [done, setDone] = useState(false); const [error,setError]=useState(''); const [saving,setSaving]=useState(false);
+  const submit=async(e)=>{e.preventDefault();setSaving(true);setError('');try{await api.postBuyer({...form,quantityKg:Number(form.quantityKg),offerPrice:Number(form.offerPrice),paymentDays:Number(form.paymentDays)});setDone(true);}catch(err){setError(err.message)}finally{setSaving(false)}};
+  return <div><SectionHeader eyebrow="BUYER SIDE" title="Publish a requirement when you need supply." description="A restaurant, factory, processor or startup can create a structured requirement that the optimizer can match to farmers." />
+    {done?<div className="success-card panel"><CheckCircle2 size={38}/><h2>Requirement published</h2><p>Your requirement is now part of the demo buyer network and can be evaluated as a direct selling opportunity.</p><button className="button button-primary" onClick={()=>setDone(false)}>Post another</button></div>:<form className="panel large-form" onSubmit={submit}>
+      <div className="form-section"><div className="section-icon"><Building2 size={19}/></div><div><h3>Business</h3><p>Who is buying?</p></div></div>
+      <div className="form-grid"><Field label="Company name"><input value={form.companyName} onChange={e=>setForm({...form,companyName:e.target.value})}/></Field><Field label="Buyer type"><select value={form.type} onChange={e=>setForm({...form,type:e.target.value})}><option>Food Processor</option><option>Restaurant Group</option><option>Processing Unit</option><option>Food Startup</option><option>Retailer</option></select></Field></div>
+      <div className="form-section"><div className="section-icon"><Factory size={19}/></div><div><h3>Requirement</h3><p>What do you need and what are you offering?</p></div></div>
+      <div className="form-grid three"><Field label="Crop"><select value={form.crop} onChange={e=>setForm({...form,crop:e.target.value})}><option>Tomato</option><option>Onion</option><option>Potato</option><option>Chilli</option></select></Field><Field label="Quantity (kg)"><input type="number" value={form.quantityKg} onChange={e=>setForm({...form,quantityKg:e.target.value})}/></Field><Field label="Offer price (₹/kg)"><input type="number" value={form.offerPrice} onChange={e=>setForm({...form,offerPrice:e.target.value})}/></Field><Field label="Grade"><select value={form.grade} onChange={e=>setForm({...form,grade:e.target.value})}><option>A</option><option>B+</option><option>B</option></select></Field><Field label="Required by"><input type="date" value={form.requiredBy} onChange={e=>setForm({...form,requiredBy:e.target.value})}/></Field><Field label="Payment days"><input type="number" value={form.paymentDays} onChange={e=>setForm({...form,paymentDays:e.target.value})}/></Field></div>
+      <div className="form-section"><div className="section-icon"><Truck size={19}/></div><div><h3>Logistics</h3><p>Make the opportunity matchable.</p></div></div>
+      <div className="form-grid three"><Field label="City"><input value={form.city} onChange={e=>setForm({...form,city:e.target.value})}/></Field><Field label="Latitude"><input value={form.latitude} onChange={e=>setForm({...form,latitude:e.target.value})}/></Field><Field label="Longitude"><input value={form.longitude} onChange={e=>setForm({...form,longitude:e.target.value})}/></Field></div>
+      <label className="check-row wide"><input type="checkbox" checked={form.pickupProvided} onChange={e=>setForm({...form,pickupProvided:e.target.checked})}/><span><strong>We provide pickup</strong><small>Transport cost can be removed from the farmer side during optimization.</small></span></label>
+      {error&&<div className="error-box">{error}</div>}
+      <div className="form-submit-row"><span className="quiet"><MapPinned size={15}/> Structured buyer data improves matching quality.</span><button className="button button-primary" disabled={saving}>{saving?'Publishing…':'Publish requirement'}</button></div>
+    </form>}</div>;
+}
+function Field({label,children}){return <label className="field"><span className="field-label">{label}</span>{children}</label>}

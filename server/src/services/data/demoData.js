@@ -1,0 +1,105 @@
+const market = (id, name, district, state, lat, lng, price, distanceMultiplier = 1, stability = 0.7, trend = 0.02) => ({
+  id,
+  name,
+  district,
+  state,
+  latitude: lat,
+  longitude: lng,
+  latestPrice: price,
+  modalPrice: price,
+  minPrice: Math.max(1, price - 4),
+  maxPrice: price + 5,
+  stability,
+  trend,
+  source: 'MandiMitra Demo Dataset',
+  distanceMultiplier
+});
+
+export const demoMarkets = [
+  market('NLG-01', 'Nalgonda Local Mandi', 'Nalgonda', 'Telangana', 17.05, 79.27, 22, 1, 0.88, 0.018),
+  market('NLG-02', 'Miryalaguda APMC', 'Nalgonda', 'Telangana', 16.87, 79.56, 23, 1, 0.82, 0.026),
+  market('NLG-03', 'Suryapet Market', 'Suryapet', 'Telangana', 17.14, 79.62, 24, 1, 0.76, 0.041),
+  market('NLG-04', 'Devarakonda Market', 'Nalgonda', 'Telangana', 16.69, 79.35, 24.7, 1, 0.63, 0.055),
+  market('YAD-01', 'Yadadri Market', 'Yadadri Bhuvanagiri', 'Telangana', 17.53, 78.89, 25.5, 1, 0.70, 0.035),
+  market('HYD-01', 'Bowenpally Wholesale Market', 'Hyderabad', 'Telangana', 17.48, 78.46, 26, 1, 0.72, 0.052),
+  market('MED-01', 'Medak Market', 'Medak', 'Telangana', 18.05, 78.26, 27.5, 1, 0.61, 0.066),
+  market('WAR-01', 'Warangal Market', 'Hanamkonda', 'Telangana', 18.00, 79.59, 28, 1, 0.59, 0.07),
+  market('KRM-01', 'Karimnagar Market', 'Karimnagar', 'Telangana', 18.44, 79.13, 28.4, 1, 0.74, 0.033),
+  market('KHM-01', 'Khammam Market', 'Khammam', 'Telangana', 17.25, 80.15, 29, 1, 0.55, 0.081),
+  market('MAH-01', 'Mahbubnagar Market', 'Mahbubnagar', 'Telangana', 16.74, 77.98, 29.5, 1, 0.62, 0.063),
+  market('VKR-01', 'Vikarabad Market', 'Vikarabad', 'Telangana', 17.34, 77.91, 30, 1, 0.65, 0.072),
+  market('SNG-01', 'Sangareddy Market', 'Sangareddy', 'Telangana', 17.62, 78.08, 30.5, 1, 0.73, 0.048),
+  market('NIZ-01', 'Nizamabad Market', 'Nizamabad', 'Telangana', 18.67, 78.10, 31, 1, 0.71, 0.037),
+  market('ADL-01', 'Adilabad Market', 'Adilabad', 'Telangana', 19.66, 78.53, 31.5, 1, 0.57, 0.092),
+  market('JAG-01', 'Jagtial Market', 'Jagtial', 'Telangana', 18.79, 78.91, 30.8, 1, 0.68, 0.06),
+  market('MAH-02', 'Gadwal Market', 'Jogulamba Gadwal', 'Telangana', 16.23, 77.80, 32, 1, 0.56, 0.1),
+  market('NAL-01', 'Nagarkurnool Market', 'Nagarkurnool', 'Telangana', 16.48, 78.32, 30.2, 1, 0.66, 0.069)
+];
+
+export const demoBuyerRequirements = [
+  {
+    id: 'BUY-001',
+    companyName: 'Deccan Fresh Foods',
+    type: 'Food Processor',
+    crop: 'Tomato',
+    quantityKg: 5000,
+    grade: 'A',
+    offerPrice: 29,
+    latitude: 17.39,
+    longitude: 78.48,
+    city: 'Hyderabad',
+    pickupProvided: true,
+    requiredBy: '2026-10-12',
+    paymentDays: 3,
+    status: 'Open'
+  },
+  {
+    id: 'BUY-002',
+    companyName: 'Urban Bowl Kitchens',
+    type: 'Restaurant Group',
+    crop: 'Tomato',
+    quantityKg: 2500,
+    grade: 'A',
+    offerPrice: 27,
+    latitude: 17.22,
+    longitude: 79.01,
+    city: 'Bhongir',
+    pickupProvided: false,
+    requiredBy: '2026-10-11',
+    paymentDays: 2,
+    status: 'Open'
+  },
+  {
+    id: 'BUY-003',
+    companyName: 'Nizam Agro Processing',
+    type: 'Processing Unit',
+    crop: 'Tomato',
+    quantityKg: 8000,
+    grade: 'B+',
+    offerPrice: 25.5,
+    latitude: 17.56,
+    longitude: 78.67,
+    city: 'Bhuvanagiri',
+    pickupProvided: true,
+    requiredBy: '2026-10-14',
+    paymentDays: 5,
+    status: 'Open'
+  }
+];
+
+export const demoPriceHistory = [
+  { date: '2026-09-25', price: 21.2 },
+  { date: '2026-09-26', price: 21.5 },
+  { date: '2026-09-27', price: 21.8 },
+  { date: '2026-09-28', price: 22.1 },
+  { date: '2026-09-29', price: 21.7 },
+  { date: '2026-09-30', price: 22.2 },
+  { date: '2026-10-01', price: 22.4 },
+  { date: '2026-10-02', price: 22.0 },
+  { date: '2026-10-03', price: 22.5 },
+  { date: '2026-10-04', price: 22.7 },
+  { date: '2026-10-05', price: 22.4 },
+  { date: '2026-10-06', price: 23.0 },
+  { date: '2026-10-07', price: 22.8 },
+  { date: '2026-10-08', price: 23.0 }
+];
