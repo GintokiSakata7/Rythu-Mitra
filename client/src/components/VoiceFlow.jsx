@@ -429,6 +429,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
   const micStreamRef = useRef(null);
   const animFrameRef = useRef(null);
   const synthRef = useRef(null);
+  const currentAudioRef = useRef(null);
   const speechWatchdogRef = useRef(null);
   const autoListenTimeoutRef = useRef(null);
   const interimDebounceRef = useRef(null);
@@ -449,6 +450,13 @@ export default function VoiceFlow({ onSwitchToManual }) {
   // VOICE ENGINE
   // ============================================================
   const stopSpeech = useCallback(() => {
+    if (currentAudioRef.current) {
+      try {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+      } catch {}
+      currentAudioRef.current = null;
+    }
     if ('speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
@@ -460,6 +468,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
     }
     synthRef.current = null;
     window.__mandimitraActiveUtterance = null;
+    setAssistantState(prev => (prev === 'speaking' ? 'idle' : prev));
   }, []);
 
   const stopListening = useCallback(() => {
@@ -547,7 +556,6 @@ export default function VoiceFlow({ onSwitchToManual }) {
         const now = performance.now();
 
         // Only trigger React rendering around 15-20 times/sec.
-        // Previously this was effectively 60+ state updates/sec.
         if (now - lastVisualUpdateRef.current > 55) {
           lastVisualUpdateRef.current = now;
           const scale = Math.min(1.18, 1 + rms * 2.8);
@@ -565,8 +573,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
 
         // ======================================================
         // NATURAL SILENCE DETECTION
-        // Don't cut the user based on transcript timing.
-        // Wait until they actually stop speaking.
+        // Only active while listening to the user.
         // ======================================================
         if (assistantStateRef.current === 'listening') {
           if (rms > 0.024) {
@@ -595,10 +602,54 @@ export default function VoiceFlow({ onSwitchToManual }) {
     }
   }, []);
 
+  // Browser SpeechSynthesis fallback
+  const speakWithBrowserSynth = useCallback((text, onFinish) => {
+    if (!('speechSynthesis' in window)) {
+      if (onFinish) onFinish();
+      return;
+    }
+
+    try {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
+    } catch {}
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = t.code;
+    utterance.rate = lang === 'en' ? 1.01 : 0.96;
+    utterance.pitch = 1.0;
+    utterance.volume = 1;
+
+    const voice = pickBestVoice(voicesListRef.current, t.code);
+    if (voice) {
+      utterance.voice = voice;
+    }
+
+    window.__mandimitraActiveUtterance = utterance;
+    synthRef.current = utterance;
+
+    utterance.onend = () => {
+      synthRef.current = null;
+      window.__mandimitraActiveUtterance = null;
+      if (onFinish) onFinish();
+    };
+    utterance.onerror = () => {
+      synthRef.current = null;
+      window.__mandimitraActiveUtterance = null;
+      if (onFinish) onFinish();
+    };
+
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      if (onFinish) onFinish();
+    }
+  }, [lang, t.code]);
+
   // ============================================================
   // SPEECH OUTPUT
-  // One utterance at a time.
-  // Supports automatic turn-taking.
+  // Streams fluent audio without prematurely cutting off sentences.
+  // Supports automatic turn-taking when speech finishes.
   // ============================================================
   const speakText = useCallback(
     (text, { autoListen = false, onFinish = null } = {}) => {
@@ -606,34 +657,11 @@ export default function VoiceFlow({ onSwitchToManual }) {
         if (onFinish) onFinish();
         return;
       }
-      if (!('speechSynthesis' in window)) {
-        if (onFinish) onFinish();
-        return;
-      }
 
       stopListening();
-
-      try {
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.resume();
-      } catch {}
+      stopSpeech();
 
       setAssistantState('speaking');
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = t.code;
-      // Natural speech cadence
-      utterance.rate = lang === 'en' ? 1.01 : 0.96;
-      utterance.pitch = 1.0;
-      utterance.volume = 1;
-
-      const voice = pickBestVoice(voicesListRef.current, t.code);
-      if (voice) {
-        utterance.voice = voice;
-      }
-
-      window.__mandimitraActiveUtterance = utterance;
-      synthRef.current = utterance;
 
       let finished = false;
       const finish = () => {
@@ -645,6 +673,13 @@ export default function VoiceFlow({ onSwitchToManual }) {
           speechWatchdogRef.current = null;
         }
 
+        if (currentAudioRef.current) {
+          try {
+            currentAudioRef.current.pause();
+          } catch {}
+          currentAudioRef.current = null;
+        }
+
         synthRef.current = null;
         window.__mandimitraActiveUtterance = null;
         setAssistantState('idle');
@@ -653,32 +688,49 @@ export default function VoiceFlow({ onSwitchToManual }) {
           onFinish();
         }
 
-        // Alexa-like automatic turn taking
+        // Automatic turn-taking: only starts listening when audio has completely finished!
         if (autoListen) {
           autoListenTimeoutRef.current = setTimeout(() => {
             startListeningRef.current?.();
-          }, 180);
+          }, 200);
         }
       };
 
-      utterance.onstart = () => {
-        setAssistantState('speaking');
-      };
-      utterance.onend = finish;
-      utterance.onerror = finish;
-
-      // Safety fallback watchdog
+      // Generous safety watchdog (prevents hanging without cutting off spoken sentences)
+      const maxDuration = Math.max(8000, Math.min(25000, text.length * 140));
       speechWatchdogRef.current = setTimeout(() => {
         finish();
-      }, Math.min(15000, Math.max(5000, text.length * 85)));
+      }, maxDuration);
 
+      // Priority 1: High-fidelity native speech audio stream from /api/ai/tts
       try {
-        window.speechSynthesis.speak(utterance);
-      } catch {
-        finish();
+        const audioUrl = api.ttsUrl(text, lang);
+        const audio = new Audio(audioUrl);
+        currentAudioRef.current = audio;
+
+        audio.onended = () => {
+          finish();
+        };
+
+        audio.onerror = () => {
+          // If network stream fails, seamlessly fall back to browser speech synthesis
+          currentAudioRef.current = null;
+          speakWithBrowserSynth(text, finish);
+        };
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((e) => {
+            console.warn('Audio stream play blocked, falling back to speech synthesis:', e);
+            currentAudioRef.current = null;
+            speakWithBrowserSynth(text, finish);
+          });
+        }
+      } catch (e) {
+        speakWithBrowserSynth(text, finish);
       }
     },
-    [lang, t.code, stopListening]
+    [lang, stopListening, stopSpeech, speakWithBrowserSynth]
   );
 
   // ============================================================

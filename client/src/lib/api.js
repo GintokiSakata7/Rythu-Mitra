@@ -15,5 +15,6 @@ export const api = {
   buyers: (crop = '') => request(`/buyers/requirements${crop ? `?crop=${encodeURIComponent(crop)}` : ''}`),
   postBuyer: (payload) => request('/buyers/requirements', { method: 'POST', body: JSON.stringify(payload) }),
   parseHarvest: (text) => request('/ai/parse-harvest', { method: 'POST', body: JSON.stringify({ text }) }),
-  health: () => request('/health')
+  health: () => request('/health'),
+  ttsUrl: (text, lang = 'te') => `${BASE}/ai/tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}`
 };
