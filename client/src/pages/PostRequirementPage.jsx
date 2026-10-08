@@ -198,7 +198,7 @@ export default function PostRequirementPage() {
               <ShieldCheck size={28} />
             </div>
             <div>
-              <div className="eyebrow-chip">MANDIMITRA TRUST PROTOCOL</div>
+              <div className="eyebrow-chip">RYTHUMITRA TRUST PROTOCOL</div>
               <h2>Step 1: Verify Government Registration Credentials</h2>
               <p>
                 To safeguard smallholder farmers from middlemen fraud, we verify that your enterprise holds active
@@ -329,7 +329,7 @@ export default function PostRequirementPage() {
                     <BadgeCheck size={22} />
                     <div>
                       <strong>GOVERNMENT CREDENTIALS VERIFIED</strong>
-                      <span>MandiMitra KYB Level 1 Verified</span>
+                      <span>RythuMitra KYB Level 1 Verified</span>
                     </div>
                   </div>
                   <span className="trust-pill">Trust Score: {verifiedData.trustScore}/100</span>
@@ -469,7 +469,7 @@ export default function PostRequirementPage() {
                   onChange={(e) => setAgreedFairTrade(e.target.checked)}
                 />
                 <span>
-                  I agree to the MandiMitra Fair Trade Standards and warrant that grading will follow objective standards with zero post-transit predatory cuts.
+                  I agree to the RythuMitra Fair Trade Standards and warrant that grading will follow objective standards with zero post-transit predatory cuts.
                 </span>
               </label>
 
@@ -691,7 +691,7 @@ export default function PostRequirementPage() {
                 <strong>🚚 We Provide Pickup Directly at Farmer's Farmgate</strong>
                 <small>
                   Offering pickup eliminates the farmer's transport deduction completely, making your requirement
-                  rank at the top of MandiMitra’s optimization engine!
+                  rank at the top of RythuMitra’s optimization engine!
                 </small>
               </span>
             </label>
@@ -739,7 +739,7 @@ export default function PostRequirementPage() {
           <div className="eyebrow-chip success">ACTIVATED ON NETWORK</div>
           <h2>Requirement Verified & Successfully Published!</h2>
           <p>
-            Your procurement requirement is live on the MandiMitra Direct Buyer Network with the{' '}
+            Your procurement requirement is live on the RythuMitra Direct Buyer Network with the{' '}
             <strong>Govt Verified Buyer Trust Seal</strong>.
           </p>
 

@@ -146,7 +146,7 @@ export default function BuyerPage() {
       <div className="buyer-directory-footer-note">
         <Filter size={16} />
         <span>
-          MandiMitra’s optimization engine evaluates these direct opportunities alongside local APMC mandis,
+          RythuMitra’s optimization engine evaluates these direct opportunities alongside local APMC mandis,
           factoring in distance, travel hours, spoilage risk, and farmgate pickup to maximize your net take-home realization.
         </span>
       </div>

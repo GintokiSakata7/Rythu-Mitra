@@ -23,7 +23,7 @@ export default function HomePage() {
           Find the market that pays you best <em>after</em> the journey.
         </h1>
         <p className="hero-sub-text">
-          MandiMitra searches nearby mandis and direct buyers only as far as the economics justify — balancing market price, transport, travel time, and spoilage risk.
+          RythuMitra searches nearby mandis and direct buyers only as far as the economics justify — balancing market price, transport, travel time, and spoilage risk.
         </p>
 
         {/* PRIMARY SIDE-BY-SIDE ENTRY MODES */}
@@ -76,7 +76,7 @@ export default function HomePage() {
       <SectionHeader
         eyebrow="THE CORE DIFFERENCE"
         title="Higher price is not necessarily higher profit."
-        description="MandiMitra treats market selection as a transportation economics problem, not just a price bulletin."
+        description="RythuMitra treats market selection as a transportation economics problem, not just a price bulletin."
       />
 
       <div className="stats-grid">

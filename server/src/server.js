@@ -11,7 +11,7 @@ const app = express();
 app.use(cors({ origin: env.clientOrigin.split(',').map((x) => x.trim()), credentials: false }));
 app.use(express.json({ limit: '1mb' }));
 
-app.get('/', (_req, res) => res.json({ name: 'MandiMitra API', status: 'online' }));
+app.get('/', (_req, res) => res.json({ name: 'RythuMitra API', status: 'online' }));
 app.use('/api/health', healthRouter);
 app.use('/api/markets', marketRouter);
 app.use('/api/recommendations', recommendationRouter);
@@ -24,5 +24,5 @@ app.use((error, _req, res, _next) => {
 });
 
 app.listen(env.port, () => {
-  console.log(`MandiMitra API listening on http://localhost:${env.port}`);
+  console.log(`RythuMitra API listening on http://localhost:${env.port}`);
 });

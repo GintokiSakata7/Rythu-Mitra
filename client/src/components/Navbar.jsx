@@ -21,8 +21,8 @@ export default function Navbar() {
               <Leaf size={22} />
             </div>
             <div className="brand-text">
-              <span className="brand-name">MandiMitra</span>
-              <span className="brand-sub">మండిమిత్ర • मंडीमित्र</span>
+              <span className="brand-name">RythuMitra</span>
+              <span className="brand-sub">రైతుమిత్ర • रैतुमित्र</span>
             </div>
           </NavLink>
 

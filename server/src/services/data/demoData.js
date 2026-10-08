@@ -11,7 +11,7 @@ const market = (id, name, district, state, lat, lng, price, distanceMultiplier =
   maxPrice: price + 5,
   stability,
   trend,
-  source: 'MandiMitra Demo Dataset',
+  source: 'RythuMitra Demo Dataset',
   distanceMultiplier
 });
 

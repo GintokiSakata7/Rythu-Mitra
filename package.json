@@ -2,7 +2,7 @@
   "name": "mandimitra",
   "private": true,
   "version": "1.0.0",
-  "description": "MandiMitra — progressive market-search optimizer for agricultural net realization.",
+  "description": "RythuMitra — progressive market-search optimizer for agricultural net realization.",
   "workspaces": ["client", "server"],
   "scripts": {
     "install:all": "npm install --workspaces",

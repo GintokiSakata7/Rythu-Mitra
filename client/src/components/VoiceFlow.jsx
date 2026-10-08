@@ -16,7 +16,7 @@ const LANG_DATA = {
     name: 'తెలుగు',
     nativeLabel: 'తెలుగు (Telugu)',
     code: 'te-IN',
-    welcome: 'నమస్కారం! నేను మండిమిత్రను.',
+    welcome: 'నమస్కారం! నేను రైతుమిత్రను.',
     q1: 'మీరు ఏ పంటను అమ్మాలనుకుంటున్నారు?',
     q1_sub: 'టమాట, ఉల్లిపాయ, బంగాళాదుంప, మిరప లేదా పత్తి చెప్పండి...',
     q2_prefix: 'గుర్తించబడింది. మీ దగ్గర ఎంత పరిమాణం ఉంది?',
@@ -28,7 +28,7 @@ const LANG_DATA = {
     analyzing: 'అన్ని మార్కెట్లు మరియు కొనుగోలుదారులను లెక్కిస్తున్నాను...',
     analyzing_sub: 'రవాణా ఖర్చు, సమయం, నష్టభయం తీసివేసి అత్యధిక నికర లాభాన్ని లెక్కిస్తున్నాను...',
     state_listening: 'వింటున్నాను... మాట్లాడండి',
-    state_speaking: 'మండిమిత్ర మాట్లాడుతోంది...',
+    state_speaking: 'రైతుమిత్ర మాట్లాడుతోంది...',
     state_thinking: 'ఆలోచిస్తున్నాను...',
     state_tap_speak: 'మాట్లాడటానికి తాకండి',
     gps_btn: '📍 నా GPS లొకేషన్ వాడండి',
@@ -76,7 +76,7 @@ const LANG_DATA = {
     name: 'हिंदी',
     nativeLabel: 'हिंदी (Hindi)',
     code: 'hi-IN',
-    welcome: 'नमस्ते! मैं मंडीमित्र हूँ।',
+    welcome: 'नमस्ते! मैं रैतुमित्र हूँ।',
     q1: 'आप कौन सी फसल बेचना चाहते हैं?',
     q1_sub: 'टमाटर, प्याज, आलू, मिर्च या कपास बोलें...',
     q2_prefix: 'दर्ज हो गया। आपके पास कितनी मात्रा है?',
@@ -88,7 +88,7 @@ const LANG_DATA = {
     analyzing: 'आसपास की मंडियों और खरीदारों का विश्लेषण हो रहा है...',
     analyzing_sub: 'भाड़ा, यात्रा समय और नुकसान घटाकर अधिकतम शुद्ध मुनाफा खोज रहे हैं...',
     state_listening: 'सुन रहा हूँ... बोलिए',
-    state_speaking: 'मंडीमित्र बोल रहा है...',
+    state_speaking: 'रैतुमित्र बोल रहा है...',
     state_thinking: 'सोच रहा हूँ...',
     state_tap_speak: 'बोलने के लिए टैप करें',
     gps_btn: '📍 वर्तमान GPS स्थान उपयोग करें',
@@ -136,7 +136,7 @@ const LANG_DATA = {
     name: 'English',
     nativeLabel: 'English',
     code: 'en-IN',
-    welcome: 'Hello! I am MandiMitra.',
+    welcome: 'Hello! I am RythuMitra.',
     q1: 'What crop do you want to sell?',
     q1_sub: 'Say Tomato, Onion, Potato, Chilli, or Cotton...',
     q2_prefix: 'noted. How much quantity do you have?',
@@ -148,7 +148,7 @@ const LANG_DATA = {
     analyzing: 'Evaluating nearby mandis and direct buyers...',
     analyzing_sub: 'Factoring in transport, travel time, and spoilage risk to maximize your net profit...',
     state_listening: 'Listening... speak now',
-    state_speaking: 'MandiMitra is speaking...',
+    state_speaking: 'RythuMitra is speaking...',
     state_thinking: 'Thinking...',
     state_tap_speak: 'Tap to speak',
     gps_btn: '📍 Use Current GPS Location',
@@ -482,7 +482,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
       speechWatchdogRef.current = null;
     }
     synthRef.current = null;
-    window.__mandimitraActiveUtterance = null;
+    window.__rythumitraActiveUtterance = null;
     setAssistantState(prev => (prev === 'speaking' ? 'idle' : prev));
   }, []);
 
@@ -640,17 +640,17 @@ export default function VoiceFlow({ onSwitchToManual }) {
       utterance.voice = voice;
     }
 
-    window.__mandimitraActiveUtterance = utterance;
+    window.__rythumitraActiveUtterance = utterance;
     synthRef.current = utterance;
 
     utterance.onend = () => {
       synthRef.current = null;
-      window.__mandimitraActiveUtterance = null;
+      window.__rythumitraActiveUtterance = null;
       if (onFinish) onFinish();
     };
     utterance.onerror = () => {
       synthRef.current = null;
-      window.__mandimitraActiveUtterance = null;
+      window.__rythumitraActiveUtterance = null;
       if (onFinish) onFinish();
     };
 
@@ -696,7 +696,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
         }
 
         synthRef.current = null;
-        window.__mandimitraActiveUtterance = null;
+        window.__rythumitraActiveUtterance = null;
         setAssistantState('idle');
 
         if (onFinish) {
@@ -1114,7 +1114,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
       <div className="alexa-top-bar">
         <div className="alexa-brand-tag">
           <span className="live-radar-dot" />
-          <span>MANDIMITRA • VOICE MODE</span>
+          <span>RYTHUMITRA • VOICE MODE</span>
         </div>
         <div className="alexa-lang-pill">
           <Radio size={12} className="spin-slow" />
@@ -1149,7 +1149,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
             </button>
           </div>
 
-          <h2 className="voice-start-title">Talk to MandiMitra</h2>
+          <h2 className="voice-start-title">Talk to RythuMitra</h2>
 
           <p className="voice-start-subtitle">
             Speak naturally. Tell me what you're selling, how much you have, and where your farm is.
@@ -1420,7 +1420,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
               <AlertTriangle size={26} />
               <div>
                 <strong>{t.transport_no}</strong>
-                <small>MandiMitra calculates freight deductions or matches direct pickup buyers</small>
+                <small>RythuMitra calculates freight deductions or matches direct pickup buyers</small>
               </div>
               <ChevronRight size={18} />
             </button>

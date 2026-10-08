@@ -1,4 +1,4 @@
--- MandiMitra schema
+-- RythuMitra schema
 -- Run in Supabase SQL editor.
 
 create extension if not exists pgcrypto;
@@ -15,7 +15,7 @@ create table if not exists public.markets (
   max_price numeric(10,2) default 0,
   stability numeric(5,4) default 0.7,
   trend numeric(8,5) default 0,
-  source text default 'MandiMitra cache',
+  source text default 'RythuMitra cache',
   updated_at timestamptz default now()
 );
 
@@ -25,7 +25,7 @@ create table if not exists public.price_history (
   market_id text references public.markets(id) on delete cascade,
   date date not null,
   price numeric(10,2) not null,
-  source text default 'MandiMitra cache'
+  source text default 'RythuMitra cache'
 );
 
 create table if not exists public.buyer_requirements (

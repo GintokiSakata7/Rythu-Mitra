@@ -1,8 +1,8 @@
-# MandiMitra
+# RythuMitra
 
 **Find the best net realization — not the highest price.**
 
-MandiMitra is a React + Node/Express web app for farmers that progressively searches only as many nearby markets and buyer opportunities as economically justified. It combines market price, transport, travel time and risk/spoilage into an expected net realization score.
+RythuMitra is a React + Node/Express web app for farmers that progressively searches only as many nearby markets and buyer opportunities as economically justified. It combines market price, transport, travel time and risk/spoilage into an expected net realization score.
 
 ## Stack
 
@@ -81,7 +81,7 @@ For data.gov.in:
 - `DATA_GOV_API_KEY`
 - `DATA_GOV_RESOURCE_ID`
 
-The data connector is intentionally adapter-based. When credentials are absent or the upstream response is unavailable, MandiMitra uses the included deterministic seed dataset.
+The data connector is intentionally adapter-based. When credentials are absent or the upstream response is unavailable, RythuMitra uses the included deterministic seed dataset.
 
 ### 4. Supabase
 
