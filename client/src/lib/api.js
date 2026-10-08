@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+const BASE = import.meta.env.VITE_API_BASE_URL || 'https://mandi-mitra-nbtv.onrender.com/api';
 
 async function request(path, options = {}) {
   const response = await fetch(`${BASE}${path}`, {
