@@ -21,9 +21,9 @@ export const env = {
   timeValuePerHour: num('TIME_VALUE_PER_HOUR', 300),
   riskRatePerKm: num('RISK_RATE_PER_KM', 0.35),
   searchClearGap: num('SEARCH_CLEAR_GAP', 0.035),
-  level1Count: num('LEVEL_1_COUNT', 5),
-  level2Count: num('LEVEL_2_COUNT', 10),
-  level3Count: num('LEVEL_3_COUNT', 15),
+  level1Count: num('LEVEL_1_COUNT', 15),
+  level2Count: num('LEVEL_2_COUNT', 25),
+  level3Count: num('LEVEL_3_COUNT', 35),
   level1RadiusKm: num('LEVEL_1_RADIUS_KM', 45),
   level2RadiusKm: num('LEVEL_2_RADIUS_KM', 90),
   level3RadiusKm: num('LEVEL_3_RADIUS_KM', 180)
