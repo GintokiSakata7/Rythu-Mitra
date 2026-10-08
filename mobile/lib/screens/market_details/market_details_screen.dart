@@ -1,0 +1,243 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/currency_formatter.dart';
+import '../../models/app_models.dart';
+import '../../localization/app_strings.dart';
+import '../../providers/language_provider.dart';
+
+class MarketDetailsScreen extends StatelessWidget {
+  final MarketModel market;
+  final String? explanation;
+
+  const MarketDetailsScreen({super.key, required this.market, this.explanation});
+
+  Future<void> _launchMaps() async {
+    // Standard geo URI intent for Android
+    final q = Uri.encodeComponent('${market.displayName}, ${market.displayLocation}');
+    final url = Uri.parse('geo:0,0?q=$q');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      // Fallback to web Maps URL
+      final webUrl = Uri.parse('https://maps.google.com/?q=$q');
+      if (await canLaunchUrl(webUrl)) {
+        await launchUrl(webUrl, mode: LaunchMode.externalApplication);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>().langCode;
+    final s = (String k) => AppStrings.get(k, lang);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(market.displayName),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.forestGreen,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.forestGreen.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    s('net_realization'),
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    CurrencyFormatter.format(market.netRealization),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _Stat(
+                          icon: Icons.location_on,
+                          label: s('distance'),
+                          val: '${market.distanceKm.toStringAsFixed(1)} ${s('km')}'),
+                      Container(width: 1, height: 30, color: Colors.white24),
+                      _Stat(
+                          icon: Icons.sell,
+                          label: s('price_per_kg'),
+                          val: '₹${market.pricePerKg.toStringAsFixed(0)}'),
+                      Container(width: 1, height: 30, color: Colors.white24),
+                      _Stat(
+                          icon: Icons.timer,
+                          label: s('travel_time'),
+                          val: '${market.travelHours} ${s('hrs')}'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // AI Explanation
+            if (explanation != null && explanation!.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.harvestGold.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.harvestGold.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_awesome,
+                            color: AppTheme.harvestGold, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          s('why_recommended'),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      explanation!,
+                      style: const TextStyle(
+                          fontSize: 14, color: Colors.black87, height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // Cost Ledger
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _LedgerRow(s('gross_revenue'), market.saleValue, isPositive: true),
+                  const Divider(height: 24),
+                  _LedgerRow(s('transport_cost'), market.transportCost, isPositive: false),
+                  _LedgerRow(s('time_cost'), market.timeCost, isPositive: false),
+                  _LedgerRow(s('expected_loss'), market.riskCost, isPositive: false),
+                  const Divider(height: 24, thickness: 2),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        s('net_realization'),
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        CurrencyFormatter.format(market.netRealization),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.successGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Action
+            ElevatedButton.icon(
+              onPressed: _launchMaps,
+              icon: const Icon(Icons.directions),
+              label: Text(s('get_directions')),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String val;
+
+  const _Stat({required this.icon, required this.label, required this.val});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, color: Colors.white70, size: 20),
+        const SizedBox(height: 4),
+        Text(val,
+            style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 15)),
+        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+      ],
+    );
+  }
+}
+
+class _LedgerRow extends StatelessWidget {
+  final String label;
+  final double amount;
+  final bool isPositive;
+
+  const _LedgerRow(this.label, this.amount, {required this.isPositive});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: const TextStyle(fontSize: 15, color: Colors.black87)),
+          Text(
+            '${isPositive ? "" : "− "}${CurrencyFormatter.format(amount)}',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: isPositive ? AppTheme.successGreen : AppTheme.dangerRed,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
