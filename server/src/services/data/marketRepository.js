@@ -46,21 +46,7 @@ export async function getMarkets({ crop = 'Tomato' } = {}) {
     };
   });
 
-  // Merge Supabase markets (if configured), avoiding duplicates
-  if (supabaseEnabled) {
-    try {
-      const { data, error } = await supabase.from('markets').select('*').order('name');
-      if (!error && data?.length) {
-        const csvNames = new Set(markets.map(m => m.name.toLowerCase()));
-        for (const row of data) {
-          const normalized = normalizeMarket(row);
-          if (!csvNames.has(normalized.name.toLowerCase())) {
-            markets.push(normalized);
-          }
-        }
-      }
-    } catch (e) { /* Supabase optional */ }
-  }
+
 
   return markets;
 }
