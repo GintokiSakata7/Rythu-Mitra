@@ -134,34 +134,35 @@ export async function getTelanganaFallbackPrices({ crop = 'Tomato' } = {}) {
   // Try to fetch from the new Supabase table first!
   if (supabaseEnabled) {
     try {
+      // Use wildcards for ilike to ensure we catch variations (e.g. 'Tomato ', 'Tomato')
       const { data, error } = await supabase
         .from('telangana_market_prices')
         .select('*')
-        // Using filter to allow either the old or new column name to match
-        .filter('commodity', 'ilike', crop)
-        .catch(() => null); // Fallback below if this fails
+        .ilike('commodity', `%${crop}%`)
+        .catch(() => ({ data: null })); // Catch network errors
 
-      // If the above query fails because 'commodity' doesn't exist yet, try 'CommName'
       const finalData = data?.length ? data : (await supabase
         .from('telangana_market_prices')
         .select('*')
-        .filter('CommName', 'ilike', crop)).data;
+        .ilike('CommName', `%${crop}%`)
+        .catch(() => ({ data: null }))).data;
         
       if (finalData && finalData.length > 0) {
         return finalData.map(row => {
-          // Support both old CSV headers and new optimized headers
           const yardCode = row.yard_code || row.YardCode;
           const geo = YARD_GEO[yardCode] || { lat: row.latitude, lng: row.longitude };
           return {
             market: row.yard_name || row.YardName,
+            YardCode: yardCode, // Ensure YardCode is passed back
+            latitude: geo.lat || 17.38,
+            longitude: geo.lng || 78.48,
             district: geo.district || row.AmcName || 'Telangana',
             state: 'Telangana',
             commodity: row.commodity || row.CommName,
             variety: row.variety || row.VarityName,
-            // CSV prices are per Quintal (100kg) — convert to per Kg
-            modalPrice: parseFloat(row.modal_price || row.Model) / 100,
-            minPrice: parseFloat(row.min_price || row.Minimum) / 100,
-            maxPrice: parseFloat(row.max_price || row.Maximum) / 100,
+            modalPrice: parseFloat(row.modal_price || row.Model || 0) / 100,
+            minPrice: parseFloat(row.min_price || row.Minimum || 0) / 100,
+            maxPrice: parseFloat(row.max_price || row.Maximum || 0) / 100,
             date: row.date || row.DDate,
             source: 'Supabase (telangana_market_prices)'
           };
@@ -175,10 +176,24 @@ export async function getTelanganaFallbackPrices({ crop = 'Tomato' } = {}) {
   return [];
 }
 
-/**
- * Returns the full list of commodities available in the CSV
- */
-export function getTelanganaCommmodities() {
+export async function getTelanganaCommmodities() {
+  if (supabaseEnabled) {
+    try {
+      const { data, error } = await supabase.from('telangana_market_prices').select('commodity, CommName');
+      if (!error && data) {
+        const set = new Set();
+        data.forEach(row => {
+          const val = row.commodity || row.CommName;
+          if (val) set.add(val);
+        });
+        return Array.from(set).map(name => ({ code: name, name })).sort((a, b) => a.name.localeCompare(b.name));
+      }
+    } catch (e) {
+      console.warn('[telanganaData] Supabase fetch failed for commodities:', e.message);
+    }
+  }
+
+  // Fallback to reading from the local loaded CSV if DB is empty or fails
   ensureParsed();
   const set = new Map();
   for (const row of csvAllRecords) {

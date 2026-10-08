@@ -28,15 +28,13 @@ export async function getMarkets({ crop = 'Tomato' } = {}) {
   const fallbackPrices = await getTelanganaFallbackPrices({ crop });
 
   const markets = fallbackPrices.map(fp => {
-    const geo = (typeof YARD_GEO !== 'undefined') ? YARD_GEO[fp.YardCode] || {} : {};
     return {
       id: `TS-${fp.market}`,
       name: fp.market + ' Market',
       district: fp.district,
       state: fp.state,
-      // Default to approximate center of Telangana if geo coordinates are missing in YARD_GEO
-      latitude: geo.lat || 17.38,
-      longitude: geo.lng || 78.48,
+      latitude: fp.latitude || 17.38,
+      longitude: fp.longitude || 78.48,
       modalPrice: fp.modalPrice ?? 0,
       minPrice: fp.minPrice ?? 0,
       maxPrice: fp.maxPrice ?? 0,
