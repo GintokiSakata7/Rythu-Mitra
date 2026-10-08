@@ -19,3 +19,8 @@ healthRouter.get('/', async (_req, res) => {
   }
   res.json({ ok: true, app: 'RythuMitra API', supabaseEnabled, groqEnabled: Boolean(env.groqApiKey), time: new Date().toISOString(), dbCount: count, dbError: errorMsg });
 });
+
+healthRouter.get('/test', async (req, res) => {
+  const { data, error } = await supabase.from('telangana_market_prices').select('*').ilike('commodity', '%Tomato%');
+  res.json({ data, error });
+});
