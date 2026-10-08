@@ -8,7 +8,7 @@ import { buyerRouter } from './routes/buyer.routes.js';
 import { aiRouter } from './routes/ai.routes.js';
 
 const app = express();
-app.use(cors({ origin: env.clientOrigin.split(',').map((x) => x.trim()), credentials: false }));
+app.use(cors({ origin: '*', credentials: false }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/', (_req, res) => res.json({ name: 'RythuMitra API', status: 'online' }));
