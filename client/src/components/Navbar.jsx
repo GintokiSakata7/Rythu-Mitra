@@ -17,8 +17,8 @@ export default function Navbar() {
       <header className="mobile-navbar">
         <div className="nav-container">
           <NavLink to="/" className="brand-group">
-            <div className="brand-leaf-icon">
-              <Leaf size={22} />
+            <div className="brand-leaf-icon" style={{ backgroundColor: 'transparent', padding: 0 }}>
+              <img src="/logo.png" alt="RythuMitra Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             </div>
             <div className="brand-text">
               <span className="brand-name">RythuMitra</span>
