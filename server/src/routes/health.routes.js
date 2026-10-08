@@ -24,3 +24,13 @@ healthRouter.get('/test', async (req, res) => {
   const { data, error } = await supabase.from('telangana_market_prices').select('*').ilike('commodity', '%Tomato%');
   res.json({ data, error });
 });
+
+import { getMarkets } from '../services/data/marketRepository.js';
+healthRouter.get('/test2', async (req, res) => {
+  try {
+    const markets = await getMarkets({ crop: 'Tomato' });
+    res.json({ markets, count: markets?.length });
+  } catch (e) {
+    res.json({ error: e.message, stack: e.stack });
+  }
+});
