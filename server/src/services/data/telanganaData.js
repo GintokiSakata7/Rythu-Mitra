@@ -134,39 +134,50 @@ export async function getTelanganaFallbackPrices({ crop = 'Tomato' } = {}) {
   // Try to fetch from the new Supabase table first!
   if (supabaseEnabled) {
     try {
-      // Use wildcards for ilike to ensure we catch variations (e.g. 'Tomato ', 'Tomato')
       const { data, error } = await supabase
         .from('telangana_market_prices')
         .select('*')
         .ilike('commodity', `%${crop}%`)
-        .catch(() => ({ data: null })); // Catch network errors
+        .catch(e => ({ data: null, error: e }));
 
-      const finalData = data?.length ? data : (await supabase
-        .from('telangana_market_prices')
-        .select('*')
-        .ilike('CommName', `%${crop}%`)
-        .catch(() => ({ data: null }))).data;
+      let finalData = data;
+      let secondError = null;
+      if (!data || data.length === 0) {
+        const res2 = await supabase
+          .from('telangana_market_prices')
+          .select('*')
+          .ilike('CommName', `%${crop}%`)
+          .catch(e => ({ data: null, error: e }));
+        finalData = res2.data;
+        secondError = res2.error;
+      }
         
       if (finalData && finalData.length > 0) {
-        return finalData.map(row => {
-          const yardCode = row.yard_code || row.YardCode;
-          const geo = YARD_GEO[yardCode] || { lat: row.latitude, lng: row.longitude };
-          return {
-            market: row.yard_name || row.YardName,
-            YardCode: yardCode, // Ensure YardCode is passed back
-            latitude: geo.lat || 17.38,
-            longitude: geo.lng || 78.48,
-            district: geo.district || row.AmcName || 'Telangana',
-            state: 'Telangana',
-            commodity: row.commodity || row.CommName,
-            variety: row.variety || row.VarityName,
-            modalPrice: parseFloat(row.modal_price || row.Model || 0) / 100,
-            minPrice: parseFloat(row.min_price || row.Minimum || 0) / 100,
-            maxPrice: parseFloat(row.max_price || row.Maximum || 0) / 100,
-            date: row.date || row.DDate,
-            source: 'Supabase (telangana_market_prices)'
-          };
-        });
+        try {
+          return finalData.map(row => {
+            const yardCode = row.yard_code || row.YardCode;
+            const geo = YARD_GEO[yardCode] || { lat: row.latitude, lng: row.longitude };
+            return {
+              market: row.yard_name || row.YardName,
+              YardCode: yardCode,
+              latitude: geo.lat || 17.38,
+              longitude: geo.lng || 78.48,
+              district: geo.district || row.AmcName || 'Telangana',
+              state: 'Telangana',
+              commodity: row.commodity || row.CommName,
+              variety: row.variety || row.VarityName,
+              modalPrice: parseFloat(row.modal_price || row.Model || 0) / 100,
+              minPrice: parseFloat(row.min_price || row.Minimum || 0) / 100,
+              maxPrice: parseFloat(row.max_price || row.Maximum || 0) / 100,
+              date: row.date || row.DDate,
+              source: 'Supabase (telangana_market_prices)'
+            };
+          });
+        } catch (e) {
+          return { error: 'map_failed', message: e.message };
+        }
+      } else {
+        return { error: 'no_data', data, firstError: error, secondError };
       }
     } catch (e) {
       console.warn('[telanganaData] Supabase fetch failed:', e.message);
