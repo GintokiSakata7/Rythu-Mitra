@@ -137,22 +137,32 @@ export async function getTelanganaFallbackPrices({ crop = 'Tomato' } = {}) {
       const { data, error } = await supabase
         .from('telangana_market_prices')
         .select('*')
-        .ilike('CommName', crop);
+        // Using filter to allow either the old or new column name to match
+        .filter('commodity', 'ilike', crop)
+        .catch(() => null); // Fallback below if this fails
+
+      // If the above query fails because 'commodity' doesn't exist yet, try 'CommName'
+      const finalData = data?.length ? data : (await supabase
+        .from('telangana_market_prices')
+        .select('*')
+        .filter('CommName', 'ilike', crop)).data;
         
-      if (!error && data && data.length > 0) {
-        return data.map(row => {
-          const geo = YARD_GEO[row.YardCode] || {};
+      if (finalData && finalData.length > 0) {
+        return finalData.map(row => {
+          // Support both old CSV headers and new optimized headers
+          const yardCode = row.yard_code || row.YardCode;
+          const geo = YARD_GEO[yardCode] || { lat: row.latitude, lng: row.longitude };
           return {
-            market: row.YardName,
-            district: geo.district || row.AmcName,
+            market: row.yard_name || row.YardName,
+            district: geo.district || row.AmcName || 'Telangana',
             state: 'Telangana',
-            commodity: row.CommName,
-            variety: row.VarityName,
+            commodity: row.commodity || row.CommName,
+            variety: row.variety || row.VarityName,
             // CSV prices are per Quintal (100kg) — convert to per Kg
-            modalPrice: parseFloat(row.Model) / 100,
-            minPrice: parseFloat(row.Minimum) / 100,
-            maxPrice: parseFloat(row.Maximum) / 100,
-            date: row.DDate,
+            modalPrice: parseFloat(row.modal_price || row.Model) / 100,
+            minPrice: parseFloat(row.min_price || row.Minimum) / 100,
+            maxPrice: parseFloat(row.max_price || row.Maximum) / 100,
+            date: row.date || row.DDate,
             source: 'Supabase (telangana_market_prices)'
           };
         });
