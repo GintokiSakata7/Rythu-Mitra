@@ -30,12 +30,24 @@ export default function BuyerPage() {
     fetchBuyers(crop);
   }, [crop]);
 
+  const [dbCrops, setDbCrops] = useState([]);
+  useEffect(() => {
+    api.commodities().then(res => {
+      if (res && res.commodities) setDbCrops(res.commodities);
+    }).catch(console.error);
+  }, []);
+
   const crops = [
     { id: '', label: 'All Crops' },
-    { id: 'Tomato', label: '🍅 Tomato' },
-    { id: 'Onion', label: '🧅 Onion' },
-    { id: 'Potato', label: '🥔 Potato' },
-    { id: 'Chilli', label: '🌶️ Chilli' }
+    ...(dbCrops.length > 0 
+      ? dbCrops.map(c => ({ id: c.name, label: c.name }))
+      : [
+          { id: 'Tomato', label: '🍅 Tomato' },
+          { id: 'Onion', label: '🧅 Onion' },
+          { id: 'Potato', label: '🥔 Potato' },
+          { id: 'Chilli', label: '🌶️ Chilli' }
+        ]
+    )
   ];
 
   return (

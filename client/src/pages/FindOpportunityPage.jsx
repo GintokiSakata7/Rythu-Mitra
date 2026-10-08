@@ -21,6 +21,8 @@ export default function FindOpportunityPage() {
     Suryapet: { latitude: 17.14, longitude: 79.62 }
   });
 
+  const [commodities, setCommodities] = useState([]);
+
   useEffect(() => {
     api.markets().then(data => {
       if (data && data.markets) {
@@ -35,6 +37,12 @@ export default function FindOpportunityPage() {
           }
         });
         setLocations(newLocs);
+      }
+    }).catch(console.error);
+
+    api.commodities().then(data => {
+      if (data && data.commodities) {
+        setCommodities(data.commodities);
       }
     }).catch(console.error);
   }, []);
@@ -175,11 +183,15 @@ export default function FindOpportunityPage() {
 
               <Field label="Crop">
                 <select value={form.crop} onChange={e => setForm({ ...form, crop: e.target.value })}>
-                  <option value="Tomato">🍅 Tomato (టమాట)</option>
-                  <option value="Onion">🧅 Onion (ఉల్లిపాయ)</option>
-                  <option value="Potato">🥔 Potato (ఆలూ)</option>
-                  <option value="Chilli">🌶️ Chilli (మిరప)</option>
-                  <option value="Cotton">🌾 Cotton (పత్తి)</option>
+                  {commodities.length > 0 ? commodities.map(c => (
+                    <option key={c.code} value={c.name}>{c.name}</option>
+                  )) : (
+                    <>
+                      <option value="Tomato">Tomato</option>
+                      <option value="Onion">Onion</option>
+                      <option value="Potato">Potato</option>
+                    </>
+                  )}
                 </select>
               </Field>
 

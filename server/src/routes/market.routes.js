@@ -30,7 +30,7 @@ marketRouter.get('/candidates', async (req, res, next) => {
 // GET /api/markets/commodities — list all available commodities from CSV
 marketRouter.get('/commodities', async (req, res, next) => {
   try {
-    const commodities = getTelanganaCommmodities();
+    const commodities = await getTelanganaCommmodities();
     res.json({ commodities, count: commodities.length });
   } catch (error) { next(error); }
 });
