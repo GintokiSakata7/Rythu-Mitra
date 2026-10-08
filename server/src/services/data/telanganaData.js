@@ -158,31 +158,11 @@ export async function getTelanganaFallbackPrices({ crop = 'Tomato' } = {}) {
         });
       }
     } catch (e) {
-      console.warn('[telanganaData] Supabase fetch failed, falling back to local CSV.');
+      console.warn('[telanganaData] Supabase fetch failed:', e.message);
     }
   }
 
-  // Fallback to local CSV file if Supabase fails or is empty
-  ensureParsed();
-  const results = [];
-  for (const [key, row] of Object.entries(csvLatestPrices)) {
-    if (row.CommName.toLowerCase() === crop.toLowerCase()) {
-      const geo = YARD_GEO[row.YardCode] || {};
-      results.push({
-        market: row.YardName,
-        district: geo.district || row.AmcName,
-        state: 'Telangana',
-        commodity: row.CommName,
-        variety: row.VarityName,
-        modalPrice: parseFloat(row.Model) / 100,
-        minPrice: parseFloat(row.Minimum) / 100,
-        maxPrice: parseFloat(row.Maximum) / 100,
-        date: row.DDate,
-        source: 'Local CSV Fallback'
-      });
-    }
-  }
-  return results;
+  return [];
 }
 
 /**

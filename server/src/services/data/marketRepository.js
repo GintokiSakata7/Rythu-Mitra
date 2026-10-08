@@ -2,7 +2,6 @@ import { supabase, supabaseEnabled } from '../../lib/supabase.js';
 import { haversineKm } from '../optimizer/geo.js';
 import { fetchCommodityOnlineData } from './commodityOnline.js';
 import { getTelanganaMarkets, getTelanganaFallbackPrices, getTelanganaMarketHistory } from './telanganaData.js';
-import { demoBuyerRequirements } from './demoData.js';
 
 const normalizeMarket = (row) => ({
   id: row.id,
@@ -25,31 +24,32 @@ const normalizeMarket = (row) => ({
  *  2. Supabase markets — merged in if configured (avoids duplicates)
  */
 export async function getMarkets({ crop = 'Tomato' } = {}) {
-  // Always start with real Telangana CSV markets
-  const csvMarketsList = getTelanganaMarkets();
+  // Exclusively use telangana_market_prices for BOTH the market list and prices.
   const fallbackPrices = await getTelanganaFallbackPrices({ crop });
 
-  const markets = csvMarketsList.map(m => {
-    const marketBaseName = m.name.replace(' Market', '').toLowerCase();
-    const match = fallbackPrices.find(fp =>
-      fp.market.toLowerCase() === marketBaseName
-    );
+  const markets = fallbackPrices.map(fp => {
+    const geo = (typeof YARD_GEO !== 'undefined') ? YARD_GEO[fp.YardCode] || {} : {};
     return {
-      ...m,
-      modalPrice: match?.modalPrice ?? 0,
-      minPrice: match?.minPrice ?? 0,
-      maxPrice: match?.maxPrice ?? 0,
-      latestPrice: match?.modalPrice ?? 0,
+      id: `TS-${fp.market}`,
+      name: fp.market + ' Market',
+      district: fp.district,
+      state: fp.state,
+      // Default to approximate center of Telangana if geo coordinates are missing in YARD_GEO
+      latitude: geo.lat || 17.38,
+      longitude: geo.lng || 78.48,
+      modalPrice: fp.modalPrice ?? 0,
+      minPrice: fp.minPrice ?? 0,
+      maxPrice: fp.maxPrice ?? 0,
+      latestPrice: fp.modalPrice ?? 0,
       stability: 0.7,
       trend: 0,
-      source: match ? match.source : 'Telangana State Marketing Dept'
+      source: fp.source || 'Supabase (telangana_market_prices)'
     };
   });
 
-
-
   return markets;
 }
+
 
 export async function getNearbyMarkets({ latitude, longitude, crop, radiusKm, count }) {
   let markets = await getMarkets({ crop });
@@ -71,25 +71,9 @@ export async function getNearbyMarkets({ latitude, longitude, crop, radiusKm, co
 }
 
 export async function getBuyerRequirements({ crop = '' } = {}) {
-  if (!supabaseEnabled) return demoBuyerRequirements.filter((x) => !crop || x.crop.toLowerCase() === crop.toLowerCase());
-  const { data, error } = await supabase.from('buyer_requirements').select('*').eq('status', 'Open');
-  if (error || !data?.length) return demoBuyerRequirements.filter((x) => !crop || x.crop.toLowerCase() === crop.toLowerCase());
-  return data.map((x) => ({
-    ...x,
-    companyName: x.company_name || x.companyName,
-    quantityKg: Number(x.quantity_kg ?? x.quantityKg),
-    offerPrice: Number(x.offer_price ?? x.offerPrice),
-    latitude: Number(x.latitude),
-    longitude: Number(x.longitude),
-    pickupProvided: Boolean(x.pickup_provided ?? x.pickupProvided),
-    requiredBy: x.required_by || x.requiredBy,
-    paymentDays: Number(x.payment_days ?? x.paymentDays ?? 3),
-    isVerified: true,
-    verificationId: x.verification_id || 'MM-GOV-2026-9901',
-    gstin: x.gstin || '36AABCB1234M1Z5',
-    fssai: x.fssai || '13621014000189',
-    trustScore: x.trust_score || 98
-  })).filter((x) => !crop || x.crop.toLowerCase() === crop.toLowerCase());
+  // User explicitly requested to ONLY evaluate telangana_market_prices (APMC markets),
+  // and to completely ignore any direct buyers or buyer_requirements.
+  return [];
 }
 
 export async function createBuyerRequirement(payload) {
@@ -106,7 +90,6 @@ export async function createBuyerRequirement(payload) {
   };
 
   if (!supabaseEnabled) {
-    demoBuyerRequirements.unshift(newReq);
     return newReq;
   }
 
@@ -189,33 +172,8 @@ export async function getPriceHistory({ crop = 'Tomato' } = {}) {
  * into the market objects, so the app still works with real data.
  */
 export async function refreshMarketPrices({ markets, crop }) {
-  let live;
-  try {
-    live = await fetchCommodityOnlineData({ crop });
-  } catch (err) {
-    console.warn('[refreshMarketPrices] Live scraper failed, using CSV fallback:', err.message);
-    return { markets, externalCalls: 0, liveEnabled: false, liveError: err.message };
-  }
-
-  if (!live.records.length) {
-    return { markets, externalCalls: live.requestCount || 0, liveEnabled: live.enabled, liveError: live.error || null };
-  }
-
-  const updated = markets.map((market) => {
-    const name = (market.name || '').toLowerCase().replace(' market', '');
-    const match = live.records.find((record) => {
-      const recordMarket = String(record.market || '').toLowerCase();
-      return (recordMarket && (name.includes(recordMarket) || recordMarket.includes(name)));
-    });
-    if (!match || !Number.isFinite(match.modalPrice)) return market;
-    return {
-      ...market,
-      modalPrice: match.modalPrice,
-      minPrice: match.minPrice ?? market.minPrice,
-      maxPrice: match.maxPrice ?? market.maxPrice,
-      source: 'commodityonline.com (Live)'
-    };
-  });
-
-  return { markets: updated, externalCalls: live.requestCount || 0, liveEnabled: live.enabled, liveError: live.error || null };
+  // User explicitly requested to ONLY look at telangana_market_prices
+  // We completely bypass the live web scraper.
+  return { markets, externalCalls: 0, liveEnabled: false, liveError: null };
 }
+
