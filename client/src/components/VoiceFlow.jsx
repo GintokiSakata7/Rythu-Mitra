@@ -1,49 +1,51 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Mic, MicOff, Volume2, VolumeX, Navigation, MapPin, Check,
   ChevronRight, ArrowLeft, RefreshCw, Sparkles, TrendingUp,
-  Truck, Clock, AlertTriangle, ShieldCheck, Award, Loader2
+  Truck, Clock, AlertTriangle, ShieldCheck, Award, Loader2,
+  Play, Pause, X, Radio
 } from 'lucide-react';
 import { api } from '../lib/api.js';
 import OpportunityCard from './OpportunityCard.jsx';
 import OptimizerTrace from './OptimizerTrace.jsx';
 import MarketMap from './MarketMap.jsx';
 
-// Multi-language text dictionary
+// Multi-language conversational prompts
 const LANG_DATA = {
   te: {
     name: 'తెలుగు',
     nativeLabel: 'తెలుగు (Telugu)',
     code: 'te-IN',
-    greeting: 'నమస్కారం! మండిమిత్ర వాయిస్ అసిస్టెంట్‌కు స్వాగతం. మీరు సరైన మార్కెట్ ఎంచుకోవడానికి కొన్ని ప్రశ్నలు అడుగుతాను.',
+    welcome: 'నమస్కారం! నేను మండిమిత్రను.',
     q1: 'మీరు ఏ పంటను అమ్మాలనుకుంటున్నారు?',
-    q1_sub: 'పంట పేరు చెప్పండి లేదా కింద ఉన్న ఎంపికలలో ఒకదాన్ని తాకండి:',
-    q2: 'మీ దగ్గర ఎంత పరిమాణం ఉంది? (కిలోలు లేదా టన్నుల్లో)',
-    q2_sub: 'పరిమాణం చెప్పండి లేదా కింద ఉన్న బటన్‌ను ఎంచుకోండి:',
-    q3: 'మీ పొలం ఎక్కడ ఉంది? లొకేషన్ చెప్పండి లేదా GPS బటన్ నొక్కండి.',
-    q3_sub: 'లొకేషన్ చెప్పండి లేదా నేరుగా GPS ద్వారా స్థానాన్ని గుర్తించండి:',
+    q1_sub: 'టమాట, ఉల్లిపాయ, బంగాళాదుంప, మిరప లేదా పత్తి చెప్పండి...',
+    q2_prefix: 'గుర్తించబడింది. మీ దగ్గర ఎంత పరిమాణం ఉంది?',
+    q2_sub: 'కిలోలు లేదా టన్నుల్లో చెప్పండి (ఉదా: 5 టన్నులు లేదా 5000 కేజీలు)...',
+    q3: 'మీ పొలం ఎక్కడ ఉంది?',
+    q3_sub: 'నల్గొండ, సూర్యాపేట, మిర్యాలగూడ చెప్పండి లేదా GPS బటన్ నొక్కండి...',
     q4: 'మీకు స్వంత రవాణా వాహనం ఉందా?',
-    q4_sub: 'వాహన సదుపాయం మరియు నాణ్యతను ఎంచుకోండి:',
-    analyzing: 'సమీప మార్కెట్లు మరియు కొనుగోలుదారులను విశ్లేషిస్తున్నాము...',
-    analyzing_sub: 'రవాణా, సమయం, నష్టభయం లెక్కించి అత్యధిక నికర లాభం ఇచ్చే మార్కెట్‌ను వెతుకుతున్నాము...',
-    gps_btn: '📍 నా GPS లొకేషన్ ఉపయోగించండి',
-    gps_success: 'GPS స్థానం విజయవంతంగా గుర్తించబడింది!',
-    gps_error: 'GPS అనుమతి లభించలేదు. దయచేసి కింద ఉన్న పట్టణాన్ని ఎంచుకోండి.',
-    transport_yes: '🚚 అవును, నా వాహనం ఉంది',
+    q4_sub: 'ఉంది లేదా లేదు అని చెప్పండి...',
+    analyzing: 'అన్ని మార్కెట్లు మరియు కొనుగోలుదారులను లెక్కిస్తున్నాను...',
+    analyzing_sub: 'రవాణా ఖర్చు, సమయం, నష్టభయం తీసివేసి అత్యధిక నికర లాభాన్ని లెక్కిస్తున్నాను...',
+    state_listening: 'వింటున్నాను... మాట్లాడండి',
+    state_speaking: 'మండిమిత్ర మాట్లాడుతోంది...',
+    state_thinking: 'ఆలోచిస్తున్నాను...',
+    state_tap_speak: 'మాట్లాడటానికి తాకండి',
+    gps_btn: '📍 నా GPS లొకేషన్ వాడండి',
+    gps_success: 'GPS లొకేషన్ విజయవంతంగా గుర్తించబడింది!',
+    gps_error: 'GPS గుర్తించలేకపోయాము. దయచేసి పట్టణం పేరు చెప్పండి.',
+    transport_yes: '🚚 అవును, వాహనం ఉంది',
     transport_no: '❌ లేదు, రవాణా కావాలి',
-    grade_a: 'గ్రేడ్ A (ఉత్తమ నాణ్యత)',
-    grade_b: 'గ్రేడ్ B (సాధారణ నాణ్యత)',
     best_badge: 'అత్యుత్తమ మార్కెట్ సిఫార్సు',
     net_realization: 'చేతికందే నికర మొత్తం (Net Realization)',
     gross_val: 'మొత్తం అమ్మకపు విలువ',
     transport_cost: 'రవాణా ఖర్చు',
-    time_cost: 'ప్రయాణ సమయ ఖర్చు',
-    risk_cost: 'నష్టభయం / వృధా ఖర్చు',
-    net_per_kg: 'ప్రతి కిలోకు నికర ధర',
-    why_this_won: 'ఈ మార్కెట్ ఎందుకు ఉత్తమమైనది?',
+    time_cost: 'సమయ ఖర్చు',
+    risk_cost: 'వృధా/నష్టభయం',
+    why_this_won: 'ఈ మార్కెట్ ఎందుకు గెలిచింది?',
     listen_again: 'మళ్ళీ వినండి',
     stop_audio: 'ఆపండి',
-    restart: 'మళ్ళీ ప్రారంభించండి',
+    restart: 'నయా వాయిస్ సెషన్',
     edit: 'సవరించండి',
     crops: [
       { id: 'Tomato', label: '🍅 టమాట (Tomato)' },
@@ -69,35 +71,36 @@ const LANG_DATA = {
     name: 'हिंदी',
     nativeLabel: 'हिंदी (Hindi)',
     code: 'hi-IN',
-    greeting: 'नमस्ते! मंडीमित्र वॉइस असिस्टेंट में आपका स्वागत है। सही मंडी चुनने के लिए मैं आपसे कुछ आसान सवाल पूछूंगा।',
+    welcome: 'नमस्ते! मैं मंडीमित्र हूँ।',
     q1: 'आप कौन सी फसल बेचना चाहते हैं?',
-    q1_sub: 'फसल का नाम बोलें या नीचे दिए गए विकल्पों पर टैप करें:',
-    q2: 'आपके पास कितनी मात्रा है? (किलो या टन में)',
-    q2_sub: 'मात्रा बोलें या नीचे से चुनें:',
-    q3: 'आपका खेत कहाँ है? स्थान बताएं या GPS चालू करें।',
-    q3_sub: 'बोलकर बताएं या GPS बटन दबाकर अपना स्थान दर्ज करें:',
-    q4: 'क्या आपके पास अपनी गाड़ी / परिवहन है?',
-    q4_sub: 'परिवहन और फसल की गुणवत्ता चुनें:',
+    q1_sub: 'टमाटर, प्याज, आलू, मिर्च या कपास बोलें...',
+    q2_prefix: 'दर्ज हो गया। आपके पास कितनी मात्रा है?',
+    q2_sub: 'किलो या टन में बताएं (जैसे: 5 टन या 5000 किलो)...',
+    q3: 'आपका खेत या गाँव कहाँ है?',
+    q3_sub: 'नलगोंडा, सूर्यापेट, मिर्यालगुडा बोलें या GPS बटन दबाएं...',
+    q4: 'क्या आपके पास अपना वाहन या गाड़ी है?',
+    q4_sub: 'हाँ या नहीं बोलें...',
     analyzing: 'आसपास की मंडियों और खरीदारों का विश्लेषण हो रहा है...',
-    analyzing_sub: 'भाड़ा, यात्रा का समय और जोखिम घटाकर अधिकतम शुद्ध मुनाफा खोज रहे हैं...',
-    gps_btn: '📍 मेरा GPS स्थान उपयोग करें',
+    analyzing_sub: 'भाड़ा, यात्रा समय और नुकसान घटाकर अधिकतम शुद्ध मुनाफा खोज रहे हैं...',
+    state_listening: 'सुन रहा हूँ... बोलिए',
+    state_speaking: 'मंडीमित्र बोल रहा है...',
+    state_thinking: 'सोच रहा हूँ...',
+    state_tap_speak: 'बोलने के लिए टैप करें',
+    gps_btn: '📍 वर्तमान GPS स्थान उपयोग करें',
     gps_success: 'GPS स्थान सफलतापूर्वक मिल गया!',
-    gps_error: 'GPS अनुमति नहीं मिली। कृपया नीचे से शहर चुनें।',
+    gps_error: 'GPS नहीं मिला। कृपया स्थान का नाम बोलें।',
     transport_yes: '🚚 हाँ, अपनी गाड़ी है',
     transport_no: '❌ नहीं, परिवहन चाहिए',
-    grade_a: 'ग्रेड A (उत्तम गुणवत्ता)',
-    grade_b: 'ग्रेड B (सामान्य)',
     best_badge: 'सर्वश्रेष्ठ मंडी / खरीदार सिफ़ारिश',
     net_realization: 'शुद्ध प्राप्ति (Net Realization)',
     gross_val: 'कुल बिक्री मूल्य',
-    transport_cost: 'ट्रांसपोर्ट / ढुलाई खर्च',
-    time_cost: 'यात्रा समय खर्च',
-    risk_cost: 'खराबी / जोखिम खर्च',
-    net_per_kg: 'प्रति किलो शुद्ध भाव',
-    why_this_won: 'यह विकल्प सबसे अच्छा क्यों है?',
+    transport_cost: 'ढुलाई खर्च',
+    time_cost: 'समय खर्च',
+    risk_cost: 'जोखिम खर्च',
+    why_this_won: 'यह विकल्प सर्वश्रेष्ठ क्यों है?',
     listen_again: 'फिर से सुनें',
     stop_audio: 'रोकें',
-    restart: 'नया सर्च करें',
+    restart: 'नया वॉइस सत्र',
     edit: 'बदलें',
     crops: [
       { id: 'Tomato', label: '🍅 टमाटर (Tomato)' },
@@ -123,31 +126,32 @@ const LANG_DATA = {
     name: 'English',
     nativeLabel: 'English',
     code: 'en-IN',
-    greeting: 'Welcome to MandiMitra Voice Assistant! I will ask a few quick questions to find your highest net profit market.',
+    welcome: 'Hello! I am MandiMitra.',
     q1: 'What crop do you want to sell?',
-    q1_sub: 'Speak the crop name or tap one of the options below:',
-    q2: 'How much quantity do you have? (in kg or tonnes)',
-    q2_sub: 'Speak the quantity or select a button:',
-    q3: 'Where is your farm located? Speak or enable GPS.',
-    q3_sub: 'Speak your town/district or tap to enable real GPS location:',
+    q1_sub: 'Say Tomato, Onion, Potato, Chilli, or Cotton...',
+    q2_prefix: 'noted. How much quantity do you have?',
+    q2_sub: 'Say in kilograms or tons (e.g. 5 tons or 5000 kg)...',
+    q3: 'Where is your farm located?',
+    q3_sub: 'Speak Nalgonda, Suryapet, Hyderabad or tap GPS...',
     q4: 'Do you have your own transport vehicle?',
-    q4_sub: 'Select transportation & produce grade:',
-    analyzing: 'Evaluating nearby markets & direct buyers...',
-    analyzing_sub: 'Computing transport, time, and spoilage risk to maximize your net take-home realization...',
-    gps_btn: '📍 Enable GPS Location',
-    gps_success: 'GPS location captured successfully!',
-    gps_error: 'Could not access GPS. Please choose a nearby town.',
+    q4_sub: 'Say yes or no...',
+    analyzing: 'Evaluating nearby mandis and direct buyers...',
+    analyzing_sub: 'Factoring in transport, travel time, and spoilage risk to maximize your net profit...',
+    state_listening: 'Listening... speak now',
+    state_speaking: 'MandiMitra is speaking...',
+    state_thinking: 'Thinking...',
+    state_tap_speak: 'Tap to speak',
+    gps_btn: '📍 Use Current GPS Location',
+    gps_success: 'GPS location detected successfully!',
+    gps_error: 'Could not access GPS. Please speak your town name.',
     transport_yes: '🚚 Yes, I have a vehicle',
-    transport_no: '❌ No, need transport (MandiMitra arranges)',
-    grade_a: 'Grade A (Premium quality)',
-    grade_b: 'Grade B (Standard)',
+    transport_no: '❌ No, need transport',
     best_badge: 'Optimal Recommendation',
     net_realization: 'Expected Net Realization',
     gross_val: 'Gross Sale Value',
     transport_cost: 'Transport Cost',
     time_cost: 'Travel Time Cost',
-    risk_cost: 'Spoilage & Risk Discount',
-    net_per_kg: 'Net Realization per kg',
+    risk_cost: 'Spoilage Discount',
     why_this_won: 'Why this option delivers highest profit',
     listen_again: 'Listen Again',
     stop_audio: 'Stop Audio',
@@ -175,11 +179,204 @@ const LANG_DATA = {
   }
 };
 
+// ==================== AUTHENTIC ZERO-LATENCY ALEXA CHIMES ====================
+// Synthesizes the signature Amazon Echo 2-tone "Ding-Ding" & acknowledgment chimes
+function playAlexaChime(type = 'wake') {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    const now = ctx.currentTime;
+
+    if (type === 'wake') {
+      // Signature Alexa 2-tone chime: D5 (587.33 Hz) -> A5 (880.00 Hz)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(587.33, now);
+      gain1.gain.setValueAtTime(0.18, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.11);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(880.0, now + 0.08);
+      gain2.gain.setValueAtTime(0.24, now + 0.08);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.08);
+      osc2.stop(now + 0.32);
+    } else if (type === 'confirm') {
+      // Pleasant acknowledgment tone: G5 (784 Hz) -> E5 (659 Hz)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(783.99, now);
+      osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.12);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.28);
+    } else if (type === 'success') {
+      // Major harmonic chord celebration (C5, E5, G5, C6)
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        const startT = now + idx * 0.06;
+        osc.frequency.setValueAtTime(freq, startT);
+        gain.gain.setValueAtTime(0.14, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.42);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(startT);
+        osc.stop(startT + 0.42);
+      });
+    }
+  } catch (err) {
+    // Silently ignore if audio context is blocked
+  }
+}
+
+// ==================== FAST MULTI-LINGUAL INTENT RECOGNITION ====================
+// Detects user answers immediately in real-time interim speech (<150ms latency)
+function detectInstantIntent(rawText, currentStep) {
+  if (!rawText) return null;
+  const t = rawText.toLowerCase().trim();
+
+  // STEP 1: CROP
+  if (currentStep === 1) {
+    if (/tomato|tomatoes|టమాట|టమోట|टमाटर|tamaatar|tamata/i.test(t)) {
+      return { type: 'crop', value: 'Tomato' };
+    }
+    if (/onion|onions|ఉల్లి|ఉల్లిపాయ|प्याज|pyaaz|pyaj|ulli/i.test(t)) {
+      return { type: 'crop', value: 'Onion' };
+    }
+    if (/potato|potatoes|ఆలూ|ఆలు|आलू|బంగాళా|బంగాళాదుంప|aloo|alu|bangala/i.test(t)) {
+      return { type: 'crop', value: 'Potato' };
+    }
+    if (/chilli|chili|chillies|మిరప|మిర్చి|मिर्च|मिर्ची|mirchi|mirapa|mirch/i.test(t)) {
+      return { type: 'crop', value: 'Chilli' };
+    }
+    if (/cotton|పత్తి|कपास|patti|kapas/i.test(t)) {
+      return { type: 'crop', value: 'Cotton' };
+    }
+  }
+
+  // STEP 2: QUANTITY
+  if (currentStep === 2) {
+    const numMatch = t.match(/(\d+(?:\.\d+)?)/);
+    const hasTon = /ton|tons|tonne|tonnes|టన్|టన్ను|टन/i.test(t);
+    const hasKg = /kg|kgs|kilo|kilos|కిలో|किलो/i.test(t);
+
+    let spokenVal = null;
+    if (/\b(one|ek|okati|ఒక|एक)\b/i.test(t)) spokenVal = 1;
+    else if (/\b(two|do|rendu|రెండు|दो)\b/i.test(t)) spokenVal = 2;
+    else if (/\b(two and a half|dhāī|arāi|2.5)\b/i.test(t)) spokenVal = 2.5;
+    else if (/\b(five|panch|paanch|aidu|ఐదు|पांच)\b/i.test(t)) spokenVal = 5;
+    else if (/\b(ten|das|padi|పది|दस)\b/i.test(t)) spokenVal = 10;
+
+    if (numMatch || spokenVal !== null) {
+      let val = numMatch ? parseFloat(numMatch[1]) : spokenVal;
+      if (hasTon || (!hasKg && val <= 50)) {
+        val = val * 1000;
+      }
+      if (val >= 100) {
+        return { type: 'quantity', value: Math.round(val) };
+      }
+    }
+  }
+
+  // STEP 3: LOCATION
+  if (currentStep === 3) {
+    if (/gps|current|location|జీపీఎస్|స్థానం|यहाँ|లొకేషన్|యక్కడ|yahin|ikada/i.test(t)) {
+      return { type: 'location_gps' };
+    }
+    if (/nalgonda|నల్గొండ|नलगोंडा|nalgunda/i.test(t)) {
+      return { type: 'location', name: 'Nalgonda', lat: 17.05, lng: 79.27 };
+    }
+    if (/suryapet|సూర్యాపేట|सूर्यापेट|suryapeta/i.test(t)) {
+      return { type: 'location', name: 'Suryapet', lat: 17.14, lng: 79.62 };
+    }
+    if (/miryalaguda|మిర్యాలగూడ|मिर्यालगुडा|miryalguda/i.test(t)) {
+      return { type: 'location', name: 'Miryalaguda', lat: 16.87, lng: 79.56 };
+    }
+    if (/hyderabad|హైదరాబాద్|हैदराबाद|secunderabad/i.test(t)) {
+      return { type: 'location', name: 'Hyderabad', lat: 17.385, lng: 78.4867 };
+    }
+  }
+
+  // STEP 4: TRANSPORT
+  if (currentStep === 4) {
+    if (/\b(yes|ha|haan|avunu|అవును|హా|हाँ|undi|ఉంది|hai|vehicle|gaadi|apna|own|tractor|auto|lorry)\b/i.test(t)) {
+      return { type: 'transport', value: true };
+    }
+    if (/\b(no|nahi|nahin|ledu|లేదు|नहीं|leydhu|don't|not|chahiye|need transport)\b/i.test(t)) {
+      return { type: 'transport', value: false };
+    }
+  }
+
+  return null;
+}
+
+// Select natural sounding voice for Indian regional languages
+function pickBestVoice(voices, langCode) {
+  if (!voices || voices.length === 0) return null;
+  const langKey = langCode.slice(0, 2).toLowerCase();
+
+  if (langKey === 'te') {
+    // Search for Telugu voice
+    const te = voices.find(v => v.lang.startsWith('te') || /telugu/i.test(v.name));
+    if (te) return te;
+    // Fallback to Indian English natural voice
+    const inVoice = voices.find(v => v.lang === 'en-IN' || /india/i.test(v.name));
+    if (inVoice) return inVoice;
+  }
+
+  if (langKey === 'hi') {
+    // Search for Hindi voice
+    const hi = voices.find(v => v.lang.startsWith('hi') || /hindi|swara|hemant|madhur/i.test(v.name));
+    if (hi) return hi;
+    const inVoice = voices.find(v => v.lang === 'en-IN' || /india/i.test(v.name));
+    if (inVoice) return inVoice;
+  }
+
+  // English: prefer natural Indian or US English
+  const en = voices.find(v =>
+    (v.lang === 'en-IN' || v.lang === 'en-US') &&
+    /natural|neural|google|jenny|aria|guy/i.test(v.name)
+  ) || voices.find(v => v.lang.startsWith('en'));
+
+  return en || voices[0];
+}
+
 export default function VoiceFlow({ onSwitchToManual }) {
+  // Steps: 0: Language, 1: Crop, 2: Quantity, 3: Location, 4: Transport, 5: Recommendation
   const [step, setStep] = useState(0);
   const [lang, setLang] = useState('te');
   const t = LANG_DATA[lang] || LANG_DATA.en;
 
+  // Assistant states: 'idle' | 'speaking' | 'listening' | 'thinking'
+  const [assistantState, setAssistantState] = useState('idle');
+  const [transcript, setTranscript] = useState('');
+  const [micVolume, setMicVolume] = useState(1);
+  const [harmonicLevels, setHarmonicLevels] = useState([12, 20, 26, 18, 14]);
+  const [gpsStatus, setGpsStatus] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+
+  // Harvest state
   const [answers, setAnswers] = useState({
     crop: 'Tomato',
     quantityKg: 5000,
@@ -192,146 +389,331 @@ export default function VoiceFlow({ onSwitchToManual }) {
     includeBuyers: true
   });
 
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [gpsStatus, setGpsStatus] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [result, setResult] = useState(null);
+  const stepRef = useRef(step);
+  stepRef.current = step;
+
+  const answersRef = useRef(answers);
+  answersRef.current = answers;
+
+  const assistantStateRef = useRef(assistantState);
+  assistantStateRef.current = assistantState;
 
   const recognitionRef = useRef(null);
-  const synthesisUtteranceRef = useRef(null);
+  const synthRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const micStreamRef = useRef(null);
+  const animFrameRef = useRef(null);
+  const autoListenTimeoutRef = useRef(null);
+  const speechWatchdogRef = useRef(null);
+  const interimDebounceRef = useRef(null);
+  const voicesListRef = useRef([]);
 
-  const speak = (text) => {
-    if (!('speechSynthesis' in window)) return;
+  // Cache voices on mount
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      const updateVoices = () => {
+        voicesListRef.current = window.speechSynthesis.getVoices();
+      };
+      updateVoices();
+      window.speechSynthesis.onvoiceschanged = updateVoices;
+    }
+  }, []);
+
+  // Stop all active audio, timers & recognition cleanly
+  const stopAllAudio = useCallback(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (speechWatchdogRef.current) {
+      clearTimeout(speechWatchdogRef.current);
+      speechWatchdogRef.current = null;
+    }
+    if (autoListenTimeoutRef.current) {
+      clearTimeout(autoListenTimeoutRef.current);
+      autoListenTimeoutRef.current = null;
+    }
+    if (interimDebounceRef.current) {
+      clearTimeout(interimDebounceRef.current);
+      interimDebounceRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch (e) {}
+      recognitionRef.current = null;
+    }
+    setAssistantState('idle');
+  }, []);
+
+  // Audio reactive microphone visualizer (Web Audio API)
+  const setupMicVisualizer = useCallback(async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) return;
+      if (micStreamRef.current) return;
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStreamRef.current = stream;
+
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+      audioContextRef.current = ctx;
+
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.6;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const renderAudioPhysics = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArray);
+
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const avg = sum / bufferLength;
+        // Dynamic scale factor: 1.0 to 1.62
+        const scaleVal = 1 + (avg / 128) * 0.62;
+        setMicVolume(scaleVal);
+
+        // Real-time harmonic frequency equalizer bars
+        const bars = [
+          Math.max(8, Math.round(dataArray[1] / 6)),
+          Math.max(12, Math.round(dataArray[4] / 5)),
+          Math.max(16, Math.round(dataArray[8] / 4)),
+          Math.max(10, Math.round(dataArray[12] / 5)),
+          Math.max(8, Math.round(dataArray[16] / 6))
+        ];
+        setHarmonicLevels(bars);
+
+        animFrameRef.current = requestAnimationFrame(renderAudioPhysics);
+      };
+      renderAudioPhysics();
+    } catch (e) {
+      // Audio stream rejected or unsupported; fallback to standard CSS animation
+    }
+  }, []);
+
+  // Natural Speech Synthesis with Alexa Cadence & Chromium Stability Fixes
+  const speakText = useCallback((text, onFinish = null) => {
+    if (!('speechSynthesis' in window)) {
+      if (onFinish) onFinish();
+      return;
+    }
+
+    // Cancel prior speech cleanly
     window.speechSynthesis.cancel();
-    if (!text) return;
+    if (speechWatchdogRef.current) clearTimeout(speechWatchdogRef.current);
+
+    setAssistantState('speaking');
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = t.code;
-    utterance.rate = 0.95;
+    utterance.rate = lang === 'en' ? 1.05 : 0.98; // natural cadence
+    utterance.pitch = 1.02;
 
-    const voices = window.speechSynthesis.getVoices();
-    const matchingVoice = voices.find(v => v.lang.startsWith(lang) || v.lang === t.code);
-    if (matchingVoice) utterance.voice = matchingVoice;
+    const voice = pickBestVoice(voicesListRef.current, t.code);
+    if (voice) utterance.voice = voice;
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    // Fix Chromium GC Bug: persist utterance globally
+    window.__mandimitraActiveUtterance = utterance;
 
-    synthesisUtteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-  };
+    const cleanupAndFinish = () => {
+      if (speechWatchdogRef.current) {
+        clearTimeout(speechWatchdogRef.current);
+        speechWatchdogRef.current = null;
+      }
+      window.__mandimitraActiveUtterance = null;
+      setAssistantState('idle');
 
-  const stopSpeaking = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
-  };
+      if (onFinish) {
+        onFinish();
+      } else {
+        // Alexa Automatic Turn-taking: immediately open microphone
+        autoListenTimeoutRef.current = setTimeout(() => {
+          startListening();
+        }, 320);
+      }
+    };
 
-  const startListening = () => {
+    utterance.onstart = () => {
+      setAssistantState('speaking');
+    };
+
+    utterance.onend = cleanupAndFinish;
+    utterance.onerror = cleanupAndFinish;
+
+    // Safety watchdog timer: guarantees state never gets stuck in 'speaking'
+    const maxDurationMs = Math.max(3500, (text.length / 8) * 1000);
+    speechWatchdogRef.current = setTimeout(() => {
+      if (assistantStateRef.current === 'speaking') {
+        cleanupAndFinish();
+      }
+    }, maxDurationMs);
+
+    synthRef.current = utterance;
+    // Chromium micro-delay prevents silent drop
+    setTimeout(() => {
+      try {
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        cleanupAndFinish();
+      }
+    }, 50);
+  }, [lang, t.code]);
+
+  // Start Voice Recognition with Instant Intent Detection
+  const startListening = useCallback(() => {
+    stopAllAudio();
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Speech recognition is not supported in this browser. Please use the quick tap options.');
       return;
     }
 
-    stopSpeaking();
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-      return;
+    try {
+      setupMicVisualizer();
+      playAlexaChime('wake');
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = t.code;
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        setAssistantState('listening');
+        setTranscript('');
+      };
+
+      recognition.onresult = (event) => {
+        let fullTranscript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          fullTranscript += event.results[i][0].transcript;
+        }
+        setTranscript(fullTranscript);
+
+        // INSTANT INTENT CHECK: Detect answers immediately in interim speech!
+        const detected = detectInstantIntent(fullTranscript, stepRef.current);
+        if (detected) {
+          try {
+            recognition.stop();
+          } catch (e) {}
+          handleDetectedIntent(detected);
+          return;
+        }
+
+        // Fast silence debounce fallback (650ms) instead of waiting for Chrome's 3-second delay
+        if (interimDebounceRef.current) clearTimeout(interimDebounceRef.current);
+        interimDebounceRef.current = setTimeout(() => {
+          if (stepRef.current >= 1 && stepRef.current <= 4 && fullTranscript.trim()) {
+            try {
+              recognition.stop();
+            } catch (e) {}
+            handleGenericTranscriptFallback(fullTranscript);
+          }
+        }, 650);
+      };
+
+      recognition.onerror = () => {
+        setAssistantState('idle');
+      };
+
+      recognition.onend = () => {
+        setAssistantState(prev => (prev === 'listening' ? 'idle' : prev));
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (e) {
+      setAssistantState('idle');
     }
+  }, [t.code, stopAllAudio, setupMicVisualizer]);
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = t.code;
-    recognition.interimResults = true;
-    recognition.continuous = false;
+  // Execute instantaneous action on matched intent
+  const handleDetectedIntent = (intent) => {
+    playAlexaChime('confirm');
 
-    recognition.onstart = () => {
-      setIsListening(true);
-      setTranscript('');
-    };
-
-    recognition.onresult = (event) => {
-      const current = Array.from(event.results)
-        .map(r => r[0].transcript)
-        .join(' ');
-      setTranscript(current);
-      handleSpokenAnswer(current);
-    };
-
-    recognition.onerror = () => setIsListening(false);
-    recognition.onend = () => setIsListening(false);
-
-    recognitionRef.current = recognition;
-    recognition.start();
+    if (intent.type === 'crop') {
+      selectCrop(intent.value);
+    } else if (intent.type === 'quantity') {
+      selectQuantity(intent.value);
+    } else if (intent.type === 'location_gps') {
+      handleEnableGPS();
+    } else if (intent.type === 'location') {
+      selectLocation(intent.name, intent.lat, intent.lng);
+    } else if (intent.type === 'transport') {
+      finishAndEvaluate(intent.value);
+    }
   };
 
-  const handleSpokenAnswer = (text) => {
-    const lower = text.toLowerCase();
-    if (step === 1) {
-      if (/tomato|టమాట|टमाटर/i.test(lower)) selectCrop('Tomato');
-      else if (/onion|ఉల్లి|प्याज/i.test(lower)) selectCrop('Onion');
-      else if (/potato|ఆలూ|आलू|బంగాళా/i.test(lower)) selectCrop('Potato');
-      else if (/chilli|మిరప|मिर्च/i.test(lower)) selectCrop('Chilli');
-      else if (/cotton|పత్తి|कपास/i.test(lower)) selectCrop('Cotton');
-    } else if (step === 2) {
-      const match = text.match(/(\d+)/);
-      if (match) {
-        let val = parseInt(match[1], 10);
-        if (/ton|టన్|टन/i.test(text)) val *= 1000;
-        if (val > 0) selectQuantity(val);
-      }
-    } else if (step === 3) {
-      if (/nalgonda|నల్గొండ|नलगोंडा/i.test(lower)) selectLocation('Nalgonda', 17.05, 79.27);
-      else if (/suryapet|సూర్యాపేట|सूर्यापेट/i.test(lower)) selectLocation('Suryapet', 17.14, 79.62);
-      else if (/miryalaguda|మిర్యాలగూడ|मिर्यालगुडा/i.test(lower)) selectLocation('Miryalaguda', 16.87, 79.56);
-      else if (/hyderabad|హైదరాబాద్|हैदराबाद/i.test(lower)) selectLocation('Hyderabad', 17.385, 78.4867);
-    } else if (step === 4) {
-      if (/yes|ఉంది|हाँ|vehicle|vehicle undi|gaadi hai/i.test(lower)) {
-        finishAndEvaluate(true);
-      } else if (/no|లేదు|नहीं|no vehicle|ledu|nahi/i.test(lower)) {
-        finishAndEvaluate(false);
-      }
+  // Fallback for uncommon or noisy inputs
+  const handleGenericTranscriptFallback = (spoken) => {
+    playAlexaChime('confirm');
+    const currentStep = stepRef.current;
+
+    if (currentStep === 1) {
+      selectCrop('Tomato');
+    } else if (currentStep === 2) {
+      const match = spoken.match(/\d+/);
+      const q = match ? parseInt(match[0], 10) : 5000;
+      selectQuantity(q >= 100 ? q : 5000);
+    } else if (currentStep === 3) {
+      selectLocation(spoken, 17.05, 79.27);
+    } else if (currentStep === 4) {
+      finishAndEvaluate(false);
     }
   };
 
-  useEffect(() => {
-    if (step === 0) {
-      speak('Please select your language. దయచేసి మీ భాషను ఎంచుకోండి. कृपया अपनी भाषा चुनें.');
-    } else if (step === 1) {
-      speak(t.q1);
-    } else if (step === 2) {
-      speak(t.q2);
-    } else if (step === 3) {
-      speak(t.q3);
-    } else if (step === 4) {
-      speak(t.q4);
-    }
-    return () => stopSpeaking();
-  }, [step, lang]);
-
+  // Step 0 -> Step 1: Language Selection & Immediate Alexa Greeting
   const selectLanguage = (selectedLang) => {
+    playAlexaChime('confirm');
     setLang(selectedLang);
     setStep(1);
+    const selT = LANG_DATA[selectedLang];
+
+    setTimeout(() => {
+      speakText(`${selT.welcome} ${selT.q1}`);
+    }, 180);
   };
 
+  // Step 1 -> Step 2: Crop
   const selectCrop = (cropName) => {
+    playAlexaChime('confirm');
     setAnswers(prev => ({ ...prev, crop: cropName }));
     setTranscript('');
     setStep(2);
+
+    setTimeout(() => {
+      const prompt = lang === 'te'
+        ? `${cropName} ${t.q2_prefix}`
+        : lang === 'hi'
+        ? `${cropName} ${t.q2_prefix}`
+        : `${cropName} ${t.q2_prefix}`;
+      speakText(prompt);
+    }, 120);
   };
 
+  // Step 2 -> Step 3: Quantity
   const selectQuantity = (qty) => {
+    playAlexaChime('confirm');
     setAnswers(prev => ({ ...prev, quantityKg: qty }));
     setTranscript('');
     setStep(3);
+
+    setTimeout(() => {
+      speakText(t.q3);
+    }, 120);
   };
 
+  // Step 3 -> Step 4: Location
   const selectLocation = (locName, lat, lng) => {
+    playAlexaChime('confirm');
     setAnswers(prev => ({
       ...prev,
       locationText: locName,
@@ -340,17 +722,24 @@ export default function VoiceFlow({ onSwitchToManual }) {
     }));
     setTranscript('');
     setStep(4);
+
+    setTimeout(() => {
+      speakText(t.q4);
+    }, 120);
   };
 
+  // GPS 1-Tap Geolocation
   const handleEnableGPS = () => {
+    playAlexaChime('wake');
     if (!navigator.geolocation) {
       setGpsStatus(t.gps_error);
       return;
     }
-    setGpsStatus('📍 Detecting location via GPS...');
+    setGpsStatus('📍 Detecting GPS coordinates...');
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        playAlexaChime('confirm');
         setAnswers(prev => ({
           ...prev,
           latitude,
@@ -358,109 +747,233 @@ export default function VoiceFlow({ onSwitchToManual }) {
           locationText: `GPS (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`
         }));
         setGpsStatus(t.gps_success);
+        setStep(4);
         setTimeout(() => {
-          setStep(4);
-        }, 800);
+          speakText(t.q4);
+        }, 250);
       },
       () => {
         setGpsStatus(t.gps_error);
       },
-      { timeout: 10000, enableHighAccuracy: true }
+      { timeout: 7000, enableHighAccuracy: true }
     );
   };
 
-  const finishAndEvaluate = async (hasOwnVehicle, quality = 'A') => {
+  // Step 4 -> Step 5: Evaluate Economics & Speak Verdict
+  const finishAndEvaluate = async (hasTransport) => {
+    stopAllAudio();
+    playAlexaChime('confirm');
+
     const payload = {
-      ...answers,
-      hasTransport: hasOwnVehicle,
-      quality,
+      ...answersRef.current,
+      hasTransport,
       language: lang
     };
     setAnswers(payload);
     setStep(5);
     setLoading(true);
+    setAssistantState('thinking');
     setError('');
-
-    speak(t.analyzing);
 
     try {
       const res = await api.recommend(payload);
       setResult(res);
+      setLoading(false);
+      playAlexaChime('success');
 
+      // Announce the optimal recommendation out loud
       if (res.explanation) {
         setTimeout(() => {
-          speak(res.explanation);
-        }, 500);
+          speakText(res.explanation, () => {
+            setAssistantState('idle');
+          });
+        }, 350);
       }
     } catch (err) {
       setError(err.message || 'Optimization failed');
-    } finally {
       setLoading(false);
+      setAssistantState('idle');
     }
   };
 
-  const restartFlow = () => {
-    stopSpeaking();
+  const restartSession = () => {
+    stopAllAudio();
     setStep(0);
     setResult(null);
     setTranscript('');
     setGpsStatus('');
+    setAssistantState('idle');
   };
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopAllAudio();
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stopAllAudio]);
+
   return (
-    <div className="voice-flow-container">
-      <div className="voice-flow-header">
-        <div className="voice-flow-badge">
-          <Sparkles size={16} />
-          <span>VOICE ASSISTANT • AI సహచరి</span>
+    <div className="alexa-voice-container">
+      {/* Dynamic Ambient Background Aurora */}
+      <div className={`alexa-aurora-glow aura-${assistantState}`} />
+
+      {/* Top Status & Language Bar */}
+      <div className="alexa-top-bar">
+        <div className="alexa-brand-tag">
+          <span className="live-radar-dot" />
+          <span>ALEXA & CHATGPT VOICE ENGINE</span>
         </div>
-        <div className="voice-steps-progress">
-          {[1, 2, 3, 4, 5].map(s => (
-            <div
-              key={s}
-              className={`step-dot ${step === s ? 'current' : step > s ? 'done' : ''}`}
-            />
-          ))}
+        <div className="alexa-lang-pill">
+          <Radio size={12} className="spin-slow" />
+          <span>{LANG_DATA[lang]?.nativeLabel || 'Telugu'}</span>
         </div>
       </div>
 
-      {step === 0 && (
-        <div className="voice-step-card slide-in">
-          <div className="voice-assistant-avatar">
-            <Mic size={32} />
-          </div>
-          <h2 className="voice-step-title">Choose Your Language / భాషను ఎంచుకోండి</h2>
-          <p className="voice-step-subtitle">
-            మాట్లాడటానికి మీ ఇష్టమైన భాషను ఎంచుకోండి • बोलकर जानकारी देने के लिए भाषा चुनें
-          </p>
+      {/* ==================== THE LIVING ALEXA / CHATGPT VOICE ORB ==================== */}
+      <div className="alexa-orb-stage">
+        {/* Radiating sound wave ripple rings when listening */}
+        {assistantState === 'listening' && (
+          <>
+            <div className="orb-soundwave-ring ring-1" />
+            <div className="orb-soundwave-ring ring-2" />
+            <div className="orb-soundwave-ring ring-3" />
+          </>
+        )}
 
-          <div className="language-selector-grid">
+        <div
+          className={`alexa-orb-wrapper state-${assistantState}`}
+          style={{
+            transform: assistantState === 'listening' ? `scale(${micVolume})` : undefined
+          }}
+          onClick={() => {
+            if (assistantState === 'speaking') {
+              // Tap to barge-in / interrupt Alexa
+              stopAllAudio();
+            } else if (assistantState === 'listening') {
+              stopAllAudio();
+            } else if (step > 0 && step < 5) {
+              startListening();
+            }
+          }}
+          title={
+            assistantState === 'speaking'
+              ? 'Tap to interrupt / pause'
+              : assistantState === 'listening'
+              ? 'Tap to mute'
+              : 'Tap to speak'
+          }
+        >
+          {/* Multi-layered glass halo & holographic fluid core */}
+          <div className="orb-halo-outer" />
+          <div className="orb-halo-mid" />
+          <div className="orb-aurora-mesh" />
+          <div className="orb-core">
+            {assistantState === 'listening' ? (
+              <Mic size={38} className="orb-mic-glow" />
+            ) : assistantState === 'speaking' ? (
+              <div className="voice-harmonic-bars">
+                <span /><span /><span /><span /><span />
+              </div>
+            ) : assistantState === 'thinking' ? (
+              <Loader2 size={40} className="spin orb-loader-glow" />
+            ) : (
+              <Mic size={34} />
+            )}
+          </div>
+        </div>
+
+        {/* Real-time Dynamic Equalizer Bar Visualizer */}
+        {assistantState === 'listening' && (
+          <div className="alexa-live-equalizer">
+            {harmonicLevels.map((lvl, i) => (
+              <span
+                key={i}
+                className="eq-bar"
+                style={{ height: `${lvl}px` }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Dynamic Conversational State Capsule */}
+        <div className="alexa-state-label">
+          {assistantState === 'listening' && (
+            <span className="state-badge listening">
+              <span className="wave-dot" /> {t.state_listening}
+            </span>
+          )}
+          {assistantState === 'speaking' && (
+            <span className="state-badge speaking">
+              <Volume2 size={16} /> {t.state_speaking}
+            </span>
+          )}
+          {assistantState === 'thinking' && (
+            <span className="state-badge thinking">
+              <Sparkles size={16} className="spin" /> {t.state_thinking}
+            </span>
+          )}
+          {assistantState === 'idle' && (
             <button
               type="button"
-              className="lang-card featured"
+              className="state-badge idle-btn"
+              onClick={startListening}
+            >
+              <Mic size={14} /> {t.state_tap_speak}
+            </button>
+          )}
+        </div>
+
+        {/* Live Streaming Speech Transcript Capsule */}
+        {transcript && (
+          <div className="alexa-live-transcript-bubble">
+            <span className="transcript-quotes">“</span>
+            <span>{transcript}</span>
+            <span className="transcript-quotes">”</span>
+          </div>
+        )}
+      </div>
+
+      {/* ==================== INTERACTIVE CONVERSATION STEPS ==================== */}
+
+      {/* STEP 0: LANGUAGE SELECTION */}
+      {step === 0 && (
+        <div className="alexa-step-content slide-fade">
+          <h2 className="alexa-prompt-title">Choose Your Voice Language / భాషను ఎంచుకోండి</h2>
+          <p className="alexa-prompt-sub">
+            Tap your language to begin voice mode • మాట్లాడటానికి భాషను తాకండి
+          </p>
+
+          <div className="alexa-lang-grid">
+            <button
+              type="button"
+              className="alexa-lang-card featured"
               onClick={() => selectLanguage('te')}
             >
-              <span className="lang-icon">🌾</span>
+              <span className="flag-icon">🌾</span>
               <strong>తెలుగు</strong>
               <span>Telugu (మాట్లాడండి)</span>
             </button>
 
             <button
               type="button"
-              className="lang-card"
+              className="alexa-lang-card"
               onClick={() => selectLanguage('hi')}
             >
-              <span className="lang-icon">🇮🇳</span>
+              <span className="flag-icon">🇮🇳</span>
               <strong>हिंदी</strong>
               <span>Hindi (बोलें)</span>
             </button>
 
             <button
               type="button"
-              className="lang-card"
+              className="alexa-lang-card"
               onClick={() => selectLanguage('en')}
             >
-              <span className="lang-icon">🇬🇧</span>
+              <span className="flag-icon">🇬🇧</span>
               <strong>English</strong>
               <span>English (Speak)</span>
             </button>
@@ -468,38 +981,18 @@ export default function VoiceFlow({ onSwitchToManual }) {
         </div>
       )}
 
+      {/* STEP 1: CROP */}
       {step === 1 && (
-        <div className="voice-step-card slide-in">
-          <button type="button" className="step-back-btn" onClick={() => setStep(0)}>
-            <ArrowLeft size={16} /> <span>భాష / Language</span>
-          </button>
+        <div className="alexa-step-content slide-fade">
+          <h2 className="alexa-prompt-title">{t.q1}</h2>
+          <p className="alexa-prompt-sub">{t.q1_sub}</p>
 
-          <div className="voice-speaking-indicator">
-            <div className={`audio-visualizer ${isSpeaking ? 'active' : ''}`}>
-              <span /><span /><span /><span /><span />
-            </div>
-            <h2 className="voice-step-title">{t.q1}</h2>
-            <p className="voice-step-subtitle">{t.q1_sub}</p>
-          </div>
-
-          <div className="mic-interactive-bar">
-            <button
-              type="button"
-              className={`big-mic-button ${isListening ? 'listening' : ''}`}
-              onClick={startListening}
-            >
-              {isListening ? <MicOff size={28} /> : <Mic size={28} />}
-              <span>{isListening ? 'Listening...' : 'Tap to Speak'}</span>
-            </button>
-            {transcript && <div className="live-transcript-bubble">"{transcript}"</div>}
-          </div>
-
-          <div className="quick-chips-grid">
+          <div className="alexa-quick-chips">
             {t.crops.map(c => (
               <button
                 key={c.id}
                 type="button"
-                className={`quick-chip ${answers.crop === c.id ? 'active' : ''}`}
+                className={`alexa-chip ${answers.crop === c.id ? 'active' : ''}`}
                 onClick={() => selectCrop(c.id)}
               >
                 {c.label}
@@ -509,38 +1002,26 @@ export default function VoiceFlow({ onSwitchToManual }) {
         </div>
       )}
 
+      {/* STEP 2: QUANTITY */}
       {step === 2 && (
-        <div className="voice-step-card slide-in">
-          <button type="button" className="step-back-btn" onClick={() => setStep(1)}>
-            <ArrowLeft size={16} /> <span>{answers.crop}</span>
-          </button>
-
-          <div className="voice-speaking-indicator">
-            <div className={`audio-visualizer ${isSpeaking ? 'active' : ''}`}>
-              <span /><span /><span /><span /><span />
-            </div>
-            <h2 className="voice-step-title">{t.q2}</h2>
-            <p className="voice-step-subtitle">{t.q2_sub}</p>
-          </div>
-
-          <div className="mic-interactive-bar">
-            <button
-              type="button"
-              className={`big-mic-button ${isListening ? 'listening' : ''}`}
-              onClick={startListening}
-            >
-              {isListening ? <MicOff size={28} /> : <Mic size={28} />}
-              <span>{isListening ? 'Listening...' : 'Tap to Speak'}</span>
+        <div className="alexa-step-content slide-fade">
+          <div className="step-back-row">
+            <button type="button" className="alexa-back-btn" onClick={() => setStep(1)}>
+              <ArrowLeft size={14} /> <span>{answers.crop}</span>
             </button>
-            {transcript && <div className="live-transcript-bubble">"{transcript}"</div>}
           </div>
 
-          <div className="quick-chips-grid">
+          <h2 className="alexa-prompt-title">
+            {answers.crop} {t.q2_prefix}
+          </h2>
+          <p className="alexa-prompt-sub">{t.q2_sub}</p>
+
+          <div className="alexa-quick-chips">
             {t.quantities.map(q => (
               <button
                 key={q.val}
                 type="button"
-                className={`quick-chip ${answers.quantityKg === q.val ? 'active' : ''}`}
+                className={`alexa-chip ${answers.quantityKg === q.val ? 'active' : ''}`}
                 onClick={() => selectQuantity(q.val)}
               >
                 {q.label}
@@ -550,53 +1031,40 @@ export default function VoiceFlow({ onSwitchToManual }) {
         </div>
       )}
 
+      {/* STEP 3: LOCATION / GPS */}
       {step === 3 && (
-        <div className="voice-step-card slide-in">
-          <button type="button" className="step-back-btn" onClick={() => setStep(2)}>
-            <ArrowLeft size={16} /> <span>{answers.quantityKg} kg</span>
-          </button>
-
-          <div className="voice-speaking-indicator">
-            <div className={`audio-visualizer ${isSpeaking ? 'active' : ''}`}>
-              <span /><span /><span /><span /><span />
-            </div>
-            <h2 className="voice-step-title">{t.q3}</h2>
-            <p className="voice-step-subtitle">{t.q3_sub}</p>
+        <div className="alexa-step-content slide-fade">
+          <div className="step-back-row">
+            <button type="button" className="alexa-back-btn" onClick={() => setStep(2)}>
+              <ArrowLeft size={14} /> <span>{answers.quantityKg} kg</span>
+            </button>
           </div>
 
-          <div className="gps-action-container">
+          <h2 className="alexa-prompt-title">{t.q3}</h2>
+          <p className="alexa-prompt-sub">{t.q3_sub}</p>
+
+          {/* 1-Tap Geolocation button */}
+          <div className="alexa-gps-box">
             <button
               type="button"
-              className="gps-hero-button"
+              className="alexa-gps-hero-btn"
               onClick={handleEnableGPS}
             >
               <Navigation size={22} />
               <div>
                 <strong>{t.gps_btn}</strong>
-                <small>Auto-detect latitude & longitude from device</small>
+                <small>Instant 1-tap geolocation from your smartphone</small>
               </div>
             </button>
-            {gpsStatus && <div className="gps-status-banner">{gpsStatus}</div>}
+            {gpsStatus && <div className="alexa-gps-feedback">{gpsStatus}</div>}
           </div>
 
-          <div className="mic-interactive-bar">
-            <button
-              type="button"
-              className={`big-mic-button ${isListening ? 'listening' : ''}`}
-              onClick={startListening}
-            >
-              {isListening ? <MicOff size={28} /> : <Mic size={28} />}
-              <span>{isListening ? 'Listening...' : 'Or Speak City / Town'}</span>
-            </button>
-            {transcript && <div className="live-transcript-bubble">"{transcript}"</div>}
-          </div>
-
-          <div className="quick-chips-grid">
+          <div className="alexa-quick-chips">
             {t.locations.map(loc => (
               <button
                 key={loc.name}
                 type="button"
-                className={`quick-chip ${answers.locationText === loc.name ? 'active' : ''}`}
+                className={`alexa-chip ${answers.locationText === loc.name ? 'active' : ''}`}
                 onClick={() => selectLocation(loc.name, loc.lat, loc.lng)}
               >
                 📍 {loc.label}
@@ -606,129 +1074,135 @@ export default function VoiceFlow({ onSwitchToManual }) {
         </div>
       )}
 
+      {/* STEP 4: TRANSPORT */}
       {step === 4 && (
-        <div className="voice-step-card slide-in">
-          <button type="button" className="step-back-btn" onClick={() => setStep(3)}>
-            <ArrowLeft size={16} /> <span>{answers.locationText}</span>
-          </button>
-
-          <div className="voice-speaking-indicator">
-            <div className={`audio-visualizer ${isSpeaking ? 'active' : ''}`}>
-              <span /><span /><span /><span /><span />
-            </div>
-            <h2 className="voice-step-title">{t.q4}</h2>
-            <p className="voice-step-subtitle">{t.q4_sub}</p>
+        <div className="alexa-step-content slide-fade">
+          <div className="step-back-row">
+            <button type="button" className="alexa-back-btn" onClick={() => setStep(3)}>
+              <ArrowLeft size={14} /> <span>{answers.locationText}</span>
+            </button>
           </div>
 
-          <div className="transport-choice-cards">
+          <h2 className="alexa-prompt-title">{t.q4}</h2>
+          <p className="alexa-prompt-sub">{t.q4_sub}</p>
+
+          <div className="alexa-choices-grid">
             <button
               type="button"
-              className="choice-card"
-              onClick={() => finishAndEvaluate(true, 'A')}
+              className="alexa-choice-card"
+              onClick={() => finishAndEvaluate(true)}
             >
-              <Truck size={28} />
+              <Truck size={26} />
               <div>
                 <strong>{t.transport_yes}</strong>
-                <small>I can transport the harvest myself</small>
+                <small>I have my own vehicle to transport produce</small>
               </div>
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
 
             <button
               type="button"
-              className="choice-card primary"
-              onClick={() => finishAndEvaluate(false, 'A')}
+              className="alexa-choice-card featured"
+              onClick={() => finishAndEvaluate(false)}
             >
-              <AlertTriangle size={28} />
+              <AlertTriangle size={26} />
               <div>
                 <strong>{t.transport_no}</strong>
-                <small>Optimizer factors in freight cost or matches direct pickup buyers</small>
+                <small>MandiMitra calculates freight deductions or matches direct pickup buyers</small>
               </div>
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           </div>
         </div>
       )}
 
+      {/* STEP 5: EVALUATION RESULTS */}
       {step === 5 && (
-        <div className="voice-results-container slide-in">
+        <div className="alexa-results-view slide-fade">
           {loading ? (
-            <div className="voice-evaluating-panel">
-              <div className="eval-radar">
-                <Loader2 className="spin" size={44} />
+            <div className="alexa-eval-spinner">
+              <div className="alexa-radar-wave">
+                <Loader2 size={46} className="spin" />
               </div>
               <h3>{t.analyzing}</h3>
               <p>{t.analyzing_sub}</p>
-              <div className="eval-progress-tags">
-                <span>📍 Nearby Mandis</span>
-                <span>🏢 Direct Buyers</span>
-                <span>💰 Net Deductions</span>
-              </div>
             </div>
           ) : error ? (
             <div className="error-box">
               <p>{error}</p>
-              <button type="button" className="button button-primary" onClick={restartFlow}>
+              <button type="button" className="button button-primary" onClick={restartSession}>
                 {t.restart}
               </button>
             </div>
           ) : result ? (
-            <div className="results-display-wrapper">
-              <div className="audio-player-pill">
+            <div className="alexa-verdict-container">
+              {/* Alexa Audio Dock Bar */}
+              <div className="alexa-audio-dock">
                 <button
                   type="button"
-                  className="audio-toggle-btn"
-                  onClick={() => (isSpeaking ? stopSpeaking() : speak(result.explanation))}
+                  className="alexa-audio-dock-btn"
+                  onClick={() => {
+                    if (assistantState === 'speaking') {
+                      stopAllAudio();
+                    } else {
+                      speakText(result.explanation);
+                    }
+                  }}
                 >
-                  {isSpeaking ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                  <span>{isSpeaking ? t.stop_audio : t.listen_again}</span>
+                  {assistantState === 'speaking' ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  <span>{assistantState === 'speaking' ? t.stop_audio : t.listen_again}</span>
                 </button>
-                <span className="lang-tag">{LANG_DATA[lang]?.name} AI Explanation</span>
+                <span className="dock-lang-label">
+                  🎙️ {LANG_DATA[lang]?.name} AI Explanation
+                </span>
               </div>
 
-              <div className="voice-best-card">
-                <div className="best-card-badge">
+              {/* Optimal Recommendation Card */}
+              <div className="alexa-winner-card">
+                <div className="winner-top-badge">
                   <Award size={18} />
                   <span>{t.best_badge}</span>
                 </div>
 
-                <div className="best-card-title-row">
+                <div className="winner-headline">
                   <div>
                     <h2>{result.recommendation?.companyName || result.recommendation?.name}</h2>
-                    <span className="opp-location-tag">
-                      📍 {result.recommendation?.city || result.recommendation?.district} • {Math.round(result.recommendation?.distanceKm)} km
+                    <span className="winner-loc">
+                      📍 {result.recommendation?.city || result.recommendation?.district} • {Math.round(result.recommendation?.distanceKm)} km away
                     </span>
                   </div>
-                  <div className="net-number-box">
+                  <div className="winner-net-pill">
                     <span>{t.net_realization}</span>
-                    <strong className="giant-net">
+                    <strong className="giant-rupee">
                       ₹{Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}
                     </strong>
                     <small>₹{result.recommendation?.expectedNetPerKg} / kg net in hand</small>
                   </div>
                 </div>
 
-                <div className="ai-explanation-box">
+                {/* AI Explanation Box */}
+                <div className="winner-speech-text">
                   <p>{result.explanation}</p>
                 </div>
 
-                <div className="ledger-breakdown-grid">
-                  <div className="ledger-item positive">
+                {/* Ledger Breakdown */}
+                <div className="alexa-ledger-grid">
+                  <div className="ledger-cell positive">
                     <span>{t.gross_val}</span>
                     <strong>₹{Math.round(result.recommendation?.saleValue || 0).toLocaleString('en-IN')}</strong>
                     <small>@ ₹{result.recommendation?.pricePerKg}/kg</small>
                   </div>
-                  <div className="ledger-item negative">
+                  <div className="ledger-cell negative">
                     <span>{t.transport_cost}</span>
                     <strong>-₹{Math.round(result.recommendation?.transportCost || 0).toLocaleString('en-IN')}</strong>
-                    <small>{result.recommendation?.pickupProvided ? 'Pickup Provided' : 'Calculated freight'}</small>
+                    <small>{result.recommendation?.pickupProvided ? 'Pickup Provided' : 'Freight deduction'}</small>
                   </div>
-                  <div className="ledger-item negative">
+                  <div className="ledger-cell negative">
                     <span>{t.time_cost}</span>
                     <strong>-₹{Math.round(result.recommendation?.timeCost || 0).toLocaleString('en-IN')}</strong>
-                    <small>{result.recommendation?.travelHours} hrs travel</small>
+                    <small>{result.recommendation?.travelHours} hrs road time</small>
                   </div>
-                  <div className="ledger-item negative">
+                  <div className="ledger-cell negative">
                     <span>{t.risk_cost}</span>
                     <strong>-₹{Math.round(result.recommendation?.riskCost || 0).toLocaleString('en-IN')}</strong>
                     <small>Spoilage discount</small>
@@ -736,8 +1210,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
                 </div>
               </div>
 
-              <div className="alternatives-header">
-                <h3>Other Markets & Buyers Evaluated</h3>
+              {/* Other Options Considered */}
+              <div className="alexa-alternatives-head">
+                <h3>Other Mandis & Buyers Evaluated</h3>
                 <span className="pill">{result.search?.candidatesEvaluated} Considered</span>
               </div>
 
@@ -751,14 +1226,16 @@ export default function VoiceFlow({ onSwitchToManual }) {
                 ))}
               </div>
 
+              {/* Map & Trace */}
               <MarketMap
                 opportunities={result.alternatives}
                 farmer={{ latitude: answers.latitude, longitude: answers.longitude }}
               />
               <OptimizerTrace search={result.search} />
 
-              <div className="voice-actions-footer">
-                <button type="button" className="button button-primary" onClick={restartFlow}>
+              {/* Footer Actions */}
+              <div className="alexa-footer-actions">
+                <button type="button" className="button button-primary" onClick={restartSession}>
                   <RefreshCw size={16} /> <span>{t.restart}</span>
                 </button>
                 {onSwitchToManual && (

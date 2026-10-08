@@ -563,346 +563,613 @@ button, input, select, textarea {
   flex-shrink: 0;
 }
 
-/* ==================== VOICE FLOW COMPONENT ==================== */
-.voice-flow-container {
-  background: white;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 24px 20px;
-  box-shadow: var(--shadow-md);
+/* ==================== ALEXA & CHATGPT VOICE MODE EXPERIENCE ==================== */
+.alexa-voice-container {
+  background: radial-gradient(circle at 50% 15%, #0d281a 0%, #06160e 55%, #030a06 100%);
+  color: #edf7f0;
+  border: 1px solid rgba(46, 160, 99, 0.32);
+  border-radius: 28px;
+  padding: 28px 20px 32px;
+  box-shadow: 0 28px 65px rgba(2, 10, 6, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
   margin-bottom: 30px;
+  position: relative;
+  overflow: hidden;
 }
 
 @media (min-width: 768px) {
-  .voice-flow-container {
-    padding: 34px 30px;
+  .alexa-voice-container {
+    padding: 38px 36px 42px;
   }
 }
 
-.voice-flow-header {
+/* Ambient dynamic background aurora */
+.alexa-aurora-glow {
+  position: absolute;
+  top: -140px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 440px;
+  height: 320px;
+  border-radius: 50%;
+  filter: blur(55px);
+  pointer-events: none;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.7;
+}
+
+.alexa-aurora-glow.aura-idle {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 70%);
+}
+
+.alexa-aurora-glow.aura-listening {
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.35) 0%, rgba(16, 185, 129, 0.15) 50%, transparent 75%);
+  width: 520px;
+  height: 380px;
+  opacity: 0.95;
+}
+
+.alexa-aurora-glow.aura-speaking {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(16, 185, 129, 0.2) 60%, transparent 75%);
+  width: 500px;
+  opacity: 0.88;
+}
+
+.alexa-aurora-glow.aura-thinking {
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, rgba(6, 182, 212, 0.2) 60%, transparent 75%);
+  width: 540px;
+  opacity: 0.92;
+}
+
+.alexa-top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
   margin-bottom: 24px;
-  border-bottom: 1px solid #ebf2ec;
-  padding-bottom: 14px;
+  position: relative;
+  z-index: 2;
 }
 
-.voice-flow-badge {
+.alexa-brand-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #7ce3a2;
+}
+
+.live-radar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 12px #22c55e;
+  animation: radarPulse 1.8s infinite;
+}
+
+@keyframes radarPulse {
+  0% { transform: scale(0.9); box-shadow: 0 0 4px #22c55e; }
+  50% { transform: scale(1.3); box-shadow: 0 0 16px #4ade80; }
+  100% { transform: scale(0.9); box-shadow: 0 0 4px #22c55e; }
+}
+
+.alexa-lang-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #cdecd5;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--green);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
 }
 
-.voice-steps-progress {
+/* ==================== THE FLUID ALEXA / CHATGPT VOICE ORB ==================== */
+.alexa-orb-stage {
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0 28px;
+  position: relative;
+  z-index: 2;
 }
 
-.step-dot {
-  width: 10px;
-  height: 10px;
+/* Radiating Acoustic Soundwave Rings (ChatGPT Voice mode) */
+.orb-soundwave-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: #e2ebe4;
+  border: 1.5px solid rgba(74, 222, 128, 0.4);
+  pointer-events: none;
+  animation: soundwaveRipples 2.4s cubic-bezier(0.2, 0.8, 0.4, 1) infinite;
+}
+
+.orb-soundwave-ring.ring-1 {
+  width: 170px;
+  height: 170px;
+  animation-delay: 0s;
+}
+
+.orb-soundwave-ring.ring-2 {
+  width: 220px;
+  height: 220px;
+  animation-delay: 0.8s;
+}
+
+.orb-soundwave-ring.ring-3 {
+  width: 270px;
+  height: 270px;
+  animation-delay: 1.6s;
+}
+
+@keyframes soundwaveRipples {
+  0% {
+    transform: translate(-50%, -50%) scale(0.85);
+    opacity: 0.8;
+    border-color: rgba(74, 222, 128, 0.6);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.45);
+    opacity: 0;
+    border-color: rgba(34, 197, 94, 0);
+  }
+}
+
+.alexa-orb-wrapper {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.12s ease-out;
+  user-select: none;
+}
+
+@media (min-width: 600px) {
+  .alexa-orb-wrapper {
+    width: 160px;
+    height: 160px;
+  }
+}
+
+/* Outer Glow Halo */
+.orb-halo-outer {
+  position: absolute;
+  inset: -18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.32) 0%, rgba(13, 93, 54, 0.08) 60%, transparent 75%);
+  filter: blur(16px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+/* Mid Halo with breathing wave */
+.orb-halo-mid {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(52, 211, 153, 0.4);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, transparent 70%);
+  animation: orbRingRotate 14s linear infinite;
+}
+
+@keyframes orbRingRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Fluid Iridescent Aurora Mesh */
+.orb-aurora-mesh {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.35) 0%, transparent 50%),
+              conic-gradient(from 180deg at 50% 50%, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%);
+  opacity: 0.35;
+  filter: blur(8px);
+  pointer-events: none;
+  animation: meshSwirl 8s linear infinite;
+}
+
+@keyframes meshSwirl {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Core Orb */
+.orb-core {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 45%, #047857 100%);
+  box-shadow: inset 0 2px 14px rgba(255, 255, 255, 0.45), 0 14px 38px rgba(5, 150, 105, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  position: relative;
+  z-index: 3;
+  transition: all 0.25s ease;
+}
+
+@media (min-width: 600px) {
+  .orb-core {
+    width: 124px;
+    height: 124px;
+  }
+}
+
+/* State: Listening */
+.alexa-orb-wrapper.state-listening .orb-core {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 60%, #15803d 100%);
+  box-shadow: inset 0 2px 18px rgba(255, 255, 255, 0.7), 0 0 44px rgba(34, 197, 94, 0.75);
+}
+
+.alexa-orb-wrapper.state-listening .orb-halo-outer {
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.6) 0%, rgba(34, 197, 94, 0.3) 50%, transparent 75%);
+  filter: blur(22px);
+}
+
+/* State: Speaking */
+.alexa-orb-wrapper.state-speaking .orb-core {
+  background: linear-gradient(135deg, #3b82f6 0%, #10b981 60%, #059669 100%);
+  box-shadow: inset 0 2px 18px rgba(255, 255, 255, 0.55), 0 0 40px rgba(16, 185, 129, 0.65);
+  animation: speakingPulse 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes speakingPulse {
+  0% { transform: scale(0.96); filter: brightness(0.95); }
+  100% { transform: scale(1.06); filter: brightness(1.15); }
+}
+
+/* State: Thinking */
+.alexa-orb-wrapper.state-thinking .orb-core {
+  background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 50%, #10b981 100%);
+  box-shadow: 0 0 42px rgba(139, 92, 246, 0.75);
+  animation: thinkingSpin 3s linear infinite;
+}
+
+@keyframes thinkingSpin {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* Harmonic audio bars when assistant is speaking */
+.voice-harmonic-bars {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+}
+
+.voice-harmonic-bars span {
+  width: 4px;
+  background: white;
+  border-radius: 99px;
+  animation: harmonicWave 0.8s infinite alternate ease-in-out;
+}
+
+.voice-harmonic-bars span:nth-child(1) { height: 10px; animation-delay: 0.1s; }
+.voice-harmonic-bars span:nth-child(2) { height: 22px; animation-delay: 0.3s; }
+.voice-harmonic-bars span:nth-child(3) { height: 28px; animation-delay: 0.15s; }
+.voice-harmonic-bars span:nth-child(4) { height: 18px; animation-delay: 0.4s; }
+.voice-harmonic-bars span:nth-child(5) { height: 12px; animation-delay: 0.25s; }
+
+@keyframes harmonicWave {
+  0% { height: 6px; }
+  100% { height: 28px; }
+}
+
+/* Real-time Dynamic Equalizer Bar Strip (Microphone live reactivity) */
+.alexa-live-equalizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  margin-top: 14px;
+}
+
+.alexa-live-equalizer .eq-bar {
+  width: 4px;
+  background: linear-gradient(180deg, #4ade80 0%, #10b981 100%);
+  border-radius: 99px;
+  transition: height 0.08s ease-out;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+}
+
+/* Orb State Labels */
+.alexa-state-label {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+}
+
+.state-badge.listening {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  color: #4ade80;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.25);
+}
+
+.state-badge.speaking {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  color: #93c5fd;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.2);
+}
+
+.state-badge.thinking {
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  color: #d8b4fe;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.25);
+}
+
+.state-badge.idle-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #a7f3d0;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.step-dot.current {
-  background: var(--green);
-  transform: scale(1.3);
+.state-badge.idle-btn:hover {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: white;
+  transform: translateY(-1px);
 }
 
-.step-dot.done {
-  background: #6bc28c;
+.wave-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: radarPulse 1s infinite;
 }
 
-.voice-step-card {
+/* Live Streaming Speech Transcript */
+.alexa-live-transcript-bubble {
+  margin-top: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f0fdf4;
+  max-width: 480px;
   text-align: center;
-  max-width: 650px;
+  backdrop-filter: blur(12px);
+  animation: slideFade 0.2s ease-out;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.transcript-quotes {
+  color: #4ade80;
+  font-size: 16px;
+  margin: 0 4px;
+}
+
+/* ==================== CONVERSATIONAL STEPS ==================== */
+.alexa-step-content {
+  text-align: center;
+  max-width: 620px;
   margin: 0 auto;
 }
 
-.slide-in {
-  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+.slide-fade {
+  animation: slideFade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(12px); }
+@keyframes slideFade {
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.step-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #f1f6f2;
-  border: 1px solid var(--line);
-  border-radius: 99px;
-  padding: 5px 12px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--muted);
-  cursor: pointer;
-  margin-bottom: 16px;
-}
-
-.voice-assistant-avatar {
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #0d5d36 0%, #157345 100%);
-  color: white;
-  display: grid;
-  place-items: center;
-  margin: 0 auto 16px;
-  box-shadow: 0 10px 24px rgba(13, 93, 54, 0.25);
-}
-
-.voice-step-title {
+.alexa-prompt-title {
   font-family: 'Manrope', sans-serif;
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.02em;
   margin: 0 0 8px;
-  color: var(--ink);
+  color: #ffffff;
 }
 
-@media (min-width: 768px) {
-  .voice-step-title {
+@media (min-width: 680px) {
+  .alexa-prompt-title {
     font-size: 28px;
   }
 }
 
-.voice-step-subtitle {
+.alexa-prompt-sub {
   font-size: 13.5px;
-  color: var(--muted);
+  color: #9db2a5;
+  margin: 0 0 20px;
   line-height: 1.5;
-  margin: 0 0 24px;
+}
+
+.step-back-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.alexa-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #bbf7d0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.alexa-back-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Language Selection Grid */
-.language-selector-grid {
+.alexa-lang-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 @media (min-width: 580px) {
-  .language-selector-grid {
+  .alexa-lang-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-.lang-card {
-  background: white;
-  border: 2px solid var(--line);
+.alexa-lang-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
-  padding: 22px 14px;
+  padding: 20px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
+  color: #edf7f0;
 }
 
-.lang-card:hover {
-  border-color: var(--green);
+.alexa-lang-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #22c55e;
   transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
 }
 
-.lang-card.featured {
-  border-color: #27a260;
-  background: #f7fdf9;
+.alexa-lang-card.featured {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: #22c55e;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.18);
 }
 
-.lang-icon {
+.flag-icon {
   font-size: 28px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
-.lang-card strong {
+.alexa-lang-card strong {
   font-family: 'Manrope', sans-serif;
-  font-size: 18px;
-  color: var(--ink);
+  font-size: 17px;
+  color: #ffffff;
 }
 
-.lang-card span {
+.alexa-lang-card span {
   font-size: 11px;
-  color: var(--muted);
+  color: #9db2a5;
 }
 
-/* Audio Visualizer Waves */
-.audio-visualizer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  height: 24px;
-  margin-bottom: 12px;
-}
-
-.audio-visualizer span {
-  width: 4px;
-  height: 6px;
-  background: #bddbc5;
-  border-radius: 99px;
-  transition: all 0.15s ease;
-}
-
-.audio-visualizer.active span {
-  background: var(--green);
-  animation: audioWave 1s infinite alternate;
-}
-
-.audio-visualizer.active span:nth-child(2) { animation-delay: 0.15s; }
-.audio-visualizer.active span:nth-child(3) { animation-delay: 0.3s; }
-.audio-visualizer.active span:nth-child(4) { animation-delay: 0.45s; }
-.audio-visualizer.active span:nth-child(5) { animation-delay: 0.6s; }
-
-@keyframes audioWave {
-  0% { height: 4px; }
-  100% { height: 22px; }
-}
-
-/* Big Interactive Mic Button */
-.mic-interactive-bar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin: 20px 0 24px;
-}
-
-.big-mic-button {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  border: 0;
-  background: var(--green);
-  color: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 10px 24px rgba(13, 93, 54, 0.3);
-  transition: all 0.2s ease;
-}
-
-.big-mic-button span {
-  font-size: 9px;
-  font-weight: 700;
-  margin-top: 2px;
-}
-
-.big-mic-button:hover {
-  background: var(--green-hover);
-  transform: scale(1.04);
-}
-
-.big-mic-button.listening {
-  background: #d93829;
-  box-shadow: 0 0 0 12px rgba(217, 56, 41, 0.2);
-  animation: pulseRecording 1.4s infinite;
-}
-
-@keyframes pulseRecording {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-  100% { transform: scale(1); }
-}
-
-.live-transcript-bubble {
-  background: #f1f8f3;
-  border: 1px solid #c8e3cf;
-  border-radius: 12px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--green);
-  max-width: 400px;
-}
-
-/* Quick Chips Grid */
-.quick-chips-grid {
+/* Quick Chips */
+.alexa-quick-chips {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   margin-top: 14px;
 }
 
-@media (min-width: 520px) {
-  .quick-chips-grid {
+@media (min-width: 540px) {
+  .alexa-quick-chips {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-.quick-chip {
-  background: white;
-  border: 1.5px solid var(--line);
-  border-radius: 12px;
+.alexa-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
   padding: 12px 10px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--ink);
+  color: #f0fdf4;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.quick-chip:hover {
-  border-color: #2da163;
-  background: #f6fcf8;
+.alexa-chip:hover {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: #4ade80;
 }
 
-.quick-chip.active {
-  background: var(--green);
-  color: white;
-  border-color: var(--green);
+.alexa-chip.active {
+  background: #22c55e;
+  color: #042410;
+  border-color: #22c55e;
+  font-weight: 800;
 }
 
-/* GPS Button */
-.gps-action-container {
-  margin: 18px 0;
+/* GPS Locator Button */
+.alexa-gps-box {
+  margin: 14px 0 16px;
 }
 
-.gps-hero-button {
+.alexa-gps-hero-btn {
   width: 100%;
-  background: linear-gradient(135deg, #0d5d36 0%, #157345 100%);
+  background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
   color: white;
-  border: 0;
-  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
   padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(13, 93, 54, 0.2);
+  box-shadow: 0 10px 24px rgba(22, 163, 74, 0.3);
   text-align: left;
+  transition: all 0.2s ease;
 }
 
-.gps-hero-button strong {
+.alexa-gps-hero-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(22, 163, 74, 0.45);
+}
+
+.alexa-gps-hero-btn strong {
   display: block;
   font-size: 14.5px;
 }
 
-.gps-hero-button small {
+.alexa-gps-hero-btn small {
   display: block;
   font-size: 11px;
-  color: #d1ead9;
+  color: #dcfce7;
 }
 
-.gps-status-banner {
-  background: #eef8f1;
-  color: var(--green);
+.alexa-gps-feedback {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
   border-radius: 10px;
   padding: 8px 12px;
   font-size: 12px;
@@ -911,16 +1178,16 @@ button, input, select, textarea {
 }
 
 /* Transport Choice Cards */
-.transport-choice-cards {
+.alexa-choices-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
-  margin: 18px 0;
+  gap: 12px;
+  margin-top: 14px;
 }
 
-.choice-card {
-  background: white;
-  border: 2px solid var(--line);
+.alexa-choice-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
   border-radius: 16px;
   padding: 18px;
   display: flex;
@@ -928,262 +1195,250 @@ button, input, select, textarea {
   gap: 14px;
   text-align: left;
   cursor: pointer;
+  color: #f0fdf4;
   transition: all 0.15s ease;
 }
 
-.choice-card:hover {
-  border-color: var(--green);
-  transform: translateY(-2px);
+.alexa-choice-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #22c55e;
 }
 
-.choice-card.primary {
-  border-color: #79bf94;
-  background: #f8fcf9;
+.alexa-choice-card.featured {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
 }
 
-.choice-card div {
+.alexa-choice-card div {
   flex: 1;
 }
 
-.choice-card strong {
+.alexa-choice-card strong {
   display: block;
   font-size: 15px;
-  color: var(--ink);
+  color: #ffffff;
 }
 
-.choice-card small {
+.alexa-choice-card small {
   display: block;
   font-size: 11.5px;
-  color: var(--muted);
+  color: #9db2a5;
   margin-top: 2px;
 }
 
-/* ==================== RESULTS DISPLAY ==================== */
-.voice-evaluating-panel {
+/* ==================== RESULTS VIEW ==================== */
+.alexa-eval-spinner {
   text-align: center;
   padding: 44px 20px;
 }
 
-.eval-radar {
-  color: var(--green);
+.alexa-radar-wave {
+  color: #22c55e;
   margin-bottom: 14px;
 }
 
-.eval-progress-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 18px;
-}
-
-.eval-progress-tags span {
-  background: #eaf5ec;
-  color: var(--green);
-  padding: 6px 12px;
-  border-radius: 99px;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.results-display-wrapper {
-  animation: slideIn 0.3s ease;
-}
-
-.audio-player-pill {
+.alexa-audio-dock {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #eff7f1;
-  border: 1px solid #cbe4d2;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 99px;
-  padding: 8px 16px;
+  padding: 6px 16px;
   margin-bottom: 18px;
 }
 
-.audio-toggle-btn {
+.alexa-audio-dock-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--green);
-  color: white;
+  background: #22c55e;
+  color: #042410;
   border: 0;
   border-radius: 99px;
   padding: 6px 14px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.lang-tag {
-  font-size: 11px;
+.alexa-audio-dock-btn:hover {
+  background: #4ade80;
+}
+
+.dock-lang-label {
+  font-size: 11.5px;
   font-weight: 700;
-  color: var(--green);
+  color: #86efac;
 }
 
-/* Recommendation Best Card */
-.voice-best-card {
-  background: linear-gradient(145deg, #0d5d36 0%, #0a482a 100%);
+.alexa-winner-card {
+  background: linear-gradient(145deg, #064e3b 0%, #022c22 100%);
+  border: 1px solid rgba(52, 211, 153, 0.35);
   color: white;
-  border-radius: var(--radius-lg);
+  border-radius: 24px;
   padding: 24px;
-  box-shadow: 0 16px 36px rgba(13, 93, 54, 0.25);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
   margin-bottom: 24px;
 }
 
 @media (min-width: 768px) {
-  .voice-best-card {
+  .alexa-winner-card {
     padding: 32px;
   }
 }
 
-.best-card-badge {
+.winner-top-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.14);
   padding: 4px 12px;
   border-radius: 99px;
   font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.08em;
   margin-bottom: 14px;
+  color: #a7f3d0;
 }
 
-.best-card-title-row {
+.winner-headline {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 @media (min-width: 680px) {
-  .best-card-title-row {
+  .winner-headline {
     flex-direction: row;
     justify-content: space-between;
     align-items: flex-start;
   }
 }
 
-.best-card-title-row h2 {
+.winner-headline h2 {
   font-family: 'Manrope', sans-serif;
   font-size: 26px;
   margin: 0 0 6px;
+  color: white;
 }
 
-.opp-location-tag {
+.winner-loc {
   font-size: 13px;
-  color: #c7e5ce;
+  color: #a7f3d0;
 }
 
-.net-number-box {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+.winner-net-pill {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 16px;
   padding: 14px 18px;
   text-align: left;
 }
 
 @media (min-width: 680px) {
-  .net-number-box {
+  .winner-net-pill {
     text-align: right;
   }
 }
 
-.net-number-box span {
+.winner-net-pill span {
   font-size: 10.5px;
-  color: #bcd9c4;
+  color: #86efac;
   display: block;
 }
 
-.giant-net {
+.giant-rupee {
   font-family: 'Manrope', sans-serif;
   font-size: 32px;
   display: block;
   margin: 4px 0;
-  color: white;
+  color: #ffffff;
 }
 
-.net-number-box small {
+.winner-net-pill small {
   font-size: 11.5px;
-  color: #e2f2e6;
+  color: #bbf7d0;
   display: block;
 }
 
-.ai-explanation-box {
-  background: rgba(0, 0, 0, 0.16);
-  border-radius: 14px;
+.winner-speech-text {
+  background: rgba(0, 0, 0, 0.28);
+  border-left: 3px solid #22c55e;
+  border-radius: 0 14px 14px 0;
   padding: 16px;
   font-size: 14px;
   line-height: 1.6;
-  color: #eaf6ee;
+  color: #ecfdf5;
   margin-bottom: 20px;
 }
 
-.ai-explanation-box p {
+.winner-speech-text p {
   margin: 0;
 }
 
-/* Ledger Breakdown Grid */
-.ledger-breakdown-grid {
+.alexa-ledger-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
 @media (min-width: 680px) {
-  .ledger-breakdown-grid {
+  .alexa-ledger-grid {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
-.ledger-item {
-  background: rgba(255, 255, 255, 0.1);
+.ledger-cell {
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 12px;
 }
 
-.ledger-item span {
+.ledger-cell span {
   font-size: 10px;
-  color: #bcd9c4;
+  color: #a7f3d0;
   display: block;
 }
 
-.ledger-item strong {
+.ledger-cell strong {
   font-family: 'Manrope', sans-serif;
-  font-size: 18px;
+  font-size: 17px;
   display: block;
   margin: 3px 0;
 }
 
-.ledger-item small {
+.ledger-cell small {
   font-size: 10px;
-  color: #e0f2e5;
+  color: #d1fae5;
   display: block;
 }
 
-.ledger-item.positive strong {
-  color: #8df0aa;
+.ledger-cell.positive strong {
+  color: #4ade80;
 }
 
-.ledger-item.negative strong {
-  color: #ffb8b3;
+.ledger-cell.negative strong {
+  color: #fca5a5;
 }
 
-.alternatives-header {
+.alexa-alternatives-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin: 28px 0 14px;
+  color: #edf7f0;
 }
 
-.alternatives-header h3 {
+.alexa-alternatives-head h3 {
   margin: 0;
   font-family: 'Manrope', sans-serif;
   font-size: 18px;
 }
 
-.voice-actions-footer {
+.alexa-footer-actions {
   display: flex;
   gap: 12px;
   margin-top: 24px;
