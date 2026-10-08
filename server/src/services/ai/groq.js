@@ -10,9 +10,20 @@ function fallbackExplanation({ recommendation, search }, lang = 'en') {
     if (lang === 'hi') return 'उपलब्ध विकल्पों में कोई उपयुक्त मंडी या खरीदार नहीं मिला।';
     return 'No suitable opportunity was found from the configured candidate set.';
   }
+  const isLoss = (recommendation.netRealization ?? 0) < 0;
   const netStr = `₹${Math.round(recommendation.netRealization).toLocaleString('en-IN')}`;
   const priceStr = `₹${recommendation.pricePerKg}/kg`;
   const name = recommendation.name || recommendation.companyName;
+
+  if (isLoss) {
+    if (lang === 'te') {
+      return `హెచ్చరిక: రవాణా మరియు ప్రయాణ ఖర్చులు (₹${Math.round(recommendation.transportCost || 0)}) పంట విలువ కంటే ఎక్కువగా ఉండటం వల్ల నికర నష్టం ${netStr} వచ్చింది. తక్కువ పరిమాణానికి దూరపు హోల్‌సేల్ మార్కెట్లకు వెళ్లడం కంటే స్థానిక గ్రామంలో విక్రయించడం లేదా పొరుగు రైతులతో కలిసి సరుకు తరలించడం శ్రేయస్కరం.`;
+    }
+    if (lang === 'hi') {
+      return `चेतावनी: ढुलाई और यात्रा खर्च (₹${Math.round(recommendation.transportCost || 0)}) फसल मूल्य से अधिक होने के कारण ₹${Math.round(recommendation.netRealization)} का शुद्ध घाटा हो रहा है। इतनी छोटी मात्रा के लिए दूर की थोक मंडी जाने के बजाय स्थानीय बाज़ार में बेचें या साथी किसानों के साथ मिलकर माल भेजें।`;
+    }
+    return `Warning: Freight and travel costs (₹${Math.round(recommendation.transportCost || 0)}) exceed total harvest value, resulting in a net loss of ${netStr}. For small quantities, avoid individual wholesale transit; sell locally at the farmgate or pool freight with neighboring farmers.`;
+  }
 
   if (lang === 'te') {
     return recommendation.type === 'Direct Buyer'
@@ -40,7 +51,7 @@ export async function explainRecommendation(payload) {
   if (lang === 'te') langInstruction = 'CRITICAL: Respond fluently and naturally in Telugu script (తెలుగు) so a Telugu-speaking farmer understands immediately.';
   else if (lang === 'hi') langInstruction = 'CRITICAL: Respond fluently and naturally in Hindi script (हिंदी) so a Hindi-speaking farmer understands immediately.';
 
-  const system = `You are MandiMitra, an expert and empathetic agricultural market decision assistant for Indian farmers. Explain recommendations from structured calculations clearly. Never invent market prices or facts. Emphasize expected net realization, transport costs, travel time, and risk, explaining why this choice pays best after travel. Keep the explanation under 90 words. Use Indian rupee formatting (₹). If the recommendation is a direct buyer, mention the buyer and pickup terms. ${langInstruction}`;
+  const system = `You are MandiMitra, an expert and empathetic agricultural market decision assistant for Indian farmers. Explain recommendations from structured calculations clearly. Never invent market prices or facts. Emphasize expected net realization, transport costs, travel time, and risk, explaining why this choice pays best after travel. If the expected net realization is negative (less than 0), explicitly warn the farmer that freight and travel costs exceed the total crop value for this small harvest quantity, and advise selling locally at the farmgate or aggregating loads with neighboring farmers rather than traveling solo to a distant mandi. Keep the explanation under 90 words. Use Indian rupee formatting (₹). If the recommendation is a direct buyer, mention the buyer and pickup terms. ${langInstruction}`;
   try {
     const completion = await client.chat.completions.create({
       model: env.groqModel,

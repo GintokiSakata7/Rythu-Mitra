@@ -37,6 +37,11 @@ const LANG_DATA = {
     transport_yes: '🚚 అవును, వాహనం ఉంది',
     transport_no: '❌ లేదు, రవాణా కావాలి',
     best_badge: 'అత్యుత్తమ మార్కెట్ సిఫార్సు',
+    loss_badge: '⚠️ రవాణా నష్ట హెచ్చరిక (రవాణా ఖర్చు ఎక్కువ)',
+    loss_net_label: 'అంచనా నికర నష్టం (Net Realization Loss)',
+    loss_per_kg: 'నికర నష్టం',
+    loss_advice_title: '💡 రైతు ఆర్థిక సలహా (Farmer Economic Advisory)',
+    loss_advice_desc: '4 కిలోల వంటి తక్కువ పరిమాణానికి దూరపు హోల్‌సేల్ మార్కెట్‌కు వెళ్లడం వల్ల రవాణా ఖర్చులు (₹700) పంట విలువ కంటే ఎక్కువవుతాయి. దీనిని స్థానిక గ్రామంలో/సమీప రిటైల్ విక్రేతలకు అమ్మడం లేదా సమీప రైతుల సరుకుతో కలిపి (అగ్రిగేషన్) తరలించడం లాభదాయకం.',
     net_realization: 'చేతికందే నికర మొత్తం (Net Realization)',
     gross_val: 'మొత్తం అమ్మకపు విలువ',
     transport_cost: 'రవాణా ఖర్చు',
@@ -92,6 +97,11 @@ const LANG_DATA = {
     transport_yes: '🚚 हाँ, अपनी गाड़ी है',
     transport_no: '❌ नहीं, परिवहन चाहिए',
     best_badge: 'सर्वश्रेष्ठ मंडी / खरीदार सिफ़ारिश',
+    loss_badge: '⚠️ परिवहन घाटा चेतावनी (भाड़ा फसल से अधिक)',
+    loss_net_label: 'अनुमानित शुद्ध घाटा (Net Realization Loss)',
+    loss_per_kg: 'शुद्ध घाटा',
+    loss_advice_title: '💡 किसान आर्थिक सलाह (Farmer Economic Advisory)',
+    loss_advice_desc: 'छोटी मात्रा (जैसे 4 किलो) के लिए दूर की थोक मंडी जाने पर ढुलाई खर्च (₹700) फसल की कुल कीमत से अधिक हो जाता है। इस घाटे से बचने के लिए माल को स्थानीय बाज़ार में बेचें या पास के किसानों के साथ मिलकर वाहन साझा करें।',
     net_realization: 'शुद्ध प्राप्ति (Net Realization)',
     gross_val: 'कुल बिक्री मूल्य',
     transport_cost: 'ढुलाई खर्च',
@@ -147,6 +157,11 @@ const LANG_DATA = {
     transport_yes: '🚚 Yes, I have a vehicle',
     transport_no: '❌ No, need transport',
     best_badge: 'Optimal Recommendation',
+    loss_badge: '⚠️ Transport Loss Warning (Costs Exceed Crop Value)',
+    loss_net_label: 'Estimated Net Loss (Negative Realization)',
+    loss_per_kg: 'net loss',
+    loss_advice_title: '💡 Farmer Economic Advisory',
+    loss_advice_desc: 'For small harvest quantities (e.g. 4 kg), distant wholesale transit costs (₹700) exceed total crop value. Avoid solo freight; sell at local farmgate or pool loads with neighboring farmers to avoid transit loss.',
     net_realization: 'Expected Net Realization',
     gross_val: 'Gross Sale Value',
     transport_cost: 'Transport Cost',
@@ -1454,58 +1469,80 @@ export default function VoiceFlow({ onSwitchToManual }) {
                 </span>
               </div>
 
-              {/* Optimal Recommendation Card */}
-              <div className="alexa-winner-card">
-                <div className="winner-top-badge">
-                  <Award size={18} />
-                  <span>{t.best_badge}</span>
-                </div>
+              {/* Optimal Recommendation / Transport Loss Alert Card */}
+              {(() => {
+                const isLoss = (result.recommendation?.netRealization ?? 0) < 0;
+                return (
+                  <div className={`alexa-winner-card ${isLoss ? 'is-loss' : ''}`}>
+                    <div className={`winner-top-badge ${isLoss ? 'warning' : ''}`}>
+                      {isLoss ? <AlertTriangle size={18} /> : <Award size={18} />}
+                      <span>{isLoss ? t.loss_badge : t.best_badge}</span>
+                    </div>
 
-                <div className="winner-headline">
-                  <div>
-                    <h2>{result.recommendation?.companyName || result.recommendation?.name}</h2>
-                    <span className="winner-loc">
-                      📍 {result.recommendation?.city || result.recommendation?.district} • {Math.round(result.recommendation?.distanceKm)} km away
-                    </span>
-                  </div>
-                  <div className="winner-net-pill">
-                    <span>{t.net_realization}</span>
-                    <strong className="giant-rupee">
-                      ₹{Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}
-                    </strong>
-                    <small>₹{result.recommendation?.expectedNetPerKg} / kg net in hand</small>
-                  </div>
-                </div>
+                    <div className="winner-headline">
+                      <div>
+                        <h2>{result.recommendation?.companyName || result.recommendation?.name}</h2>
+                        <span className="winner-loc">
+                          📍 {result.recommendation?.city || result.recommendation?.district} • {Math.round(result.recommendation?.distanceKm)} km away
+                        </span>
+                      </div>
+                      <div className={`winner-net-pill ${isLoss ? 'negative-loss' : ''}`}>
+                        <span>{isLoss ? t.loss_net_label : t.net_realization}</span>
+                        <strong className={`giant-rupee ${isLoss ? 'loss-text' : ''}`}>
+                          ₹{Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}
+                        </strong>
+                        <small>
+                          {isLoss
+                            ? `⚠️ ₹${result.recommendation?.expectedNetPerKg} / kg ${t.loss_per_kg || 'net loss'}`
+                            : `₹${result.recommendation?.expectedNetPerKg} / kg net in hand`}
+                        </small>
+                      </div>
+                    </div>
 
-                {/* AI Explanation Box */}
-                <div className="winner-speech-text">
-                  <p>{result.explanation}</p>
-                </div>
+                    {/* AI Explanation Box */}
+                    <div className={`winner-speech-text ${isLoss ? 'is-loss' : ''}`}>
+                      <p>{result.explanation}</p>
+                    </div>
 
-                {/* Ledger Breakdown */}
-                <div className="alexa-ledger-grid">
-                  <div className="ledger-cell positive">
-                    <span>{t.gross_val}</span>
-                    <strong>₹{Math.round(result.recommendation?.saleValue || 0).toLocaleString('en-IN')}</strong>
-                    <small>@ ₹{result.recommendation?.pricePerKg}/kg</small>
+                    {/* Dedicated Farmer Advisory Callout when net realization is negative */}
+                    {isLoss && (
+                      <div className="loss-advisory-banner">
+                        <div className="loss-advisory-icon">
+                          <AlertTriangle size={22} />
+                        </div>
+                        <div className="loss-advisory-body">
+                          <h4>{t.loss_advice_title}</h4>
+                          <p>{t.loss_advice_desc}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ledger Breakdown */}
+                    <div className="alexa-ledger-grid">
+                      <div className="ledger-cell positive">
+                        <span>{t.gross_val}</span>
+                        <strong>₹{Math.round(result.recommendation?.saleValue || 0).toLocaleString('en-IN')}</strong>
+                        <small>@ ₹{result.recommendation?.pricePerKg}/kg</small>
+                      </div>
+                      <div className="ledger-cell negative">
+                        <span>{t.transport_cost}</span>
+                        <strong>-₹{Math.round(result.recommendation?.transportCost || 0).toLocaleString('en-IN')}</strong>
+                        <small>{result.recommendation?.pickupProvided ? 'Pickup Provided' : 'Freight deduction'}</small>
+                      </div>
+                      <div className="ledger-cell negative">
+                        <span>{t.time_cost}</span>
+                        <strong>-₹{Math.round(result.recommendation?.timeCost || 0).toLocaleString('en-IN')}</strong>
+                        <small>{result.recommendation?.travelHours} hrs road time</small>
+                      </div>
+                      <div className="ledger-cell negative">
+                        <span>{t.risk_cost}</span>
+                        <strong>-₹{Math.round(result.recommendation?.riskCost || 0).toLocaleString('en-IN')}</strong>
+                        <small>Spoilage discount</small>
+                      </div>
+                    </div>
                   </div>
-                  <div className="ledger-cell negative">
-                    <span>{t.transport_cost}</span>
-                    <strong>-₹{Math.round(result.recommendation?.transportCost || 0).toLocaleString('en-IN')}</strong>
-                    <small>{result.recommendation?.pickupProvided ? 'Pickup Provided' : 'Freight deduction'}</small>
-                  </div>
-                  <div className="ledger-cell negative">
-                    <span>{t.time_cost}</span>
-                    <strong>-₹{Math.round(result.recommendation?.timeCost || 0).toLocaleString('en-IN')}</strong>
-                    <small>{result.recommendation?.travelHours} hrs road time</small>
-                  </div>
-                  <div className="ledger-cell negative">
-                    <span>{t.risk_cost}</span>
-                    <strong>-₹{Math.round(result.recommendation?.riskCost || 0).toLocaleString('en-IN')}</strong>
-                    <small>Spoilage discount</small>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Other Options Considered */}
               <div className="alexa-alternatives-head">

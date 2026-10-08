@@ -273,20 +273,32 @@ export default function FindOpportunityPage() {
                 </div>
               ) : (
                 <>
-                  <div className="recommendation-banner">
-                    <div>
-                      <div className="eyebrow">BEST OPPORTUNITY</div>
-                      <h2>{result.recommendation?.companyName || result.recommendation?.name}</h2>
-                      <p>{result.explanation}</p>
-                    </div>
-                    <div className="banner-value">
-                      <span>Expected net</span>
-                      <strong>
-                        ₹{Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}
-                      </strong>
-                      <small>AI: {result.aiProvider}</small>
-                    </div>
-                  </div>
+                  {(() => {
+                    const isLoss = (result.recommendation?.netRealization ?? 0) < 0;
+                    return (
+                      <div className={`recommendation-banner ${isLoss ? 'warning-loss' : ''}`}>
+                        <div>
+                          <div className={`eyebrow ${isLoss ? 'eyebrow-loss' : ''}`}>
+                            {isLoss ? '⚠️ TRANSPORT LOSS ALERT' : 'BEST OPPORTUNITY'}
+                          </div>
+                          <h2>{result.recommendation?.companyName || result.recommendation?.name}</h2>
+                          <p>{result.explanation}</p>
+                          {isLoss && (
+                            <div className="loss-advisory-pill">
+                              💡 <strong>Advisory:</strong> Freight and travel costs exceed crop value for small quantities. Consider selling at farmgate or pooling transit with neighbors.
+                            </div>
+                          )}
+                        </div>
+                        <div className="banner-value">
+                          <span>{isLoss ? 'Expected net loss' : 'Expected net'}</span>
+                          <strong className={isLoss ? 'loss-num' : ''}>
+                            ₹{Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}
+                          </strong>
+                          <small>AI: {result.aiProvider}</small>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="results-top">
                     <div>
