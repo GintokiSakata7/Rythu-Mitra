@@ -179,77 +179,95 @@ const LANG_DATA = {
   }
 };
 
-// ==================== AUTHENTIC ZERO-LATENCY ALEXA CHIMES ====================
-// Synthesizes the signature Amazon Echo 2-tone "Ding-Ding" & acknowledgment chimes
+// ============================================================
+// LOW-LATENCY ASSISTANT AUDIO
+// Reuse ONE AudioContext instead of creating a new one per chime.
+// ============================================================
+let sharedVoiceAudioContext = null;
+
+function getSharedVoiceAudioContext() {
+  if (typeof window === 'undefined') return null;
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+
+  if (!sharedVoiceAudioContext) {
+    sharedVoiceAudioContext = new AudioCtx();
+  }
+
+  if (sharedVoiceAudioContext.state === 'suspended') {
+    sharedVoiceAudioContext.resume().catch(() => {});
+  }
+
+  return sharedVoiceAudioContext;
+}
+
 function playAlexaChime(type = 'wake') {
-  try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    if (ctx.state === 'suspended') {
-      ctx.resume();
-    }
-    const now = ctx.currentTime;
+  const ctx = getSharedVoiceAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
 
-    if (type === 'wake') {
-      // Signature Alexa 2-tone chime: D5 (587.33 Hz) -> A5 (880.00 Hz)
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(587.33, now);
-      gain1.gain.setValueAtTime(0.18, now);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start(now);
-      osc1.stop(now + 0.11);
+  if (type === 'wake') {
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now);
+    gain1.gain.setValueAtTime(0.0001, now);
+    gain1.gain.exponentialRampToValueAtTime(0.16, now + 0.015);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.14);
 
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(880.0, now + 0.08);
-      gain2.gain.setValueAtTime(0.24, now + 0.08);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.start(now + 0.08);
-      osc2.stop(now + 0.32);
-    } else if (type === 'confirm') {
-      // Pleasant acknowledgment tone: G5 (784 Hz) -> E5 (659 Hz)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, now + 0.075);
+    gain2.gain.setValueAtTime(0.0001, now + 0.075);
+    gain2.gain.exponentialRampToValueAtTime(0.2, now + 0.095);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.31);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.075);
+    osc2.stop(now + 0.32);
+    return;
+  }
+
+  if (type === 'confirm') {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(784, now);
+    osc.frequency.exponentialRampToValueAtTime(659, now + 0.12);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.26);
+    return;
+  }
+
+  if (type === 'success') {
+    [523.25, 659.25, 783.99].forEach((freq, index) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(783.99, now);
-      osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.12);
-      gain.gain.setValueAtTime(0.18, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      const start = now + index * 0.055;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.11, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.32);
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.28);
-    } else if (type === 'success') {
-      // Major harmonic chord celebration (C5, E5, G5, C6)
-      [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        const startT = now + idx * 0.06;
-        osc.frequency.setValueAtTime(freq, startT);
-        gain.gain.setValueAtTime(0.14, startT);
-        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.42);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(startT);
-        osc.stop(startT + 0.42);
-      });
-    }
-  } catch (err) {
-    // Silently ignore if audio context is blocked
+      osc.start(start);
+      osc.stop(start + 0.34);
+    });
   }
 }
 
 // ==================== FAST MULTI-LINGUAL INTENT RECOGNITION ====================
-// Detects user answers immediately in real-time interim speech (<150ms latency)
 function detectInstantIntent(rawText, currentStep) {
   if (!rawText) return null;
   const t = rawText.toLowerCase().trim();
@@ -335,23 +353,19 @@ function pickBestVoice(voices, langCode) {
   const langKey = langCode.slice(0, 2).toLowerCase();
 
   if (langKey === 'te') {
-    // Search for Telugu voice
     const te = voices.find(v => v.lang.startsWith('te') || /telugu/i.test(v.name));
     if (te) return te;
-    // Fallback to Indian English natural voice
     const inVoice = voices.find(v => v.lang === 'en-IN' || /india/i.test(v.name));
     if (inVoice) return inVoice;
   }
 
   if (langKey === 'hi') {
-    // Search for Hindi voice
     const hi = voices.find(v => v.lang.startsWith('hi') || /hindi|swara|hemant|madhur/i.test(v.name));
     if (hi) return hi;
     const inVoice = voices.find(v => v.lang === 'en-IN' || /india/i.test(v.name));
     if (inVoice) return inVoice;
   }
 
-  // English: prefer natural Indian or US English
   const en = voices.find(v =>
     (v.lang === 'en-IN' || v.lang === 'en-US') &&
     /natural|neural|google|jenny|aria|guy/i.test(v.name)
@@ -370,7 +384,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
   const [assistantState, setAssistantState] = useState('idle');
   const [transcript, setTranscript] = useState('');
   const [micVolume, setMicVolume] = useState(1);
-  const [harmonicLevels, setHarmonicLevels] = useState([12, 20, 26, 18, 14]);
+  const [harmonicLevels, setHarmonicLevels] = useState([8, 12, 16, 10, 8]);
   const [gpsStatus, setGpsStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -398,14 +412,25 @@ export default function VoiceFlow({ onSwitchToManual }) {
   const assistantStateRef = useRef(assistantState);
   assistantStateRef.current = assistantState;
 
+  // Voice Session Refs
+  const transcriptRef = useRef('');
+  const finalTranscriptRef = useRef('');
+  const committingRef = useRef(false);
+  const hasSpeechRef = useRef(false);
+  const lastVoiceAtRef = useRef(0);
+  const listeningSessionRef = useRef(0);
+  const commitListeningRef = useRef(null);
+  const startListeningRef = useRef(null);
+  const lastVisualUpdateRef = useRef(0);
+
   const recognitionRef = useRef(null);
-  const synthRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const micStreamRef = useRef(null);
   const animFrameRef = useRef(null);
-  const autoListenTimeoutRef = useRef(null);
+  const synthRef = useRef(null);
   const speechWatchdogRef = useRef(null);
+  const autoListenTimeoutRef = useRef(null);
   const interimDebounceRef = useRef(null);
   const voicesListRef = useRef([]);
 
@@ -420,15 +445,39 @@ export default function VoiceFlow({ onSwitchToManual }) {
     }
   }, []);
 
-  // Stop all active audio, timers & recognition cleanly
-  const stopAllAudio = useCallback(() => {
+  // ============================================================
+  // VOICE ENGINE
+  // ============================================================
+  const stopSpeech = useCallback(() => {
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
     }
     if (speechWatchdogRef.current) {
       clearTimeout(speechWatchdogRef.current);
       speechWatchdogRef.current = null;
     }
+    synthRef.current = null;
+    window.__mandimitraActiveUtterance = null;
+  }, []);
+
+  const stopListening = useCallback(() => {
+    // Invalidate previous recognition session
+    listeningSessionRef.current += 1;
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch {}
+      recognitionRef.current = null;
+    }
+    hasSpeechRef.current = false;
+    lastVoiceAtRef.current = 0;
+  }, []);
+
+  const stopAllAudio = useCallback(() => {
+    stopSpeech();
+    stopListening();
     if (autoListenTimeoutRef.current) {
       clearTimeout(autoListenTimeoutRef.current);
       autoListenTimeoutRef.current = null;
@@ -437,208 +486,335 @@ export default function VoiceFlow({ onSwitchToManual }) {
       clearTimeout(interimDebounceRef.current);
       interimDebounceRef.current = null;
     }
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort();
-      } catch (e) {}
-      recognitionRef.current = null;
-    }
     setAssistantState('idle');
-  }, []);
+  }, [stopSpeech, stopListening]);
 
-  // Audio reactive microphone visualizer (Web Audio API)
+  // ============================================================
+  // MICROPHONE VISUALIZER
+  // Keep the microphone open during the whole voice session.
+  // Do NOT request microphone access for every question.
+  // ============================================================
   const setupMicVisualizer = useCallback(async () => {
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) return;
-      if (micStreamRef.current) return;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      return;
+    }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (micStreamRef.current && analyserRef.current) {
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
       micStreamRef.current = stream;
 
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioCtx();
-      audioContextRef.current = ctx;
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioCtx();
+      }
+      const ctx = audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
 
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
-      analyser.fftSize = 64;
-      analyser.smoothingTimeConstant = 0.6;
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.72;
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
+      const timeData = new Uint8Array(analyser.fftSize);
+      const freqData = new Uint8Array(analyser.frequencyBinCount);
 
       const renderAudioPhysics = () => {
         if (!analyserRef.current) return;
-        analyserRef.current.getByteFrequencyData(dataArray);
+        analyserRef.current.getByteTimeDomainData(timeData);
+        analyserRef.current.getByteFrequencyData(freqData);
 
+        // RMS volume from microphone
         let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          sum += dataArray[i];
+        for (let i = 0; i < timeData.length; i++) {
+          const normalized = (timeData[i] - 128) / 128;
+          sum += normalized * normalized;
         }
-        const avg = sum / bufferLength;
-        // Dynamic scale factor: 1.0 to 1.62
-        const scaleVal = 1 + (avg / 128) * 0.62;
-        setMicVolume(scaleVal);
+        const rms = Math.sqrt(sum / timeData.length);
+        const now = performance.now();
 
-        // Real-time harmonic frequency equalizer bars
-        const bars = [
-          Math.max(8, Math.round(dataArray[1] / 6)),
-          Math.max(12, Math.round(dataArray[4] / 5)),
-          Math.max(16, Math.round(dataArray[8] / 4)),
-          Math.max(10, Math.round(dataArray[12] / 5)),
-          Math.max(8, Math.round(dataArray[16] / 6))
-        ];
-        setHarmonicLevels(bars);
+        // Only trigger React rendering around 15-20 times/sec.
+        // Previously this was effectively 60+ state updates/sec.
+        if (now - lastVisualUpdateRef.current > 55) {
+          lastVisualUpdateRef.current = now;
+          const scale = Math.min(1.18, 1 + rms * 2.8);
+          setMicVolume(scale);
+
+          const bars = [
+            Math.max(6, Math.round((freqData[2] || 0) / 12)),
+            Math.max(8, Math.round((freqData[6] || 0) / 10)),
+            Math.max(10, Math.round((freqData[10] || 0) / 8)),
+            Math.max(8, Math.round((freqData[14] || 0) / 10)),
+            Math.max(6, Math.round((freqData[18] || 0) / 12))
+          ];
+          setHarmonicLevels(bars);
+        }
+
+        // ======================================================
+        // NATURAL SILENCE DETECTION
+        // Don't cut the user based on transcript timing.
+        // Wait until they actually stop speaking.
+        // ======================================================
+        if (assistantStateRef.current === 'listening') {
+          if (rms > 0.024) {
+            hasSpeechRef.current = true;
+            lastVoiceAtRef.current = now;
+          }
+
+          if (
+            hasSpeechRef.current &&
+            transcriptRef.current.trim() &&
+            lastVoiceAtRef.current &&
+            now - lastVoiceAtRef.current > 950 &&
+            !committingRef.current
+          ) {
+            commitListeningRef.current?.();
+          }
+        }
 
         animFrameRef.current = requestAnimationFrame(renderAudioPhysics);
       };
-      renderAudioPhysics();
-    } catch (e) {
-      // Audio stream rejected or unsupported; fallback to standard CSS animation
+
+      cancelAnimationFrame(animFrameRef.current || 0);
+      animFrameRef.current = requestAnimationFrame(renderAudioPhysics);
+    } catch (error) {
+      console.warn('Microphone visualizer unavailable:', error);
     }
   }, []);
 
-  // Natural Speech Synthesis with Alexa Cadence & Chromium Stability Fixes
-  const speakText = useCallback((text, onFinish = null) => {
-    if (!('speechSynthesis' in window)) {
-      if (onFinish) onFinish();
-      return;
-    }
-
-    // Cancel prior speech cleanly
-    window.speechSynthesis.cancel();
-    if (speechWatchdogRef.current) clearTimeout(speechWatchdogRef.current);
-
-    setAssistantState('speaking');
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = t.code;
-    utterance.rate = lang === 'en' ? 1.05 : 0.98; // natural cadence
-    utterance.pitch = 1.02;
-
-    const voice = pickBestVoice(voicesListRef.current, t.code);
-    if (voice) utterance.voice = voice;
-
-    // Fix Chromium GC Bug: persist utterance globally
-    window.__mandimitraActiveUtterance = utterance;
-
-    const cleanupAndFinish = () => {
-      if (speechWatchdogRef.current) {
-        clearTimeout(speechWatchdogRef.current);
-        speechWatchdogRef.current = null;
+  // ============================================================
+  // SPEECH OUTPUT
+  // One utterance at a time.
+  // Supports automatic turn-taking.
+  // ============================================================
+  const speakText = useCallback(
+    (text, { autoListen = false, onFinish = null } = {}) => {
+      if (!text?.trim()) {
+        if (onFinish) onFinish();
+        return;
       }
-      window.__mandimitraActiveUtterance = null;
-      setAssistantState('idle');
-
-      if (onFinish) {
-        onFinish();
-      } else {
-        // Alexa Automatic Turn-taking: immediately open microphone
-        autoListenTimeoutRef.current = setTimeout(() => {
-          startListening();
-        }, 320);
+      if (!('speechSynthesis' in window)) {
+        if (onFinish) onFinish();
+        return;
       }
-    };
 
-    utterance.onstart = () => {
+      stopListening();
+
+      try {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
+      } catch {}
+
       setAssistantState('speaking');
-    };
 
-    utterance.onend = cleanupAndFinish;
-    utterance.onerror = cleanupAndFinish;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = t.code;
+      // Natural speech cadence
+      utterance.rate = lang === 'en' ? 1.01 : 0.96;
+      utterance.pitch = 1.0;
+      utterance.volume = 1;
 
-    // Safety watchdog timer: guarantees state never gets stuck in 'speaking'
-    const maxDurationMs = Math.max(3500, (text.length / 8) * 1000);
-    speechWatchdogRef.current = setTimeout(() => {
-      if (assistantStateRef.current === 'speaking') {
-        cleanupAndFinish();
+      const voice = pickBestVoice(voicesListRef.current, t.code);
+      if (voice) {
+        utterance.voice = voice;
       }
-    }, maxDurationMs);
 
-    synthRef.current = utterance;
-    // Chromium micro-delay prevents silent drop
-    setTimeout(() => {
+      window.__mandimitraActiveUtterance = utterance;
+      synthRef.current = utterance;
+
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+
+        if (speechWatchdogRef.current) {
+          clearTimeout(speechWatchdogRef.current);
+          speechWatchdogRef.current = null;
+        }
+
+        synthRef.current = null;
+        window.__mandimitraActiveUtterance = null;
+        setAssistantState('idle');
+
+        if (onFinish) {
+          onFinish();
+        }
+
+        // Alexa-like automatic turn taking
+        if (autoListen) {
+          autoListenTimeoutRef.current = setTimeout(() => {
+            startListeningRef.current?.();
+          }, 180);
+        }
+      };
+
+      utterance.onstart = () => {
+        setAssistantState('speaking');
+      };
+      utterance.onend = finish;
+      utterance.onerror = finish;
+
+      // Safety fallback watchdog
+      speechWatchdogRef.current = setTimeout(() => {
+        finish();
+      }, Math.min(15000, Math.max(5000, text.length * 85)));
+
       try {
         window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        cleanupAndFinish();
+      } catch {
+        finish();
       }
-    }, 50);
-  }, [lang, t.code]);
+    },
+    [lang, t.code, stopListening]
+  );
 
-  // Start Voice Recognition with Instant Intent Detection
-  const startListening = useCallback(() => {
-    stopAllAudio();
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
+  // ============================================================
+  // COMMIT SPOKEN TURN
+  // ============================================================
+  const commitListening = () => {
+    if (committingRef.current) return;
+    const spoken = finalTranscriptRef.current.trim() || transcriptRef.current.trim();
+    if (!spoken) {
+      stopListening();
+      setAssistantState('idle');
       return;
     }
 
-    try {
-      setupMicVisualizer();
-      playAlexaChime('wake');
-
-      const recognition = new SpeechRecognition();
-      recognition.lang = t.code;
-      recognition.interimResults = true;
-      recognition.continuous = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        setAssistantState('listening');
-        setTranscript('');
-      };
-
-      recognition.onresult = (event) => {
-        let fullTranscript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          fullTranscript += event.results[i][0].transcript;
-        }
-        setTranscript(fullTranscript);
-
-        // INSTANT INTENT CHECK: Detect answers immediately in interim speech!
-        const detected = detectInstantIntent(fullTranscript, stepRef.current);
-        if (detected) {
-          try {
-            recognition.stop();
-          } catch (e) {}
-          handleDetectedIntent(detected);
-          return;
-        }
-
-        // Fast silence debounce fallback (650ms) instead of waiting for Chrome's 3-second delay
-        if (interimDebounceRef.current) clearTimeout(interimDebounceRef.current);
-        interimDebounceRef.current = setTimeout(() => {
-          if (stepRef.current >= 1 && stepRef.current <= 4 && fullTranscript.trim()) {
-            try {
-              recognition.stop();
-            } catch (e) {}
-            handleGenericTranscriptFallback(fullTranscript);
-          }
-        }, 650);
-      };
-
-      recognition.onerror = () => {
-        setAssistantState('idle');
-      };
-
-      recognition.onend = () => {
-        setAssistantState(prev => (prev === 'listening' ? 'idle' : prev));
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch (e) {
-      setAssistantState('idle');
-    }
-  }, [t.code, stopAllAudio, setupMicVisualizer]);
-
-  // Execute instantaneous action on matched intent
-  const handleDetectedIntent = (intent) => {
+    committingRef.current = true;
+    stopListening();
+    setAssistantState('thinking');
     playAlexaChime('confirm');
 
+    const currentStep = stepRef.current;
+    const detected = detectInstantIntent(spoken, currentStep);
+    if (detected) {
+      handleDetectedIntent(detected);
+    } else {
+      handleGenericTranscriptFallback(spoken);
+    }
+
+    setTimeout(() => {
+      committingRef.current = false;
+    }, 350);
+  };
+  commitListeningRef.current = commitListening;
+
+  // ============================================================
+  // START LISTENING
+  // ============================================================
+  const startListening = useCallback(async () => {
+    if (assistantStateRef.current === 'listening') {
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setError('Voice recognition is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    stopSpeech();
+    stopListening();
+    setTranscript('');
+    transcriptRef.current = '';
+    finalTranscriptRef.current = '';
+    hasSpeechRef.current = false;
+    lastVoiceAtRef.current = 0;
+    committingRef.current = false;
+
+    await setupMicVisualizer();
+    playAlexaChime('wake');
+
+    const recognition = new SpeechRecognition();
+    const sessionId = ++listeningSessionRef.current;
+    recognition.lang = t.code;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setAssistantState('listening');
+      setTranscript('');
+    };
+
+    recognition.onresult = (event) => {
+      let completeText = '';
+      let finalText = '';
+
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (!result?.[0]?.transcript) continue;
+        const text = result[0].transcript.trim();
+        completeText += ` ${text}`;
+        if (result.isFinal) {
+          finalText += ` ${text}`;
+        }
+      }
+
+      completeText = completeText.trim();
+      finalText = finalText.trim();
+
+      if (finalText) {
+        finalTranscriptRef.current = finalText;
+      }
+      transcriptRef.current = completeText;
+      setTranscript(completeText);
+
+      hasSpeechRef.current = true;
+      lastVoiceAtRef.current = performance.now();
+    };
+
+    recognition.onerror = (event) => {
+      if (sessionId !== listeningSessionRef.current) {
+        return;
+      }
+      console.warn('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        setError('Microphone permission was denied. Please allow microphone access.');
+      }
+      setAssistantState('idle');
+    };
+
+    recognition.onend = () => {
+      if (sessionId !== listeningSessionRef.current) {
+        return;
+      }
+
+      if (transcriptRef.current.trim() && !committingRef.current) {
+        // Give Chrome a tiny moment to deliver final result
+        setTimeout(() => {
+          commitListeningRef.current?.();
+        }, 100);
+      } else {
+        setAssistantState('idle');
+      }
+    };
+
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+    } catch (error) {
+      console.warn('Recognition start failed:', error);
+      setAssistantState('idle');
+    }
+  }, [t.code, stopSpeech, stopListening, setupMicVisualizer]);
+  startListeningRef.current = startListening;
+
+  // Execute action on matched intent
+  const handleDetectedIntent = (intent) => {
     if (intent.type === 'crop') {
       selectCrop(intent.value);
     } else if (intent.type === 'quantity') {
@@ -652,68 +828,117 @@ export default function VoiceFlow({ onSwitchToManual }) {
     }
   };
 
-  // Fallback for uncommon or noisy inputs
-  const handleGenericTranscriptFallback = (spoken) => {
-    playAlexaChime('confirm');
+  // Structured AI recovery and natural sentence parser fallback
+  const handleGenericTranscriptFallback = async (spoken) => {
     const currentStep = stepRef.current;
+    setAssistantState('thinking');
 
-    if (currentStep === 1) {
-      selectCrop('Tomato');
-    } else if (currentStep === 2) {
-      const match = spoken.match(/\d+/);
-      const q = match ? parseInt(match[0], 10) : 5000;
-      selectQuantity(q >= 100 ? q : 5000);
-    } else if (currentStep === 3) {
-      selectLocation(spoken, 17.05, 79.27);
-    } else if (currentStep === 4) {
-      finishAndEvaluate(false);
+    try {
+      const response = await api.parseHarvest(spoken);
+      const parsed = response?.parsed || {};
+
+      // CROP
+      if (currentStep === 1 && parsed.crop) {
+        selectCrop(parsed.crop);
+        return;
+      }
+
+      // QUANTITY
+      if (currentStep === 2 && parsed.quantityKg) {
+        selectQuantity(Number(parsed.quantityKg));
+        return;
+      }
+
+      // LOCATION
+      if (currentStep === 3 && parsed.locationText) {
+        const location = t.locations.find((item) =>
+          item.name.toLowerCase().includes(parsed.locationText.toLowerCase())
+        );
+        if (location) {
+          selectLocation(location.name, location.lat, location.lng);
+          return;
+        }
+      }
+
+      // TRANSPORT
+      if (currentStep === 4 && typeof parsed.hasTransport === 'boolean') {
+        finishAndEvaluate(parsed.hasTransport);
+        return;
+      }
+
+      // MULTI-FIELD SENTENCE SHORTCUT: User said multiple harvest details in one sentence
+      if (parsed.crop && parsed.quantityKg && parsed.locationText) {
+        const location = t.locations.find((item) =>
+          item.name.toLowerCase().includes(parsed.locationText.toLowerCase())
+        ) || { name: parsed.locationText, lat: 17.05, lng: 79.27 };
+
+        setAnswers(prev => ({
+          ...prev,
+          crop: parsed.crop,
+          quantityKg: Number(parsed.quantityKg),
+          locationText: location.name,
+          latitude: location.lat,
+          longitude: location.lng,
+          hasTransport: typeof parsed.hasTransport === 'boolean' ? parsed.hasTransport : false
+        }));
+
+        if (typeof parsed.hasTransport === 'boolean') {
+          finishAndEvaluate(parsed.hasTransport);
+          return;
+        } else {
+          setStep(4);
+          setTimeout(() => {
+            speakText(t.q4, { autoListen: true });
+          }, 80);
+          return;
+        }
+      }
+
+      // NOTHING UNDERSTOOD: Ask politely to repeat
+      setAssistantState('idle');
+      speakText(
+        lang === 'te'
+          ? 'క్షమించండి, అది నాకు సరిగ్గా వినిపించలేదు. మళ్ళీ నెమ్మదిగా చెప్పండి.'
+          : lang === 'hi'
+          ? 'माफ़ कीजिए, मैं ठीक से समझ नहीं पाया। कृपया फिर से बोलिए।'
+          : 'I didn’t catch that. Please say it again.',
+        { autoListen: true }
+      );
+    } catch {
+      setAssistantState('idle');
+      speakText(
+        lang === 'te'
+          ? 'మళ్ళీ ఒకసారి చెప్పండి.'
+          : lang === 'hi'
+          ? 'कृपया फिर से बोलिए।'
+          : 'Please say that again.',
+        { autoListen: true }
+      );
     }
   };
 
-  // Step 0 -> Step 1: Language Selection & Immediate Alexa Greeting
-  const selectLanguage = (selectedLang) => {
-    playAlexaChime('confirm');
-    setLang(selectedLang);
-    setStep(1);
-    const selT = LANG_DATA[selectedLang];
-
-    setTimeout(() => {
-      speakText(`${selT.welcome} ${selT.q1}`);
-    }, 180);
-  };
-
-  // Step 1 -> Step 2: Crop
+  // Step transitions (NO duplicate confirm chimes; clean auto-listen handoff)
   const selectCrop = (cropName) => {
-    playAlexaChime('confirm');
     setAnswers(prev => ({ ...prev, crop: cropName }));
     setTranscript('');
+    transcriptRef.current = '';
     setStep(2);
-
     setTimeout(() => {
-      const prompt = lang === 'te'
-        ? `${cropName} ${t.q2_prefix}`
-        : lang === 'hi'
-        ? `${cropName} ${t.q2_prefix}`
-        : `${cropName} ${t.q2_prefix}`;
-      speakText(prompt);
-    }, 120);
+      speakText(`${cropName} ${t.q2_prefix}`, { autoListen: true });
+    }, 80);
   };
 
-  // Step 2 -> Step 3: Quantity
   const selectQuantity = (qty) => {
-    playAlexaChime('confirm');
     setAnswers(prev => ({ ...prev, quantityKg: qty }));
     setTranscript('');
+    transcriptRef.current = '';
     setStep(3);
-
     setTimeout(() => {
-      speakText(t.q3);
-    }, 120);
+      speakText(t.q3, { autoListen: true });
+    }, 80);
   };
 
-  // Step 3 -> Step 4: Location
   const selectLocation = (locName, lat, lng) => {
-    playAlexaChime('confirm');
     setAnswers(prev => ({
       ...prev,
       locationText: locName,
@@ -721,16 +946,15 @@ export default function VoiceFlow({ onSwitchToManual }) {
       longitude: lng
     }));
     setTranscript('');
+    transcriptRef.current = '';
     setStep(4);
-
     setTimeout(() => {
-      speakText(t.q4);
-    }, 120);
+      speakText(t.q4, { autoListen: true });
+    }, 80);
   };
 
   // GPS 1-Tap Geolocation
   const handleEnableGPS = () => {
-    playAlexaChime('wake');
     if (!navigator.geolocation) {
       setGpsStatus(t.gps_error);
       return;
@@ -739,7 +963,6 @@ export default function VoiceFlow({ onSwitchToManual }) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        playAlexaChime('confirm');
         setAnswers(prev => ({
           ...prev,
           latitude,
@@ -749,8 +972,8 @@ export default function VoiceFlow({ onSwitchToManual }) {
         setGpsStatus(t.gps_success);
         setStep(4);
         setTimeout(() => {
-          speakText(t.q4);
-        }, 250);
+          speakText(t.q4, { autoListen: true });
+        }, 120);
       },
       () => {
         setGpsStatus(t.gps_error);
@@ -762,7 +985,6 @@ export default function VoiceFlow({ onSwitchToManual }) {
   // Step 4 -> Step 5: Evaluate Economics & Speak Verdict
   const finishAndEvaluate = async (hasTransport) => {
     stopAllAudio();
-    playAlexaChime('confirm');
 
     const payload = {
       ...answersRef.current,
@@ -781,13 +1003,11 @@ export default function VoiceFlow({ onSwitchToManual }) {
       setLoading(false);
       playAlexaChime('success');
 
-      // Announce the optimal recommendation out loud
+      // Announce the optimal recommendation out loud without immediate auto-listen
       if (res.explanation) {
         setTimeout(() => {
-          speakText(res.explanation, () => {
-            setAssistantState('idle');
-          });
-        }, 350);
+          speakText(res.explanation, { autoListen: false });
+        }, 300);
       }
     } catch (err) {
       setError(err.message || 'Optimization failed');
@@ -801,6 +1021,8 @@ export default function VoiceFlow({ onSwitchToManual }) {
     setStep(0);
     setResult(null);
     setTranscript('');
+    transcriptRef.current = '';
+    finalTranscriptRef.current = '';
     setGpsStatus('');
     setAssistantState('idle');
   };
@@ -825,13 +1047,48 @@ export default function VoiceFlow({ onSwitchToManual }) {
       <div className="alexa-top-bar">
         <div className="alexa-brand-tag">
           <span className="live-radar-dot" />
-          <span>ALEXA & CHATGPT VOICE ENGINE</span>
+          <span>MANDIMITRA • VOICE MODE</span>
         </div>
         <div className="alexa-lang-pill">
           <Radio size={12} className="spin-slow" />
           <span>{LANG_DATA[lang]?.nativeLabel || 'Telugu'}</span>
         </div>
       </div>
+
+      {/* STEP 0: VOICE-FIRST START PANEL */}
+      {step === 0 && (
+        <div className="voice-start-panel slide-fade">
+          <div className="voice-language-switch">
+            <button
+              type="button"
+              className={lang === 'te' ? 'active' : ''}
+              onClick={() => setLang('te')}
+            >
+              తెలుగు
+            </button>
+            <button
+              type="button"
+              className={lang === 'hi' ? 'active' : ''}
+              onClick={() => setLang('hi')}
+            >
+              हिंदी
+            </button>
+            <button
+              type="button"
+              className={lang === 'en' ? 'active' : ''}
+              onClick={() => setLang('en')}
+            >
+              English
+            </button>
+          </div>
+
+          <h2 className="voice-start-title">Talk to MandiMitra</h2>
+
+          <p className="voice-start-subtitle">
+            Speak naturally. Tell me what you're selling, how much you have, and where your farm is.
+          </p>
+        </div>
+      )}
 
       {/* ==================== THE LIVING ALEXA / CHATGPT VOICE ORB ==================== */}
       <div className="alexa-orb-stage">
@@ -849,21 +1106,43 @@ export default function VoiceFlow({ onSwitchToManual }) {
           style={{
             transform: assistantState === 'listening' ? `scale(${micVolume})` : undefined
           }}
-          onClick={() => {
+          onClick={async () => {
             if (assistantState === 'speaking') {
-              // Tap to barge-in / interrupt Alexa
-              stopAllAudio();
-            } else if (assistantState === 'listening') {
-              stopAllAudio();
-            } else if (step > 0 && step < 5) {
+              stopSpeech();
+              setTimeout(() => {
+                startListening();
+              }, 60);
+              return;
+            }
+
+            if (assistantState === 'listening') {
+              stopListening();
+              setAssistantState('idle');
+              return;
+            }
+
+            if (assistantState === 'thinking') {
+              return;
+            }
+
+            // First voice interaction starts from Step 0
+            if (step === 0) {
+              setStep(1);
+              setTimeout(() => {
+                speakText(`${t.welcome} ${t.q1}`, { autoListen: true });
+              }, 80);
+              return;
+            }
+
+            if (step > 0 && step < 5) {
               startListening();
             }
           }}
           title={
             assistantState === 'speaking'
-              ? 'Tap to interrupt / pause'
+              ? 'Tap to interrupt / speak'
               : assistantState === 'listening'
-              ? 'Tap to mute'
+              ? 'Tap to pause'
               : 'Tap to speak'
           }
         >
@@ -917,15 +1196,23 @@ export default function VoiceFlow({ onSwitchToManual }) {
             </span>
           )}
           {assistantState === 'idle' && (
-            <button
-              type="button"
-              className="state-badge idle-btn"
-              onClick={startListening}
-            >
-              <Mic size={14} /> {t.state_tap_speak}
-            </button>
+            <span className="state-badge idle-btn">
+              <Mic size={14} /> {step === 0 ? 'Tap orb to start' : t.state_tap_speak}
+            </span>
           )}
         </div>
+
+        {/* Start Hint or Idle Hint */}
+        {step === 0 ? (
+          <div className="voice-start-hint">
+            <Mic size={15} />
+            <span>Tap the microphone to start</span>
+          </div>
+        ) : assistantState === 'idle' && step < 5 ? (
+          <div className="assistant-idle-hint">
+            Tap the orb and speak
+          </div>
+        ) : null}
 
         {/* Live Streaming Speech Transcript Capsule */}
         {transcript && (
@@ -938,48 +1225,6 @@ export default function VoiceFlow({ onSwitchToManual }) {
       </div>
 
       {/* ==================== INTERACTIVE CONVERSATION STEPS ==================== */}
-
-      {/* STEP 0: LANGUAGE SELECTION */}
-      {step === 0 && (
-        <div className="alexa-step-content slide-fade">
-          <h2 className="alexa-prompt-title">Choose Your Voice Language / భాషను ఎంచుకోండి</h2>
-          <p className="alexa-prompt-sub">
-            Tap your language to begin voice mode • మాట్లాడటానికి భాషను తాకండి
-          </p>
-
-          <div className="alexa-lang-grid">
-            <button
-              type="button"
-              className="alexa-lang-card featured"
-              onClick={() => selectLanguage('te')}
-            >
-              <span className="flag-icon">🌾</span>
-              <strong>తెలుగు</strong>
-              <span>Telugu (మాట్లాడండి)</span>
-            </button>
-
-            <button
-              type="button"
-              className="alexa-lang-card"
-              onClick={() => selectLanguage('hi')}
-            >
-              <span className="flag-icon">🇮🇳</span>
-              <strong>हिंदी</strong>
-              <span>Hindi (बोलें)</span>
-            </button>
-
-            <button
-              type="button"
-              className="alexa-lang-card"
-              onClick={() => selectLanguage('en')}
-            >
-              <span className="flag-icon">🇬🇧</span>
-              <strong>English</strong>
-              <span>English (Speak)</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* STEP 1: CROP */}
       {step === 1 && (
@@ -1145,7 +1390,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
                     if (assistantState === 'speaking') {
                       stopAllAudio();
                     } else {
-                      speakText(result.explanation);
+                      speakText(result.explanation, { autoListen: false });
                     }
                   }}
                 >
