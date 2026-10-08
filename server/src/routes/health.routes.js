@@ -26,10 +26,12 @@ healthRouter.get('/test', async (req, res) => {
 });
 
 import { getMarkets } from '../services/data/marketRepository.js';
+import { getTelanganaFallbackPrices } from '../services/data/telanganaData.js';
 healthRouter.get('/test2', async (req, res) => {
   try {
+    const fallbackPrices = await getTelanganaFallbackPrices({ crop: 'Tomato' });
     const markets = await getMarkets({ crop: 'Tomato' });
-    res.json({ markets, count: markets?.length });
+    res.json({ fallbackPrices, fallbackCount: fallbackPrices?.length, marketsCount: markets?.length });
   } catch (e) {
     res.json({ error: e.message, stack: e.stack });
   }
