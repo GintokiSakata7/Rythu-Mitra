@@ -55,26 +55,46 @@ export async function fetchCommodityOnlineData({ crop = 'Tomato' } = {}) {
     $('table tr').each((i, el) => {
       if (i === 0) return; // skip header
       const tds = $(el).find('td');
-      if (tds.length > 3) {
-        const market = $(tds[0]).text().trim();
-        const variety = $(tds[1]).text().trim();
-        const priceStr = $(tds[2]).text().trim().replace(/\u20b9/g, 'Rs ');
-        const date = $(tds[3]).text().trim();
-        
-        const prices = parsePriceString(priceStr);
-        if (prices.modalPrice !== null) {
-          records.push({
-            market: market,
-            district: '', // CommodityOnline doesn't split district easily here, but we match by market name
-            state: 'Telangana',
-            commodity: crop,
-            variety: variety,
-            modalPrice: prices.modalPrice,
-            minPrice: prices.minPrice,
-            maxPrice: prices.maxPrice,
-            date: date
-          });
+      
+      let market, variety, priceStr, date, modalPrice, minPrice, maxPrice;
+
+      if (tds.length === 1) {
+        // New layout: data is embedded in a single sentence
+        // e.g., "Tomato Price in Chevella on 08 Oct 2026 is ₹10/Kg ( ₹10 - ₹10) (Local)"
+        const sentence = $(tds[0]).text().trim();
+        const match = sentence.match(/in\s+(.+?)\s+on\s+([a-zA-Z0-9\s]+)\s+is\s+[^\d]*([\d.]+)\/Kg\s*\(\s*[^\d]*([\d.]+)\s*-\s*[^\d]*([\d.]+)\s*\)\s*\((.+?)\)/i);
+        if (match) {
+          market = match[1].trim();
+          date = match[2].trim();
+          modalPrice = parseFloat(match[3]);
+          minPrice = parseFloat(match[4]);
+          maxPrice = parseFloat(match[5]);
+          variety = match[6].trim();
         }
+      } else if (tds.length > 3) {
+        // Old layout: explicit columns
+        market = $(tds[0]).text().trim();
+        variety = $(tds[1]).text().trim();
+        priceStr = $(tds[2]).text().trim().replace(/\u20b9/g, 'Rs ');
+        date = $(tds[3]).text().trim();
+        const prices = parsePriceString(priceStr);
+        modalPrice = prices.modalPrice;
+        minPrice = prices.minPrice;
+        maxPrice = prices.maxPrice;
+      }
+
+      if (market && modalPrice !== null && !isNaN(modalPrice)) {
+        records.push({
+          market: market,
+          district: '', // Match by name downstream
+          state: 'Telangana',
+          commodity: crop,
+          variety: variety,
+          modalPrice: modalPrice,
+          minPrice: minPrice,
+          maxPrice: maxPrice,
+          date: date
+        });
       }
     });
 

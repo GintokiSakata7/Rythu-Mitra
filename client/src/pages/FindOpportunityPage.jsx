@@ -52,12 +52,23 @@ export default function FindOpportunityPage() {
     }
     setGpsLoading(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
+        let name = `GPS (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+          const data = await res.json();
+          if (data && data.address) {
+            name = `📍 ${data.address.city || data.address.town || data.address.village || data.address.county || 'Your Location'}`;
+          }
+        } catch (e) {
+          console.error('Reverse geocode failed', e);
+        }
+
         setForm(prev => ({
           ...prev,
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
-          locationText: `GPS (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`
+          locationText: name
         }));
         setGpsLoading(false);
       },
