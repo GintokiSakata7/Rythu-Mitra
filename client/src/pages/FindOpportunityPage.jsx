@@ -22,7 +22,7 @@ export default function FindOpportunityPage() {
   });
 
   useEffect(() => {
-    api.get('/markets').then(data => {
+    api.markets().then(data => {
       if (data && data.markets) {
         const newLocs = { ...locations };
         data.markets.forEach(m => {
