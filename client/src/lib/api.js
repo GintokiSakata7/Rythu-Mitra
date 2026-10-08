@@ -13,6 +13,7 @@ async function request(path, options = {}) {
 export const api = {
   recommend: (payload) => request('/recommendations', { method: 'POST', body: JSON.stringify(payload) }),
   buyers: (crop = '') => request(`/buyers/requirements${crop ? `?crop=${encodeURIComponent(crop)}` : ''}`),
+  verifyBuyer: (payload) => request('/buyers/verify', { method: 'POST', body: JSON.stringify(payload) }),
   postBuyer: (payload) => request('/buyers/requirements', { method: 'POST', body: JSON.stringify(payload) }),
   parseHarvest: (text) => request('/ai/parse-harvest', { method: 'POST', body: JSON.stringify({ text }) }),
   health: () => request('/health'),

@@ -51,7 +51,13 @@ export const demoBuyerRequirements = [
     pickupProvided: true,
     requiredBy: '2026-10-12',
     paymentDays: 3,
-    status: 'Open'
+    status: 'Open',
+    isVerified: true,
+    verificationId: 'MM-GOV-2026-8941',
+    gstin: '36AABCB1234M1Z5',
+    fssai: '13621014000189',
+    trustScore: 98,
+    officerName: 'Suresh Reddy (Head of Ag Procurement)'
   },
   {
     id: 'BUY-002',
@@ -67,7 +73,13 @@ export const demoBuyerRequirements = [
     pickupProvided: false,
     requiredBy: '2026-10-11',
     paymentDays: 2,
-    status: 'Open'
+    status: 'Open',
+    isVerified: true,
+    verificationId: 'MM-GOV-2026-7612',
+    gstin: '36AAACU5678K1Z2',
+    fssai: '13622015000451',
+    trustScore: 95,
+    officerName: 'Vikram Joshi (Supply Chain Lead)'
   },
   {
     id: 'BUY-003',
@@ -83,7 +95,13 @@ export const demoBuyerRequirements = [
     pickupProvided: true,
     requiredBy: '2026-10-14',
     paymentDays: 5,
-    status: 'Open'
+    status: 'Open',
+    isVerified: true,
+    verificationId: 'MM-GOV-2026-6430',
+    gstin: '36AABCN9012L1Z8',
+    fssai: '13620011000923',
+    trustScore: 96,
+    officerName: 'Mohammed Tariq (Plant Manager)'
   }
 ];
 

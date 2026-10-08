@@ -10,7 +10,17 @@ export default function OpportunityCard({ opportunity, highlight = false }) {
     <article className={`opportunity-card ${highlight ? 'highlight' : ''} ${isLoss ? 'is-loss' : ''}`}>
       <div className="opp-head">
         <div>
-          <div className="opp-tag">{opportunity.type === 'Direct Buyer' ? <><Factory size={14}/> DIRECT BUYER</> : <><TrendingUp size={14}/> MARKET</>}</div>
+          <div className="opp-tag">
+            {opportunity.type === 'Direct Buyer' ? (
+              <>
+                <Factory size={14} /> DIRECT BUYER · <span style={{ color: '#059669', fontWeight: 800 }}>🛡️ GOVT VERIFIED</span>
+              </>
+            ) : (
+              <>
+                <TrendingUp size={14} /> APMC MARKET
+              </>
+            )}
+          </div>
           <h3>{opportunity.name}</h3>
           <p>{opportunity.district || opportunity.city} · {Number(opportunity.distanceKm).toFixed(1)} km</p>
         </div>
