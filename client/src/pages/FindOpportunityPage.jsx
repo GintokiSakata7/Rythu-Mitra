@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Check, Crosshair, Edit3, Loader2, MapPin, Mic, Mic2,
   Navigation, RefreshCw, Sparkles, Truck, Wheat
@@ -10,15 +10,34 @@ import MarketMap from '../components/MarketMap.jsx';
 import VoiceFlow from '../components/VoiceFlow.jsx';
 import { api } from '../lib/api.js';
 
-const locations = {
-  Nalgonda: { latitude: 17.05, longitude: 79.27 },
-  Miryalaguda: { latitude: 16.87, longitude: 79.56 },
-  Hyderabad: { latitude: 17.385, longitude: 78.4867 },
-  Suryapet: { latitude: 17.14, longitude: 79.62 }
-};
+
 
 export default function FindOpportunityPage() {
   const [mode, setMode] = useState('manual');
+  const [locations, setLocations] = useState({
+    Nalgonda: { latitude: 17.05, longitude: 79.27 },
+    Miryalaguda: { latitude: 16.87, longitude: 79.56 },
+    Hyderabad: { latitude: 17.385, longitude: 78.4867 },
+    Suryapet: { latitude: 17.14, longitude: 79.62 }
+  });
+
+  useEffect(() => {
+    api.get('/markets').then(data => {
+      if (data && data.markets) {
+        const newLocs = { ...locations };
+        data.markets.forEach(m => {
+          if (m.name) {
+            const cleanName = m.name.replace(/ market/i, '').trim();
+            newLocs[cleanName] = { latitude: m.latitude, longitude: m.longitude };
+          }
+          if (m.district) {
+            newLocs[m.district] = { latitude: m.latitude, longitude: m.longitude };
+          }
+        });
+        setLocations(newLocs);
+      }
+    }).catch(console.error);
+  }, []);
 
   const [form, setForm] = useState({
     crop: 'Tomato',
@@ -185,7 +204,11 @@ export default function FindOpportunityPage() {
 
               <Field label="Farm / Nearest Town">
                 <div className="location-input-group">
-                  <select
+                  <input
+                    type="text"
+                    list="locations-list"
+                    className="form-input"
+                    placeholder="Search city or market..."
                     value={form.locationText}
                     onChange={e => {
                       const sel = e.target.value;
@@ -197,13 +220,12 @@ export default function FindOpportunityPage() {
                         longitude: c ? c.longitude : form.longitude
                       });
                     }}
-                  >
-                    {Object.keys(locations).map(x => (
-                      <option key={x} value={x}>
-                        📍 {x}
-                      </option>
+                  />
+                  <datalist id="locations-list">
+                    {Object.keys(locations).sort().map(x => (
+                      <option key={x} value={x} />
                     ))}
-                  </select>
+                  </datalist>
                   <button
                     type="button"
                     className="gps-quick-btn"
