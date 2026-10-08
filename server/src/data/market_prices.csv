@@ -1,0 +1,351 @@
+﻿DDate,AmcCode,AmcName,YardCode,YardName,CommCode,CommName,VarityCode,VarityName,ProgArrivals,Arrivals,Minimum,Maximum,Model,Valuation,MarketFee
+08-06-26,300,Badepally,1327,Badepally,31,Castor,31,Common,0.0,4.0,6181.0,6181.0,6181.0,0.0,0.0
+08-21-26,300,Badepally,1327,Badepally,22,Cowpea,22,Common,0.0,1.0,5100.0,5100.0,5100.0,0.0,0.0
+08-21-26,300,Badepally,1327,Badepally,16,Green Gram,16,Common,0.0,6.0,6410.0,6410.0,7589.0,0.0,0.0
+08-13-26,300,Badepally,1327,Badepally,30,Groundnut pods,30,Common,0.0,3.0,4504.0,4504.0,4504.0,0.0,0.0
+08-20-26,300,Badepally,1327,Badepally,5,Maize,5,Common,0.0,9.0,2535.0,2535.0,2535.0,0.0,0.0
+08-11-26,300,Badepally,1327,Badepally,1,Paddy,256,Grade-A (RNR),0.0,13.0,2828.0,2828.0,2828.0,0.0,0.0
+08-08-26,300,Badepally,1327,Badepally,44,Pungam Seed,44,Common,0.0,1.0,4679.0,4679.0,4679.0,0.0,0.0
+08-08-26,300,Badepally,1327,Badepally,47,Tamarind Seed,47,Common,0.0,3.0,2550.0,2550.0,2550.0,0.0,0.0
+08-27-26,188,Bhainsa,11,Bhainsa,14,Bengal Gram,14,Common,0.0,12.5,4900.0,5359.0,5359.0,0.0,0.0
+08-31-26,188,Bhainsa,11,Bhainsa,32,Gingelly,32,Common,0.0,24.0,11539.0,11752.0,11689.0,0.0,0.0
+08-21-26,188,Bhainsa,11,Bhainsa,16,Green Gram,16,Common,0.0,1.5,2656.0,2656.0,2656.0,0.0,0.0
+08-11-26,188,Bhainsa,11,Bhainsa,30,Groundnut pods,30,Common,0.0,3.5,6116.0,6116.0,6116.0,0.0,0.0
+08-31-26,188,Bhainsa,11,Bhainsa,6,Jowar,226,Hybrid,0.0,11.5,2269.0,2425.0,2425.0,0.0,0.0
+08-31-26,188,Bhainsa,11,Bhainsa,5,Maize,215,Hybrid New,0.0,25.0,2121.0,2388.0,2252.0,0.0,0.0
+08-31-26,188,Bhainsa,11,Bhainsa,15,Red Gram,15,Common,0.0,12.5,7759.0,7952.0,7952.0,0.0,0.0
+08-31-26,188,Bhainsa,11,Bhainsa,75,Soyabean,214,Yellow,0.0,2.0,5852.0,6039.0,6039.0,0.0,0.0
+08-19-26,188,Bhainsa,11,Bhainsa,57,Tumeric,227,Finger,0.0,2.5,8143.0,8143.0,8143.0,0.0,0.0
+08-31-26,188,Bhainsa,11,Bhainsa,3,Wheat,196,Hybir,0.0,5.0,2539.0,2539.0,2539.0,0.0,0.0
+08-24-26,189,Boath,12,Boath,5,Maize,5,Common,0.0,100.0,2410.0,2410.0,2410.0,0.0,0.0
+08-31-26,189,Boath,12,Boath,3,Wheat,3,Common,0.0,100.0,2600.0,2600.0,2600.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,154,Amla,154,Common,0.0,27.0,3000.0,6000.0,5000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,101,Beet Root,101,Common,0.0,869.0,1000.0,3000.0,2500.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,125,Bitter Gourd,125,Common,0.0,1179.0,700.0,2000.0,1500.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,122,Bottle Gourd,122,Common,0.0,857.0,200.0,600.0,500.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,111,Brinjal,278,Kalyani,0.0,673.0,500.0,2000.0,1500.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,98,Cabbage,98,Common,0.0,1368.0,600.0,1200.0,1000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,199,Capsicum,204,Common,0.0,1950.0,1000.0,2800.0,2200.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,103,Carrot,103,Common,0.0,4831.0,1000.0,4500.0,3000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,99,Cauliflower,99,Common,0.0,242.0,500.0,2000.0,1500.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,200,ChowChow,205,Common,0.0,2.0,1000.0,1500.0,1300.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,117,Cluster Beans,117,Common,0.0,465.0,1000.0,2000.0,1800.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,106,ColaCasio(Arvi),106,Common,0.0,248.0,1500.0,2300.0,2000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,129,Cucumber,129,Common,0.0,383.0,400.0,1200.0,1000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,148,Culinery Banana,148,Common,0.0,229.0,300.0,700.0,600.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,155,Donda,155,Common,0.0,552.0,500.0,1500.0,1200.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,130,Drumstick,130,Common,0.0,565.0,1000.0,4000.0,3000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,118,Field Beans,118,Common,0.0,1617.0,1000.0,3000.0,2500.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,116,French Beans,116,Common,0.0,419.0,2000.0,5000.0,4000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,113,Green Chillies,113,Common,0.0,1758.0,1000.0,2500.0,2000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,209,Green Chillies (Bold),209,common,0.0,988.0,1500.0,4000.0,3000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,197,Green Mangos,202,Common,0.0,43.0,1000.0,2600.0,2200.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,110,Green Onion,110,Common,0.0,19.0,1000.0,2000.0,1800.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,115,Green Peas,115,Common,0.0,81.0,4000.0,8000.0,7000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,147,Green Tamarind,147,Common,0.0,14.0,3000.0,6000.0,5000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,127,Kheera,127,Common,0.0,2340.0,1000.0,3000.0,2500.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,112,Ladys Finger,112,Common,0.0,771.0,500.0,1200.0,1000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,195,Lobha,199,Common,0.0,20.0,800.0,1500.0,1200.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,55,Onions,55,Common,0.0,5.0,1000.0,2000.0,1800.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,105,Potato,105,Common,0.0,2312.0,800.0,1400.0,1200.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,128,Pumpkin,128,Common,0.0,669.0,500.0,1000.0,800.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,102,Radish,102,Common,0.0,9.0,300.0,500.0,450.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,123,Ribbed Gourd,123,Common,0.0,1098.0,700.0,1300.0,1000.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,121,Snake Gourd,121,Common,0.0,21.0,500.0,2000.0,1500.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,234,Sweet Corn,280,Local,0.0,380.0,500.0,1800.0,1400.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,107,Sweet Potato,107,Common,0.0,446.0,1000.0,3000.0,2500.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,235,Teisel Gourd(Boda Kakarakaya),281,Local,0.0,77.0,1500.0,3000.0,2500.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,114,Tomato,198,Hybrid,0.0,2386.0,400.0,2000.0,1400.0,0.0,0.0
+08-31-26,324,Bowenpally,3,Bowenpally,108,Yam,108,Common,0.0,19.0,1000.0,2000.0,1800.0,0.0,0.0
+08-31-26,212,Choppadandi,1123,Choppadandi,16,Green Gram,16,Common,0.0,9.0,5555.0,7387.0,6826.0,0.0,0.0
+08-31-26,212,Choppadandi,1123,Choppadandi,5,Maize,5,Common,0.0,10.0,1501.0,2311.0,2311.0,0.0,0.0
+08-31-26,212,Choppadandi,1123,Choppadandi,1,Paddy,237,Grade-A(IR64),0.0,37.0,2206.0,2212.0,2206.0,0.0,0.0
+08-20-26,212,Choppadandi,1123,Choppadandi,15,Red Gram,229,Hybrid,0.0,2.0,5252.0,5252.0,5252.0,0.0,0.0
+08-19-26,301,Devarakadra,1352,Devarakadra,55,Onions,55,Common,0.0,53.0,2410.0,4000.0,3205.0,0.0,0.0
+08-31-26,282,Dubbaka,1215,Dubbak,1,Paddy,237,Grade-A(IR64),0.0,251.15,2400.0,2400.0,2400.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,97,Apple,97,Common,0.0,1613.0,4000.0,30000.0,15000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,198,Arati-Green Plantain,203,Common,0.0,12.0,2000.0,3000.0,2500.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,80,Banana,80,Common,0.0,4.0,2000.0,2250.0,2000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,101,Beet Root,101,Common,0.0,12.0,2000.0,3000.0,2500.0,0.0,0.0
+08-29-26,323,Gaddiannaram,1,Gaddiannaram,91,Ber,91,Common,0.0,10.0,1600.0,1600.0,1600.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,125,Bitter Gourd,125,Common,0.0,25.0,1500.0,2500.0,2000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,122,Bottle Gourd,122,Common,0.0,176.0,400.0,800.0,600.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,111,Brinjal,111,Common,0.0,54.0,1000.0,1500.0,1200.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,98,Cabbage,98,Common,0.0,94.0,800.0,1200.0,1000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,199,Capsicum,204,Common,0.0,35.0,2500.0,3500.0,3000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,103,Carrot,103,Common,0.0,32.0,3000.0,5000.0,4000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,99,Cauliflower,99,Common,0.0,71.0,1500.0,2500.0,2000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,117,Cluster Beans,117,Common,0.0,18.0,1500.0,2500.0,2000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,106,ColaCasio(Arvi),106,Common,0.0,6.0,2000.0,3000.0,2500.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,129,Cucumber,129,Common,0.0,180.0,800.0,1200.0,1000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,92,Custard apple,92,Common,0.0,32.0,2500.0,6250.0,3100.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,155,Donda,155,Common,0.0,60.0,1000.0,2000.0,1500.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,130,Drumstick,130,Common,0.0,29.0,2000.0,2500.0,2200.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,118,Field Beans,118,Common,0.0,26.0,3000.0,4000.0,3500.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,116,French Beans,116,Common,0.0,11.0,4000.0,6000.0,5000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,81,Grapes,81,Common,0.0,5.0,16000.0,26000.0,20000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,113,Green Chillies,113,Common,0.0,282.0,2000.0,3000.0,2500.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,90,Guava,90,Common,0.0,274.0,2000.0,8000.0,3300.0,0.0,0.0
+08-22-26,323,Gaddiannaram,1,Gaddiannaram,88,Jack fruit,88,Common,0.0,25.0,800.0,4000.0,1600.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,112,Ladys Finger,112,Common,0.0,80.0,1000.0,1500.0,1200.0,0.0,0.0
+08-29-26,323,Gaddiannaram,1,Gaddiannaram,76,Mango,294,Rasalu,0.0,3.0,2000.0,6000.0,3000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,77,Mosambi,77,Common,0.0,5927.0,1000.0,3100.0,1700.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,85,Musk Melon,85,Common,0.0,1012.0,400.0,1200.0,600.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,201,Nashpati(Pear),207,Common,0.0,5.0,2650.0,6650.0,4000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,79,Orange,79,Common,0.0,90.0,8000.0,20000.0,12000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,89,Papaya,89,Common,0.0,506.0,2000.0,5800.0,2100.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,87,Pine apple,87,Common,0.0,473.0,480.0,4480.0,640.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,202,Plum(Aloobukara),206,Common,0.0,10.0,6250.0,8750.0,7500.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,82,Pomegrenates,82,Common,0.0,3122.0,1000.0,12000.0,3000.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,105,Potato,105,Common,0.0,141.0,1000.0,1500.0,1200.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,128,Pumpkin,128,Common,0.0,53.0,1000.0,1500.0,1200.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,123,Ribbed Gourd,123,Common,0.0,65.0,2000.0,3000.0,2500.0,0.0,0.0
+08-25-26,323,Gaddiannaram,1,Gaddiannaram,84,Sapota,84,Common,0.0,6.0,2000.0,2000.0,2000.0,0.0,0.0
+08-26-26,323,Gaddiannaram,2,L.B Nagar,121,Snake Gourd,121,Common,0.0,3.0,1500.0,1500.0,1500.0,0.0,0.0
+08-18-26,323,Gaddiannaram,2,L.B Nagar,107,Sweet Potato,107,Common,0.0,12.0,2000.0,2500.0,2200.0,0.0,0.0
+08-31-26,323,Gaddiannaram,2,L.B Nagar,114,Tomato,114,Common,0.0,640.0,800.0,1600.0,1200.0,0.0,0.0
+08-31-26,323,Gaddiannaram,1,Gaddiannaram,86,Water Melon,86,Common,0.0,1928.0,200.0,500.0,400.0,0.0,0.0
+08-29-26,302,Gadwal,1328,Gadwal,31,Castor,31,Common,0.0,2.0,6079.0,6079.0,6079.0,0.0,0.0
+08-31-26,302,Gadwal,1328,Gadwal,30,Groundnut pods,30,Common,0.0,210.0,5369.0,7709.0,6769.0,0.0,0.0
+08-08-26,302,Gadwal,1328,Gadwal,1,Paddy,272,Grade-A (Sonamasuri),0.0,1.0,3219.0,3219.0,3219.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,198,Arati-Green Plantain,203,Common,0.0,26.0,1000.0,2500.0,1500.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,101,Beet Root,101,Common,0.0,56.0,1600.0,2000.0,1800.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,125,Bitter Gourd,125,Common,0.0,135.0,1500.0,2500.0,2000.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,122,Bottle Gourd,122,Common,0.0,135.0,1500.0,2500.0,2000.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,111,Brinjal,279,Round,0.0,220.0,600.0,1200.0,900.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,98,Cabbage,98,Common,0.0,385.0,800.0,1000.0,900.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,199,Capsicum,204,Common,0.0,161.0,1000.0,2500.0,1500.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,103,Carrot,103,Common,0.0,225.0,1800.0,3500.0,2400.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,99,Cauliflower,99,Common,0.0,172.0,1000.0,3000.0,2000.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,200,ChowChow,205,Common,0.0,2.0,2000.0,2000.0,2000.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,117,Cluster Beans,117,Common,0.0,114.0,2000.0,2500.0,2200.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,106,ColaCasio(Arvi),106,Common,0.0,29.0,2000.0,2500.0,2200.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,129,Cucumber,129,Common,0.0,75.0,800.0,1000.0,900.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,155,Donda,155,Common,0.0,125.0,1000.0,1800.0,1400.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,130,Drumstick,130,Common,0.0,79.0,2000.0,3500.0,2500.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,118,Field Beans,118,Common,0.0,152.0,1500.0,3500.0,2000.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,116,French Beans,116,Common,0.0,152.0,1500.0,3500.0,2000.0,0.0,0.0
+08-06-26,367,Gudimalkapur,1571,Gudumalkapur,212,Gajar,211,Common,0.0,1.0,2000.0,2000.0,2000.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,113,Green Chillies,113,Common,0.0,600.0,1800.0,3000.0,2400.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,197,Green Mangos,202,Common,0.0,16.0,2000.0,3000.0,2500.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,110,Green Onion,110,Common,0.0,1.0,2000.0,2000.0,2000.0,0.0,0.0
+08-16-26,367,Gudimalkapur,1571,Gudumalkapur,115,Green Peas,115,Common,0.0,7.0,7000.0,9000.0,8000.0,0.0,0.0
+08-29-26,367,Gudimalkapur,1571,Gudumalkapur,147,Green Tamarind,147,Common,0.0,4.0,3000.0,5000.0,4000.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,127,Kheera,127,Common,0.0,324.0,1400.0,2000.0,1600.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,112,Ladys Finger,112,Common,0.0,404.0,1200.0,1800.0,1400.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,195,Lobha,199,Common,0.0,11.0,1000.0,1500.0,1200.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,55,Onions,55,Common,0.0,261.0,1000.0,4500.0,1200.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,105,Potato,105,Common,0.0,547.0,1300.0,1900.0,1500.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,128,Pumpkin,128,Common,0.0,62.0,800.0,1000.0,900.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,102,Radish,102,Common,0.0,19.0,1000.0,1500.0,1200.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,123,Ribbed Gourd,123,Common,0.0,241.0,1000.0,2000.0,1500.0,0.0,0.0
+08-16-26,367,Gudimalkapur,1571,Gudumalkapur,213,Salgam,212,Common,0.0,1.0,2000.0,2000.0,2000.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,121,Snake Gourd,121,Common,0.0,4.0,1600.0,2000.0,1800.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,107,Sweet Potato,107,Common,0.0,11.0,2000.0,2500.0,2200.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,114,Tomato,114,Common,0.0,2148.0,1000.0,2000.0,1200.0,0.0,0.0
+08-31-26,367,Gudimalkapur,1571,Gudumalkapur,108,Yam,108,Common,0.0,4.0,1500.0,2500.0,2000.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,101,Beet Root,101,Common,0.0,3.0,2300.0,2500.0,2400.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,125,Bitter Gourd,125,Common,0.0,5.0,2500.0,3000.0,2750.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,122,Bottle Gourd,122,Common,0.0,22.0,200.0,400.0,300.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,122,Bottle Gourd,122,Common,0.0,8.0,300.0,500.0,400.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,111,Brinjal,111,Common,0.0,5.0,1500.0,2000.0,1750.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,111,Brinjal,111,Common,0.0,35.0,1350.0,1350.0,1350.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,98,Cabbage,98,Common,0.0,7.0,1500.0,1500.0,1500.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,98,Cabbage,98,Common,0.0,25.0,1200.0,1200.0,1200.0,0.0,0.0
+08-30-26,325,Hyderabad,6,Madannapeta,199,Capsicum,204,Common,0.0,2.0,2500.0,2500.0,2500.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,103,Carrot,103,Common,0.0,3.0,3000.0,3500.0,3250.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,103,Carrot,103,Common,0.0,9.0,3000.0,3500.0,3250.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,99,Cauliflower,99,Common,0.0,9.0,3000.0,3000.0,3000.0,0.0,0.0
+08-30-26,325,Hyderabad,6,Madannapeta,99,Cauliflower,99,Common,0.0,9.0,2000.0,3000.0,2500.0,0.0,0.0
+08-31-26,325,Hyderabad,5,Mahabubmansion,54,Chillies(Dry),268,Talu,0.0,108.0,8000.0,13000.0,11000.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,117,Cluster Beans,117,Common,0.0,16.0,2500.0,3000.0,2750.0,0.0,0.0
+08-30-26,325,Hyderabad,6,Madannapeta,106,ColaCasio(Arvi),106,Common,0.0,5.0,2000.0,2000.0,2000.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,129,Cucumber,129,Common,0.0,13.0,1500.0,1500.0,1500.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,155,Donda,155,Common,0.0,10.0,2000.0,2500.0,2250.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,155,Donda,155,Common,0.0,3.0,2500.0,3000.0,2750.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,118,Field Beans,118,Common,0.0,4.0,3000.0,3000.0,3000.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,116,French Beans,116,Common,0.0,6.0,7000.0,7000.0,7000.0,0.0,0.0
+08-31-26,325,Hyderabad,5,Mahabubmansion,56,Garlic,56,Common,0.0,226.0,6000.0,18000.0,11000.0,0.0,0.0
+08-31-26,325,Hyderabad,5,Mahabubmansion,62,Ginger,62,Common,0.0,226.0,4500.0,8000.0,7000.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,113,Green Chillies,113,Common,0.0,6.0,3000.0,3500.0,3250.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,113,Green Chillies,113,Common,0.0,45.0,3000.0,3000.0,3000.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,127,Kheera,127,Common,0.0,4.0,1800.0,2000.0,1900.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,127,Kheera,127,Common,0.0,5.0,2000.0,2000.0,2000.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,112,Ladys Finger,112,Common,0.0,3.0,2000.0,2500.0,2250.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,112,Ladys Finger,112,Common,0.0,31.0,1000.0,2000.0,1500.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,151,Lemon,151,Common,0.0,231.0,1200.0,8800.0,5000.0,0.0,0.0
+08-31-26,325,Hyderabad,5,Mahabubmansion,55,Onions,217,No.I,0.0,3551.0,3000.0,4300.0,3600.0,0.0,0.0
+08-29-26,325,Hyderabad,7,Meeralamandi,105,Potato,105,Common,0.0,38.0,1200.0,1200.0,1200.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,105,Potato,105,Common,0.0,5.0,1200.0,1200.0,1200.0,0.0,0.0
+08-31-26,325,Hyderabad,5,Mahabubmansion,105,Potato,105,Common,0.0,157.0,1900.0,1900.0,1900.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,123,Ribbed Gourd,123,Common,0.0,3.0,3500.0,3500.0,3500.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,123,Ribbed Gourd,123,Common,0.0,22.0,1500.0,2500.0,2000.0,0.0,0.0
+08-31-26,325,Hyderabad,5,Mahabubmansion,68,Tamarind,221,No.I,0.0,65.0,9500.0,12000.0,1000.0,0.0,0.0
+08-31-26,325,Hyderabad,7,Meeralamandi,114,Tomato,114,Common,0.0,21.0,2000.0,2400.0,2200.0,0.0,0.0
+08-31-26,325,Hyderabad,6,Madannapeta,114,Tomato,114,Common,0.0,157.0,1200.0,2000.0,1600.0,0.0,0.0
+08-25-26,325,Hyderabad,5,Mahabubmansion,57,Tumeric,57,Common,0.0,5.0,12000.0,15000.0,14000.0,0.0,0.0
+08-13-26,219,Jagtial,1125,Jagtial,16,Green Gram,16,Common,0.0,2.0,7811.0,7811.0,7811.0,0.0,0.0
+08-13-26,219,Jagtial,1125,Jagtial,1,Paddy,241,Grade-A (Jai Sri Ram),0.0,1.0,2411.0,2411.0,2411.0,0.0,0.0
+08-12-26,192,Jainath,26,Jainath,77,Mosambi,77,Common,0.0,170.0,1400.0,1500.0,1300.0,0.0,0.0
+08-25-26,192,Jainath,26,Jainath,89,Papaya,89,Common,0.0,170.0,2100.0,2000.0,2200.0,0.0,0.0
+08-31-26,221,Jammikunta,36,Jammikunta,25,Cotton,25,Common,0.0,12.0,5500.0,8800.0,8400.0,0.0,0.0
+08-11-26,284,Jogipet,1208,Jogipet,6,Jowar,225,White,0.0,45.0,2250.0,2300.0,4550.0,0.0,0.0
+08-31-26,303,Kalwakurthy,1340,Kalwakurthy,125,Bitter Gourd,125,Common,0.0,3.0,1000.0,2000.0,1500.0,0.0,0.0
+08-31-26,303,Kalwakurthy,1340,Kalwakurthy,111,Brinjal,111,Common,0.0,5.0,500.0,1500.0,1000.0,0.0,0.0
+08-23-26,303,Kalwakurthy,1340,Kalwakurthy,98,Cabbage,98,Common,0.0,2.0,2000.0,2000.0,2000.0,0.0,0.0
+08-31-26,303,Kalwakurthy,1340,Kalwakurthy,117,Cluster Beans,117,Common,0.0,2.0,1000.0,1500.0,1250.0,0.0,0.0
+08-31-26,303,Kalwakurthy,1340,Kalwakurthy,129,Cucumber,129,Common,0.0,6.0,400.0,600.0,500.0,0.0,0.0
+08-24-26,303,Kalwakurthy,1340,Kalwakurthy,155,Donda,155,Common,0.0,1.0,2000.0,2000.0,2000.0,0.0,0.0
+08-31-26,303,Kalwakurthy,1340,Kalwakurthy,113,Green Chillies,113,Common,0.0,11.0,2000.0,3500.0,2750.0,0.0,0.0
+08-31-26,303,Kalwakurthy,1340,Kalwakurthy,112,Ladys Finger,112,Common,0.0,3.0,1000.0,1500.0,1250.0,0.0,0.0
+08-29-26,303,Kalwakurthy,1340,Kalwakurthy,105,Potato,105,Common,0.0,1.0,1600.0,1600.0,1600.0,0.0,0.0
+08-31-26,303,Kalwakurthy,1340,Kalwakurthy,123,Ribbed Gourd,123,Common,0.0,2.0,1000.0,2500.0,1750.0,0.0,0.0
+08-31-26,303,Kalwakurthy,1340,Kalwakurthy,114,Tomato,197,Local,0.0,76.0,400.0,1200.0,800.0,0.0,0.0
+08-19-26,239,Kesamudram,1168,Kesamudram,25,Cotton,25,Common,0.0,4.0,4222.0,8851.0,8169.0,0.0,0.0
+08-19-26,239,Kesamudram,1168,Kesamudram,16,Green Gram,16,Common,0.0,7.0,6616.0,6616.0,6616.0,0.0,0.0
+08-17-26,239,Kesamudram,1168,Kesamudram,30,Groundnut pods,30,Common,0.0,18.0,4669.0,4669.0,4669.0,0.0,0.0
+08-19-26,239,Kesamudram,1168,Kesamudram,5,Maize,5,Common,0.0,22.0,2303.0,2404.0,2404.0,0.0,0.0
+08-19-26,239,Kesamudram,1168,Kesamudram,1,Paddy,256,Grade-A (RNR),0.0,451.0,2404.0,4455.0,3599.0,0.0,0.0
+08-19-26,239,Kesamudram,1168,Kesamudram,15,Red Gram,15,Common,0.0,1.0,7155.0,7155.0,7155.0,0.0,0.0
+08-19-26,239,Kesamudram,1168,Kesamudram,57,Tumeric,227,Finger,0.0,36.0,10899.0,15079.0,13856.0,0.0,0.0
+08-21-26,256,Khammam,1067,Khammam,17,Black Gram,17,Common,0.0,1.0,7611.0,7611.0,7611.0,0.0,0.0
+08-31-26,256,Khammam,1067,Khammam,54,Chillies(Dry),250,Teja,0.0,514.0,13000.0,16500.0,15000.0,0.0,0.0
+08-31-26,256,Khammam,1067,Khammam,25,Cotton,25,Common,0.0,226.0,6300.0,9250.0,7700.0,0.0,0.0
+08-19-26,256,Khammam,1067,Khammam,22,Cowpea,22,Common,0.0,9.0,6350.0,6350.0,6350.0,0.0,0.0
+08-31-26,256,Khammam,1067,Khammam,16,Green Gram,16,Common,0.0,796.0,4000.0,6550.0,6450.0,0.0,0.0
+08-25-26,256,Khammam,1067,Khammam,5,Maize,5,Common,0.0,11.0,1750.0,1900.0,1900.0,0.0,0.0
+08-21-26,256,Khammam,1067,Khammam,15,Red Gram,15,Common,0.0,2.0,7551.0,7551.0,7551.0,0.0,0.0
+08-25-26,241,Mahabubabad,1177,Mahabubabad,17,Black Gram,17,Common,0.0,1.0,3350.0,3350.0,3350.0,0.0,0.0
+08-31-26,241,Mahabubabad,1177,Mahabubabad,25,Cotton,25,Common,0.0,15.0,5252.0,8618.0,8618.0,0.0,0.0
+08-25-26,241,Mahabubabad,1177,Mahabubabad,16,Green Gram,16,Common,0.0,4.0,5400.0,5400.0,5400.0,0.0,0.0
+08-13-26,241,Mahabubabad,1177,Mahabubabad,5,Maize,5,Common,0.0,10.0,2433.0,2433.0,2433.0,0.0,0.0
+08-31-26,241,Mahabubabad,1177,Mahabubabad,1,Paddy,241,Grade-A (Jai Sri Ram),0.0,5.0,3550.0,4402.0,3550.0,0.0,0.0
+08-25-26,241,Mahabubabad,1177,Mahabubabad,15,Red Gram,15,Common,0.0,2.0,4011.0,6450.0,6450.0,0.0,0.0
+08-31-26,306,Mahbubnagar,1326,Mahaboobnagar,30,Groundnut pods,30,Common,0.0,5.0,7229.0,7229.0,7229.0,0.0,0.0
+08-20-26,308,Nagarkurnool,1334,Nagarkurnool,17,Black Gram,17,Common,0.0,35.0,6430.0,6430.0,6430.0,0.0,0.0
+08-31-26,309,Narayanpet,1342,Narayanpet,22,Cowpea,22,Common,0.0,5.88,5901.0,7051.0,7051.0,0.0,0.0
+08-31-26,309,Narayanpet,1342,Narayanpet,16,Green Gram,16,Common,0.0,244.02,4009.0,9229.0,6456.0,0.0,0.0
+08-19-26,309,Narayanpet,1342,Narayanpet,6,Jowar,225,White,0.0,1.96,5350.0,5350.0,5350.0,0.0,0.0
+08-03-26,208,Nizamabad,1080,Nizamabad,220,Bazra,246,common,0.0,6.0,1955.0,1955.0,1955.0,0.0,0.0
+08-27-26,208,Nizamabad,1080,Nizamabad,32,Gingelly,223,White,0.0,3.0,12450.0,12450.0,12450.0,0.0,0.0
+08-03-26,208,Nizamabad,1080,Nizamabad,18,Horse Gram,18,Common,0.0,5.0,4450.0,4450.0,4450.0,0.0,0.0
+08-24-26,208,Nizamabad,1080,Nizamabad,5,Maize,215,Hybrid New,0.0,26.0,1465.0,1465.0,1465.0,0.0,0.0
+08-30-26,208,Nizamabad,1080,Nizamabad,1,Paddy,241,Grade-A (Jai Sri Ram),0.0,1.0,2300.0,2300.0,2300.0,0.0,0.0
+08-24-26,208,Nizamabad,1080,Nizamabad,75,Soyabean,213,White,0.0,2.0,4536.0,4536.0,4536.0,0.0,0.0
+08-25-26,208,Nizamabad,1080,Nizamabad,57,Tumeric,227,Finger,0.0,803.0,9000.0,19511.0,14600.0,0.0,0.0
+08-20-26,208,Nizamabad,1080,Nizamabad,217,mustard,284,Common,0.0,3.0,5115.0,5115.0,5115.0,0.0,0.0
+08-31-26,310,Shadnagar,1330,Shadnagar,125,Bitter Gourd,125,Common,0.0,15.0,2400.0,2600.0,2500.0,0.0,0.0
+08-31-26,310,Shadnagar,1330,Shadnagar,111,Brinjal,111,Common,0.0,20.0,1200.0,1600.0,1400.0,0.0,0.0
+08-31-26,310,Shadnagar,1330,Shadnagar,98,Cabbage,98,Common,0.0,15.0,1600.0,1900.0,1700.0,0.0,0.0
+08-31-26,310,Shadnagar,1330,Shadnagar,103,Carrot,103,Common,0.0,14.0,1800.0,2200.0,1900.0,0.0,0.0
+08-31-26,310,Shadnagar,1330,Shadnagar,117,Cluster Beans,117,Common,0.0,14.0,2500.0,2800.0,2600.0,0.0,0.0
+08-31-26,310,Shadnagar,1330,Shadnagar,113,Green Chillies,113,Common,0.0,25.0,2500.0,2800.0,2600.0,0.0,0.0
+08-31-26,310,Shadnagar,1330,Shadnagar,112,Ladys Finger,112,Common,0.0,15.0,2200.0,2600.0,2400.0,0.0,0.0
+08-31-26,310,Shadnagar,1330,Shadnagar,123,Ribbed Gourd,123,Common,0.0,12.0,2200.0,2600.0,2400.0,0.0,0.0
+08-31-26,310,Shadnagar,1330,Shadnagar,114,Tomato,197,Local,0.0,15.0,1400.0,1600.0,1500.0,0.0,0.0
+08-29-26,278,Suryapet,1091,Suryapet,17,Black Gram,17,Common,0.0,1.0,4828.0,4828.0,4828.0,0.0,0.0
+08-31-26,278,Suryapet,1091,Suryapet,22,Cowpea,22,Common,0.0,2.0,2226.0,2226.0,2226.0,0.0,0.0
+08-31-26,278,Suryapet,1091,Suryapet,16,Green Gram,16,Common,0.0,79.0,3893.0,6799.0,6799.0,0.0,0.0
+08-31-26,278,Suryapet,1091,Suryapet,30,Groundnut pods,30,Common,0.0,1.0,6859.0,6859.0,6859.0,0.0,0.0
+08-29-26,278,Suryapet,1091,Suryapet,18,Horse Gram,18,Common,0.0,1.0,4802.0,4802.0,4802.0,0.0,0.0
+08-31-26,278,Suryapet,1091,Suryapet,5,Maize,5,Common,0.0,2.0,1742.0,1742.0,1742.0,0.0,0.0
+08-31-26,278,Suryapet,1091,Suryapet,1,Paddy,195,Grade-A,0.0,10.0,2661.0,2661.0,2661.0,0.0,0.0
+08-31-26,278,Suryapet,1091,Suryapet,15,Red Gram,15,Common,0.0,10.0,6894.0,7943.0,7754.0,0.0,0.0
+08-29-26,320,Tandur,37,Tandur,17,Black Gram,17,Common,0.0,1.0,8501.0,8501.0,8501.0,0.0,0.0
+08-27-26,320,Tandur,37,Tandur,168,Cattle(All),168,Common,0.0,32.0,15000.0,50000.0,30000.0,0.0,0.0
+08-31-26,320,Tandur,37,Tandur,16,Green Gram,16,Common,0.0,608.0,6003.0,8199.0,7155.0,0.0,0.0
+08-31-26,320,Tandur,37,Tandur,15,Red Gram,15,Common,0.0,150.0,8276.0,8415.0,8289.0,0.0,0.0
+08-27-26,279,Thirumalagiri,9,Tirmalagiri,17,Black Gram,17,Common,0.0,2.0,6512.0,6512.0,6512.0,0.0,0.0
+08-29-26,279,Thirumalagiri,9,Tirmalagiri,16,Green Gram,16,Common,0.0,8.0,5661.0,7511.0,7511.0,0.0,0.0
+08-27-26,279,Thirumalagiri,9,Tirmalagiri,5,Maize,5,Common,0.0,2.0,2010.0,2010.0,2010.0,0.0,0.0
+08-29-26,279,Thirumalagiri,9,Tirmalagiri,1,Paddy,237,Grade-A(IR64),0.0,45.0,2169.0,2169.0,2169.0,0.0,0.0
+08-29-26,279,Thirumalagiri,9,Tirmalagiri,15,Red Gram,15,Common,0.0,3.0,7422.0,7422.0,7422.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,125,Bitter Gourd,125,Common,0.0,9.0,1000.0,1500.0,1250.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,122,Bottle Gourd,122,Common,0.0,6.0,500.0,500.0,500.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,111,Brinjal,111,Common,0.0,32.0,1500.0,2000.0,1750.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,98,Cabbage,98,Common,0.0,43.0,500.0,800.0,650.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,199,Capsicum,204,Common,0.0,6.0,1000.0,1000.0,1000.0,0.0,0.0
+08-29-26,331,Vantimamidi,1612,Vantimamidi,103,Carrot,103,Common,0.0,8.0,500.0,500.0,500.0,0.0,0.0
+08-05-26,331,Vantimamidi,1612,Vantimamidi,117,Cluster Beans,117,Common,0.0,1.0,2000.0,2000.0,2000.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,155,Donda,155,Common,0.0,15.0,800.0,1500.0,1150.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,118,Field Beans,118,Common,0.0,8.0,1800.0,2500.0,2150.0,0.0,0.0
+08-27-26,331,Vantimamidi,1612,Vantimamidi,113,Green Chillies,113,Common,0.0,8.0,800.0,1000.0,900.0,0.0,0.0
+08-18-26,331,Vantimamidi,1612,Vantimamidi,110,Green Onion,110,Common,0.0,2.0,2500.0,2500.0,2500.0,0.0,0.0
+08-30-26,331,Vantimamidi,1612,Vantimamidi,30,Groundnut pods,243,Wet,0.0,4.0,3000.0,3000.0,3000.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,127,Kheera,127,Common,0.0,7.0,500.0,500.0,500.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,112,Ladys Finger,112,Common,0.0,13.0,1000.0,1500.0,1250.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,195,Lobha,199,Common,0.0,9.0,800.0,1000.0,900.0,0.0,0.0
+08-30-26,331,Vantimamidi,1612,Vantimamidi,105,Potato,105,Common,0.0,23.0,1000.0,1000.0,1000.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,128,Pumpkin,128,Common,0.0,14.0,600.0,600.0,600.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,123,Ribbed Gourd,123,Common,0.0,15.0,1200.0,1800.0,1500.0,0.0,0.0
+08-31-26,331,Vantimamidi,1612,Vantimamidi,234,Sweet Corn,280,Local,0.0,538.0,600.0,1200.0,900.0,0.0,0.0
+08-30-26,331,Vantimamidi,1612,Vantimamidi,235,Teisel Gourd(Boda Kakarakaya),281,Local,0.0,3.0,7000.0,7000.0,7000.0,0.0,0.0
+08-26-26,331,Vantimamidi,1612,Vantimamidi,114,Tomato,197,Local,0.0,9.0,800.0,800.0,800.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,101,Beet Root,101,Common,0.0,1.0,1500.0,1500.0,1500.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,125,Bitter Gourd,125,Common,0.0,2.0,2000.0,2200.0,2100.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,122,Bottle Gourd,122,Common,0.0,9.0,600.0,1000.0,800.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,111,Brinjal,111,Common,0.0,5.0,1000.0,1200.0,1000.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,98,Cabbage,98,Common,0.0,2.0,1000.0,1200.0,1000.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,103,Carrot,103,Common,0.0,2.0,1800.0,2000.0,1800.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,117,Cluster Beans,117,Common,0.0,1.0,1500.0,1500.0,1500.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,129,Cucumber,129,Common,0.0,5.0,1000.0,1400.0,1300.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,155,Donda,155,Common,0.0,3.0,1000.0,1500.0,1200.0,0.0,0.0
+08-23-26,281,Venkateshwar Nagar,1106,V Nagar,118,Field Beans,118,Common,0.0,2.0,2000.0,2500.0,2200.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,113,Green Chillies,113,Common,0.0,3.0,2500.0,3000.0,2800.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,112,Ladys Finger,112,Common,0.0,4.0,1000.0,1500.0,1200.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,105,Potato,105,Common,0.0,4.0,1600.0,2000.0,1800.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,123,Ribbed Gourd,123,Common,0.0,2.0,2000.0,2200.0,2100.0,0.0,0.0
+08-27-26,281,Venkateshwar Nagar,1106,V Nagar,121,Snake Gourd,121,Common,0.0,1.0,1200.0,1200.0,1200.0,0.0,0.0
+08-29-26,281,Venkateshwar Nagar,1106,V Nagar,114,Tomato,197,Local,0.0,22.0,1000.0,1500.0,1200.0,0.0,0.0
+08-31-26,312,Wanaparthy Town,1344,W.P.Town,30,Groundnut pods,30,Common,0.0,16.0,5200.0,8817.0,7517.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,97,Apple,97,Common,0.0,71.0,8000.0,15000.0,11000.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,80,Banana,80,Common,0.0,32.0,2500.0,2500.0,2500.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,101,Beet Root,101,Common,0.0,15.0,2500.0,3000.0,2750.0,0.0,0.0
+08-27-26,246,Warangal,886,Warangal,14,Bengal Gram,14,Common,0.0,5.52,2522.0,5955.0,5855.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,125,Bitter Gourd,125,Common,0.0,26.0,2500.0,3000.0,2750.0,0.0,0.0
+08-06-26,246,Warangal,886,Warangal,17,Black Gram,17,Common,0.0,3.0,8390.0,8390.0,8390.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,111,Brinjal,111,Common,0.0,28.0,1600.0,2000.0,1800.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,98,Cabbage,98,Common,0.0,24.0,1600.0,2000.0,1800.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,199,Capsicum,204,Common,0.0,10.0,4500.0,5000.0,4750.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,103,Carrot,103,Common,0.0,32.0,4000.0,4500.0,4250.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,99,Cauliflower,99,Common,0.0,30.0,2500.0,3000.0,2750.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,54,Chillies(Dry),250,Teja,0.0,154.0,11000.0,20000.0,17000.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,117,Cluster Beans,117,Common,0.0,2.0,2000.0,2500.0,2250.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,106,ColaCasio(Arvi),106,Common,0.0,5.0,2000.0,2500.0,2250.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,25,Cotton,25,Common,0.0,167.0,7000.0,9230.0,9000.0,0.0,0.0
+08-25-26,246,Warangal,886,Warangal,22,Cowpea,262,Black,0.0,1.6,6052.0,6052.0,6052.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,129,Cucumber,129,Common,0.0,5.0,600.0,800.0,700.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,155,Donda,155,Common,0.0,6.0,2500.0,3000.0,2750.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,118,Field Beans,118,Common,0.0,54.0,3500.0,4000.0,3750.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,116,French Beans,116,Common,0.0,4.0,9500.0,10000.0,9750.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,81,Grapes,296,Black,0.0,24.0,7000.0,7000.0,7000.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,113,Green Chillies,113,Common,0.0,240.0,2500.0,3000.0,2750.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,16,Green Gram,16,Common,0.0,28.13,5750.0,6452.0,6252.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,30,Groundnut pods,30,Common,0.0,94.13,3200.0,7980.0,5300.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,90,Guava,90,Common,0.0,13.5,8000.0,8000.0,8000.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,127,Kheera,127,Common,0.0,20.0,1600.0,2000.0,1800.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,112,Ladys Finger,112,Common,0.0,28.0,600.0,800.0,700.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,5,Maize,5,Common,0.0,21.8,2216.0,2550.0,2321.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,77,Mosambi,77,Common,0.0,70.0,1000.0,2000.0,1400.0,0.0,0.0
+08-26-26,246,Warangal,886,Warangal,85,Musk Melon,85,Common,0.0,5.0,3000.0,3000.0,3000.0,0.0,0.0
+08-30-26,246,Warangal,886,Warangal,89,Papaya,89,Common,0.0,30.0,2000.0,2000.0,2000.0,0.0,0.0
+08-30-26,246,Warangal,886,Warangal,87,Pine apple,87,Common,0.0,10.0,4000.0,4000.0,4000.0,0.0,0.0
+08-10-26,246,Warangal,886,Warangal,202,Plum(Aloobukara),206,Common,0.0,26.0,10000.0,10000.0,10000.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,82,Pomegrenates,82,Common,0.0,41.0,6000.0,13000.0,10000.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,105,Potato,105,Common,0.0,28.0,1500.0,2000.0,1750.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,15,Red Gram,15,Common,0.0,4.35,7602.0,7602.0,7602.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,123,Ribbed Gourd,123,Common,0.0,18.0,2000.0,2500.0,2250.0,0.0,0.0
+08-21-26,246,Warangal,886,Warangal,26,Sunnhemp,26,Common,0.0,1.99,11875.0,11875.0,11875.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,114,Tomato,197,Local,0.0,200.0,1500.0,2000.0,1750.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,57,Tumeric,227,Finger,0.0,78.44,12179.0,15579.0,14500.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,86,Water Melon,86,Common,0.0,30.0,2000.0,2000.0,2000.0,0.0,0.0
+08-31-26,246,Warangal,886,Warangal,108,Yam,108,Common,0.0,1.0,4000.0,4500.0,4250.0,0.0,0.0
+08-27-26,292,Zaheerabad,1198,Zaheerabad,14,Bengal Gram,14,Common,0.0,3.0,6050.0,6053.0,6050.0,0.0,0.0
+08-31-26,292,Zaheerabad,1198,Zaheerabad,17,Black Gram,17,Common,0.0,9.0,8366.0,8366.0,8366.0,0.0,0.0
+08-31-26,292,Zaheerabad,1198,Zaheerabad,16,Green Gram,16,Common,0.0,130.0,6550.0,9011.0,7259.0,0.0,0.0
+08-31-26,292,Zaheerabad,1198,Zaheerabad,6,Jowar,225,White,0.0,1.0,2353.0,2353.0,2353.0,0.0,0.0
+08-31-26,292,Zaheerabad,1198,Zaheerabad,5,Maize,5,Common,0.0,1.0,2364.0,2364.0,2364.0,0.0,0.0
+08-31-26,292,Zaheerabad,1198,Zaheerabad,15,Red Gram,233,White,0.0,3.0,5613.0,7911.0,5613.0,0.0,0.0
+08-31-26,292,Zaheerabad,1198,Zaheerabad,34,Safflower,34,Common,0.0,4.5,5350.0,5350.0,5350.0,0.0,0.0
+08-31-26,292,Zaheerabad,1198,Zaheerabad,75,Soyabean,213,White,0.0,7.5,6062.0,6092.0,6092.0,0.0,0.0
+08-07-26,292,Zaheerabad,1198,Zaheerabad,3,Wheat,3,Common,0.0,4.0,2113.0,2436.0,2388.0,0.0,0.0

@@ -88,7 +88,7 @@ export async function optimizeSellingOpportunity(input) {
       level: level.level,
       radiusKm: level.radiusKm,
       candidatesReturned: candidates.length,
-      liveDataUsed: candidates.some((x) => String(x.source).includes('data.gov.in')),
+      liveDataUsed: candidates.some((x) => String(x.source).includes('commodityonline')),
       liveDataError: liveRefresh.liveError,
       evaluatedCount: allEvaluated.size + buyerEvaluated.length,
       bestOpportunity: best?.name,
