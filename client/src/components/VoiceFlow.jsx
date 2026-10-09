@@ -173,10 +173,10 @@ const LANG_DATA = {
     restart: 'Start New Voice Search',
     edit: 'Edit Details',
     crops: [
+      { id: 'Chilli', label: '🌶️ Chilli' },
+      { id: 'Potato', label: '🥔 Potato' },
       { id: 'Tomato', label: '🍅 Tomato' },
       { id: 'Onion', label: '🧅 Onion' },
-      { id: 'Potato', label: '🥔 Potato' },
-      { id: 'Chilli', label: '🌶️ Chilli' },
       { id: 'Cotton', label: '🌾 Cotton' }
     ],
     quantities: [
@@ -186,6 +186,7 @@ const LANG_DATA = {
       { val: 10000, label: '10,000 kg (10 Tons)' }
     ],
     locations: [
+      { name: 'Balapur', label: 'Hyderabad (Balapur)', lat: 17.3117, lng: 78.5146 },
       { name: 'Nalgonda', label: 'Nalgonda', lat: 17.05, lng: 79.27 },
       { name: 'Suryapet', label: 'Suryapet', lat: 17.14, lng: 79.62 },
       { name: 'Miryalaguda', label: 'Miryalaguda', lat: 16.87, lng: 79.56 },
@@ -924,6 +925,15 @@ export default function VoiceFlow({ onSwitchToManual }) {
         if (location) {
           selectLocation(location.name, location.lat, location.lng);
           return;
+        } else {
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(parsed.locationText + ', Telangana, India')}`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+              selectLocation(parsed.locationText, parseFloat(data[0].lat), parseFloat(data[0].lon));
+              return;
+            }
+          } catch(e) {}
         }
       }
 
@@ -935,17 +945,36 @@ export default function VoiceFlow({ onSwitchToManual }) {
 
       // MULTI-FIELD SENTENCE SHORTCUT: User said multiple harvest details in one sentence
       if (parsed.crop && parsed.quantityKg && parsed.locationText) {
+        let locationName = parsed.locationText;
+        let finalLat = 17.05;
+        let finalLng = 79.27;
+
         const location = t.locations.find((item) =>
           item.name.toLowerCase().includes(parsed.locationText.toLowerCase())
-        ) || { name: parsed.locationText, lat: 17.05, lng: 79.27 };
+        );
+        
+        if (location) {
+          locationName = location.name;
+          finalLat = location.lat;
+          finalLng = location.lng;
+        } else {
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(parsed.locationText + ', Telangana, India')}`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+              finalLat = parseFloat(data[0].lat);
+              finalLng = parseFloat(data[0].lon);
+            }
+          } catch(e) {}
+        }
 
         setAnswers(prev => ({
           ...prev,
           crop: parsed.crop,
           quantityKg: Number(parsed.quantityKg),
-          locationText: location.name,
-          latitude: location.lat,
-          longitude: location.lng,
+          locationText: locationName,
+          latitude: finalLat,
+          longitude: finalLng,
           hasTransport: typeof parsed.hasTransport === 'boolean' ? parsed.hasTransport : false
         }));
 
@@ -1501,7 +1530,13 @@ export default function VoiceFlow({ onSwitchToManual }) {
 
                     {/* AI Explanation Box */}
                     <div className={`winner-speech-text ${isLoss ? 'is-loss' : ''}`}>
-                      <p>{result.explanation}</p>
+                      <p>
+                        {(result.explanation || '').split(/(\*\*.*?\*\*)/g).map((part, idx) => 
+                          part.startsWith('**') && part.endsWith('**') 
+                            ? <strong key={idx}>{part.slice(2, -2)}</strong> 
+                            : part
+                        )}
+                      </p>
                     </div>
 
                     {/* Dedicated Farmer Advisory Callout when net realization is negative */}

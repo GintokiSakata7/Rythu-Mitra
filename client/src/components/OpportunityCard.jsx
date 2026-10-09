@@ -5,9 +5,22 @@ const money = (n) => `₹${Math.round(n || 0).toLocaleString('en-IN')}`;
 export default function OpportunityCard({ opportunity, highlight = false }) {
   if (!opportunity) return null;
   const isLoss = (opportunity.netRealization ?? 0) < 0;
+  const handleCardClick = () => {
+    if (window.confirm(`Are you sure you want to go with ${opportunity.name}?`)) {
+      if (opportunity.latitude && opportunity.longitude) {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${opportunity.latitude},${opportunity.longitude}`, '_blank');
+      } else {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(opportunity.name + ' ' + (opportunity.district || opportunity.city || ''))}`, '_blank');
+      }
+    }
+  };
 
   return (
-    <article className={`opportunity-card ${highlight ? 'highlight' : ''} ${isLoss ? 'is-loss' : ''}`}>
+    <article 
+      className={`opportunity-card ${highlight ? 'highlight' : ''} ${isLoss ? 'is-loss' : ''}`}
+      onClick={handleCardClick}
+      style={{ cursor: 'pointer' }}
+    >
       <div className="opp-head">
         <div>
           <div className="opp-tag">

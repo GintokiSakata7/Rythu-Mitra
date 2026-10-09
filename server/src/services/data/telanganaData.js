@@ -236,7 +236,17 @@ export async function getTelanganaCommmodities() {
       set.set(row.commodity, { code: row.commodity, name: row.commodity });
     }
   }
-  return Array.from(set.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const topCrops = ['Chilli', 'Potato', 'Tomato'];
+  return Array.from(set.values()).sort((a, b) => {
+    const idxA = topCrops.indexOf(a.name);
+    const idxB = topCrops.indexOf(b.name);
+    
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    
+    return a.name.localeCompare(b.name);
+  });
 }
 
 /**

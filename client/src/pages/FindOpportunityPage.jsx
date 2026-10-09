@@ -18,7 +18,8 @@ export default function FindOpportunityPage() {
     Nalgonda: { latitude: 17.05, longitude: 79.27 },
     Miryalaguda: { latitude: 16.87, longitude: 79.56 },
     Hyderabad: { latitude: 17.385, longitude: 78.4867 },
-    Suryapet: { latitude: 17.14, longitude: 79.62 }
+    Suryapet: { latitude: 17.14, longitude: 79.62 },
+    Balapur: { latitude: 17.3117, longitude: 78.5146 }
   });
 
   const [commodities, setCommodities] = useState([]);
@@ -111,10 +112,42 @@ export default function FindOpportunityPage() {
     e?.preventDefault();
     setLoading(true);
     setError('');
+
+    let finalLat = form.latitude;
+    let finalLng = form.longitude;
+
+    if (!locations[form.locationText] && (!finalLat || !finalLng)) {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(form.locationText + ', Telangana, India')}`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          finalLat = parseFloat(data[0].lat);
+          finalLng = parseFloat(data[0].lon);
+          setForm(prev => ({ ...prev, latitude: finalLat, longitude: finalLng }));
+        } else {
+          setError(`Could not find coordinates for "${form.locationText}". Please try a different nearby town.`);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Geocoding failed', err);
+        setError('Location search failed. Please try again or use the GPS button.');
+        setLoading(false);
+        return;
+      }
+    } else if (locations[form.locationText]) {
+      finalLat = locations[form.locationText].latitude;
+      finalLng = locations[form.locationText].longitude;
+    } else if (!finalLat) {
+      finalLat = locations.Nalgonda.latitude;
+      finalLng = locations.Nalgonda.longitude;
+    }
+
     try {
       const payload = {
         ...form,
-        ...coordinates,
+        latitude: finalLat,
+        longitude: finalLng,
         quantityKg: Number(form.quantityKg)
       };
       setResult(await api.recommend(payload));
@@ -187,9 +220,10 @@ export default function FindOpportunityPage() {
                     <option key={c.code} value={c.name}>{c.name}</option>
                   )) : (
                     <>
+                      <option value="Chilli">Chilli</option>
+                      <option value="Potato">Potato</option>
                       <option value="Tomato">Tomato</option>
                       <option value="Onion">Onion</option>
-                      <option value="Potato">Potato</option>
                     </>
                   )}
                 </select>
@@ -327,7 +361,13 @@ export default function FindOpportunityPage() {
                             {isLoss ? '⚠️ TRANSPORT LOSS ALERT' : 'BEST OPPORTUNITY'}
                           </div>
                           <h2>{result.recommendation?.companyName || result.recommendation?.name}</h2>
-                          <p>{result.explanation}</p>
+                          <p>
+                            {(result.explanation || '').split(/(\*\*.*?\*\*)/g).map((part, idx) => 
+                              part.startsWith('**') && part.endsWith('**') 
+                                ? <strong key={idx}>{part.slice(2, -2)}</strong> 
+                                : part
+                            )}
+                          </p>
                           {isLoss && (
                             <div className="loss-advisory-pill">
                               💡 <strong>Advisory:</strong> Freight and travel costs exceed crop value for small quantities. Consider selling at farmgate or pooling transit with neighbors.

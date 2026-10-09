@@ -2145,6 +2145,100 @@ button, input, select, textarea {
   background: radial-gradient(circle at 25% 20%, rgba(24, 95, 55, 0.08), transparent 34%), linear-gradient(140deg, #f3f8f4, #eef3ef);
 }
 
+.map-grid-lines {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(#e0eae2 1px, transparent 1px), linear-gradient(90deg, #e0eae2 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.5;
+}
+
+.farm-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+}
+
+.farm-ring {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--text-dark);
+  border-radius: 50%;
+  background: white;
+}
+
+.farm-pin strong {
+  font-size: 10px;
+  color: var(--text-dark);
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  background: white;
+  border: 2px solid var(--text-light);
+  color: var(--text-dark);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.map-pin.best {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: white;
+  transform: translate(-50%, -50%) scale(1.2);
+  z-index: 6;
+}
+
+.map-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.map-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-farm {
+  border: 2px solid var(--text-dark);
+  background: white;
+}
+
+.legend-best {
+  background: var(--brand);
+}
+
+.legend-market {
+  background: white;
+  border: 2px solid var(--text-light);
+}
+
 .bottom-callout {
   background: var(--green);
   color: white;
