@@ -132,7 +132,7 @@ import { supabase, supabaseEnabled } from '../../lib/supabase.js';
  */
 export async function getTelanganaFallbackPrices({ crop = 'Tomato' } = {}) {
   // Try to fetch from the new Supabase table first!
-  if (supabaseEnabled) {
+  if (false) {
     try {
       const { data, error } = await supabase
         .from('telangana_market_prices')
@@ -188,7 +188,7 @@ export async function getTelanganaFallbackPrices({ crop = 'Tomato' } = {}) {
 }
 
 export async function getTelanganaCommmodities() {
-  if (supabaseEnabled) {
+  if (false) {
     try {
       const { data, error } = await supabase.from('telangana_market_prices').select('commodity, CommName');
       if (!error && data) {
