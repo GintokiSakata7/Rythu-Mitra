@@ -1,5 +1,6 @@
 import { supabase, supabaseEnabled } from '../../lib/supabase.js';
 import { hashPassword } from '../../lib/auth.js';
+import { randomUUID } from 'crypto';
 
 // Pre-computed hashes for default test accounts (using hashPassword format)
 const DEFAULT_ADMIN_HASH = hashPassword('Admin@123');
@@ -8,7 +9,7 @@ const DEFAULT_FARMER_HASH = hashPassword('Farmer@123');
 
 const INITIAL_USERS = [
   {
-    id: 'usr-admin-001',
+    id: 'a0000001-0000-0000-0000-000000000001',
     fullName: 'Dr. Rameshwar Rao (APMC Director)',
     email: 'admin@mandimitra.gov.in',
     phone: '+91 98480 12345',
@@ -20,8 +21,8 @@ const INITIAL_USERS = [
     createdAt: new Date().toISOString()
   },
   {
-    id: 'usr-official-001',
-    fullName: 'Sri K. Venkatesham (Bowenpally Mandi Secretary)',
+    id: 'a0000001-0000-0000-0000-000000000002',
+    fullName: 'Sri K. Venkatesham (Bowenpally APMC)',
     email: 'official@bowenpally.mandi.gov.in',
     phone: '+91 98480 23456',
     passwordHash: DEFAULT_OFFICIAL_HASH,
@@ -32,8 +33,8 @@ const INITIAL_USERS = [
     createdAt: new Date().toISOString()
   },
   {
-    id: 'usr-official-002',
-    fullName: 'Smt. Lakshmi Devi (Warangal APMC Officer)',
+    id: 'a0000001-0000-0000-0000-000000000003',
+    fullName: 'Smt. Lakshmi Devi (Warangal Yard)',
     email: 'official@warangal.mandi.gov.in',
     phone: '+91 98480 34567',
     passwordHash: DEFAULT_OFFICIAL_HASH,
@@ -44,7 +45,7 @@ const INITIAL_USERS = [
     createdAt: new Date().toISOString()
   },
   {
-    id: 'usr-farmer-001',
+    id: 'a0000001-0000-0000-0000-000000000004',
     fullName: 'Anji Reddy (Rythu Sangham)',
     email: 'farmer@rythumitra.org',
     phone: '+91 98480 45678',
@@ -59,29 +60,29 @@ const INITIAL_USERS = [
 
 const INITIAL_OFFICIAL_PROFILES = [
   {
-    id: 'prof-001',
-    userId: 'usr-official-001',
-    organizationName: 'Bowenpally Agricultural Market Committee (APMC)',
+    id: 'b0000001-0000-0000-0000-000000000001',
+    userId: 'a0000001-0000-0000-0000-000000000002',
+    organizationName: 'Bowenpally APMC Committee',
     officialIdReference: 'TS-APMC-HYD-2024-88',
-    assignedMarketIds: ['TS-Bowenpally Market', 'HYD-01'],
+    assignedMarketIds: ['TS-Bowenpally Market'],
     assignedMarketNames: ['Bowenpally Market'],
     verificationStatus: 'APPROVED',
-    reviewedBy: 'usr-admin-001',
+    reviewedBy: 'a0000001-0000-0000-0000-000000000001',
     reviewedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-    verificationNotes: 'Official APMC ID and appointment order verified by state directorate.',
+    verificationNotes: 'Official appointment verified by state directorate.',
     createdAt: new Date(Date.now() - 86400000 * 10).toISOString()
   },
   {
-    id: 'prof-002',
-    userId: 'usr-official-002',
-    organizationName: 'Warangal Grain & Vegetable Market Yard',
+    id: 'b0000001-0000-0000-0000-000000000002',
+    userId: 'a0000001-0000-0000-0000-000000000003',
+    organizationName: 'Warangal Agricultural Market Yard',
     officialIdReference: 'TS-APMC-WAR-2025-14',
-    assignedMarketIds: ['TS-Warangal Market', 'WAR-01'],
+    assignedMarketIds: ['TS-Warangal Market'],
     assignedMarketNames: ['Warangal Market'],
     verificationStatus: 'PENDING_VERIFICATION',
     reviewedBy: null,
     reviewedAt: null,
-    verificationNotes: 'Application submitted, awaiting administrative ID check.',
+    verificationNotes: 'Awaiting administrative identity check.',
     createdAt: new Date().toISOString()
   }
 ];
@@ -119,9 +120,9 @@ const INITIAL_PRICES = [
     sourceType: 'VERIFIED_MARKET_SUBMISSION',
     sourceReference: 'APMC Official Daily Ledger #102',
     remarks: 'High morning arrivals from Shamshabad & Medchal belt. Stable demand.',
-    submittedBy: 'usr-official-001',
+    submittedBy: 'a0000001-0000-0000-0000-000000000002',
     submittedByName: 'Sri K. Venkatesham',
-    approvedBy: 'usr-admin-001',
+    approvedBy: 'a0000001-0000-0000-0000-000000000001',
     status: 'PUBLISHED',
     publishedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
@@ -145,9 +146,9 @@ const INITIAL_PRICES = [
     sourceType: 'VERIFIED_MARKET_SUBMISSION',
     sourceReference: 'APMC Official Daily Ledger #103',
     remarks: 'Consistent arrivals, modal price holding steady.',
-    submittedBy: 'usr-official-001',
+    submittedBy: 'a0000001-0000-0000-0000-000000000002',
     submittedByName: 'Sri K. Venkatesham',
-    approvedBy: 'usr-admin-001',
+    approvedBy: 'a0000001-0000-0000-0000-000000000001',
     status: 'PUBLISHED',
     publishedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
@@ -171,9 +172,9 @@ const INITIAL_PRICES = [
     sourceType: 'VERIFIED_MARKET_SUBMISSION',
     sourceReference: 'APMC Daily Auction Sheet #89',
     remarks: 'Premium export-grade lots cleared fast.',
-    submittedBy: 'usr-official-001',
+    submittedBy: 'a0000001-0000-0000-0000-000000000002',
     submittedByName: 'Sri K. Venkatesham',
-    approvedBy: 'usr-admin-001',
+    approvedBy: 'a0000001-0000-0000-0000-000000000001',
     status: 'PUBLISHED',
     publishedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
@@ -197,7 +198,7 @@ const INITIAL_PRICES = [
     sourceType: 'VERIFIED_MARKET_SUBMISSION',
     sourceReference: 'Cotton Yard Board',
     remarks: 'Awaiting administrative verification review.',
-    submittedBy: 'usr-official-002',
+    submittedBy: 'a0000001-0000-0000-0000-000000000003',
     submittedByName: 'Smt. Lakshmi Devi',
     approvedBy: null,
     status: 'PENDING_REVIEW',
@@ -211,7 +212,7 @@ const INITIAL_AUDIT_LOGS = [
   {
     id: 'aud-001',
     priceRecordId: 'prc-001',
-    actorUserId: 'usr-admin-001',
+    actorUserId: 'a0000001-0000-0000-0000-000000000001',
     actorName: 'Dr. Rameshwar Rao (APMC Director)',
     action: 'APPROVE_AND_PUBLISH',
     previousValues: { status: 'PENDING_REVIEW' },
@@ -225,7 +226,7 @@ const INITIAL_REVIEW_LOGS = [
   {
     id: 'rev-001',
     submissionId: 'prc-001',
-    reviewerId: 'usr-admin-001',
+    reviewerId: 'a0000001-0000-0000-0000-000000000001',
     reviewerName: 'Dr. Rameshwar Rao (APMC Director)',
     action: 'APPROVE',
     comments: 'Verified against Bowenpally APMC daily arrival register. Authorized for publication.',
@@ -258,7 +259,7 @@ class LocalDataStore {
 
   createUser(userData) {
     const user = {
-      id: `usr-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+      id: userData.id || randomUUID(),
       emailVerified: false,
       phoneVerified: false,
       accountStatus: 'active',
@@ -280,7 +281,7 @@ class LocalDataStore {
 
   createOfficialProfile(profileData) {
     const profile = {
-      id: `prof-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+      id: profileData.id || randomUUID(),
       verificationStatus: 'PENDING_VERIFICATION',
       assignedMarketIds: [],
       assignedMarketNames: [],
@@ -327,7 +328,7 @@ class LocalDataStore {
 
   createCommodity(data) {
     const item = {
-      id: `com-${Date.now().toString(36)}`,
+      id: data.id || randomUUID(),
       active: true,
       createdAt: new Date().toISOString(),
       ...data
@@ -345,7 +346,7 @@ class LocalDataStore {
   // PRICES
   createPriceSubmission(data) {
     const record = {
-      id: `prc-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+      id: data.id || randomUUID(),
       unit: '₹/Quintal',
       sourceType: 'VERIFIED_MARKET_SUBMISSION',
       status: 'PENDING_REVIEW',
@@ -406,7 +407,7 @@ class LocalDataStore {
   // AUDIT & REVIEW
   createPriceAuditLog(entry) {
     const log = {
-      id: `aud-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+      id: entry.id || randomUUID(),
       createdAt: new Date().toISOString(),
       ...entry
     };
@@ -416,7 +417,7 @@ class LocalDataStore {
 
   createReviewLog(entry) {
     const log = {
-      id: `rev-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+      id: entry.id || randomUUID(),
       createdAt: new Date().toISOString(),
       ...entry
     };
@@ -505,25 +506,48 @@ export const db = {
   },
 
   async createUser(userData) {
-    const localUser = localStore.createUser(userData);
+    const userId = userData.id || randomUUID();
     if (supabaseEnabled) {
       try {
-        await supabase.from('users').insert({
-          id: localUser.id,
-          full_name: localUser.fullName,
-          email: localUser.email,
-          phone: localUser.phone,
-          password_hash: localUser.passwordHash,
-          role: localUser.role,
-          account_status: localUser.accountStatus,
-          email_verified: localUser.emailVerified,
-          phone_verified: localUser.phoneVerified
-        });
+        const { data: inserted, error } = await supabase
+          .from('users')
+          .insert({
+            id: userId,
+            full_name: userData.fullName,
+            email: userData.email.toLowerCase().trim(),
+            phone: userData.phone || '',
+            password_hash: userData.passwordHash,
+            role: userData.role || 'farmer',
+            account_status: userData.accountStatus || 'active',
+            email_verified: Boolean(userData.emailVerified),
+            phone_verified: Boolean(userData.phoneVerified)
+          })
+          .select('*')
+          .single();
+
+        if (!error && inserted) {
+          const user = {
+            id: inserted.id,
+            fullName: inserted.full_name,
+            email: inserted.email,
+            phone: inserted.phone,
+            passwordHash: inserted.password_hash,
+            role: inserted.role,
+            accountStatus: inserted.account_status,
+            emailVerified: inserted.email_verified,
+            phoneVerified: inserted.phone_verified,
+            createdAt: inserted.created_at
+          };
+          localStore.users.push(user);
+          return user;
+        } else if (error) {
+          console.error('Supabase createUser error:', error.message || error);
+        }
       } catch (err) {
-        console.error('Supabase createUser error:', err);
+        console.error('Supabase createUser exception:', err.message || err);
       }
     }
-    return localUser;
+    return localStore.createUser({ ...userData, id: userId });
   },
 
   async getOfficialProfileByUserId(userId) {
@@ -551,24 +575,74 @@ export const db = {
     return localStore.getOfficialProfileByUserId(userId);
   },
 
-  async createOfficialProfile(profileData) {
-    const localProfile = localStore.createOfficialProfile(profileData);
+  async getOfficialProfileById(id) {
     if (supabaseEnabled) {
       try {
-        await supabase.from('official_profiles').insert({
-          id: localProfile.id,
-          user_id: localProfile.userId,
-          organization_name: localProfile.organizationName,
-          official_id_reference: localProfile.officialIdReference,
-          assigned_market_ids: localProfile.assignedMarketIds,
-          verification_status: localProfile.verificationStatus,
-          verification_notes: localProfile.verificationNotes
-        });
+        const { data, error } = await supabase.from('official_profiles').select('*').eq('id', id).single();
+        if (!error && data) {
+          return {
+            id: data.id,
+            userId: data.user_id,
+            organizationName: data.organization_name,
+            officialIdReference: data.official_id_reference,
+            assignedMarketIds: data.assigned_market_ids || [],
+            assignedMarketNames: data.assigned_market_ids || [],
+            verificationStatus: data.verification_status,
+            reviewedBy: data.reviewed_by,
+            reviewedAt: data.reviewed_at,
+            verificationNotes: data.verification_notes,
+            createdAt: data.created_at
+          };
+        }
       } catch (err) {
-        console.error('Supabase createOfficialProfile error:', err);
+        // fallback
       }
     }
-    return localProfile;
+    return localStore.getOfficialProfileById(id);
+  },
+
+  async createOfficialProfile(profileData) {
+    const profileId = profileData.id || randomUUID();
+    if (supabaseEnabled) {
+      try {
+        const { data: inserted, error } = await supabase
+          .from('official_profiles')
+          .insert({
+            id: profileId,
+            user_id: profileData.userId,
+            organization_name: profileData.organizationName || 'APMC Committee',
+            official_id_reference: profileData.officialIdReference || `APMC-${Date.now().toString().slice(-4)}`,
+            assigned_market_ids: profileData.assignedMarketIds || [],
+            verification_status: profileData.verificationStatus || 'PENDING_VERIFICATION',
+            verification_notes: profileData.verificationNotes || 'Pending administrative verification review.'
+          })
+          .select('*')
+          .single();
+
+        if (!error && inserted) {
+          const profile = {
+            id: inserted.id,
+            userId: inserted.user_id,
+            organizationName: inserted.organization_name,
+            officialIdReference: inserted.official_id_reference,
+            assignedMarketIds: inserted.assigned_market_ids || [],
+            assignedMarketNames: profileData.assignedMarketNames || [],
+            verificationStatus: inserted.verification_status,
+            reviewedBy: inserted.reviewed_by,
+            reviewedAt: inserted.reviewed_at,
+            verificationNotes: inserted.verification_notes,
+            createdAt: inserted.created_at
+          };
+          localStore.officialProfiles.push(profile);
+          return profile;
+        } else if (error) {
+          console.error('Supabase createOfficialProfile error:', error.message || error);
+        }
+      } catch (err) {
+        console.error('Supabase createOfficialProfile exception:', err.message || err);
+      }
+    }
+    return localStore.createOfficialProfile({ ...profileData, id: profileId });
   },
 
   async updateOfficialProfile(profileId, updates) {
@@ -577,10 +651,14 @@ export const db = {
       try {
         const dbUpdates = {};
         if (updates.verificationStatus) dbUpdates.verification_status = updates.verificationStatus;
-        if (updates.assignedMarketIds) dbUpdates.assigned_market_ids = updates.assignedMarketIds;
+        if (updates.assignedMarketIds || updates.assignedMarkets) {
+          dbUpdates.assigned_market_ids = updates.assignedMarketIds || updates.assignedMarkets;
+        }
         if (updates.reviewedBy) dbUpdates.reviewed_by = updates.reviewedBy;
         if (updates.reviewedAt) dbUpdates.reviewed_at = updates.reviewedAt;
-        if (updates.verificationNotes) dbUpdates.verification_notes = updates.verificationNotes;
+        if (updates.verificationNotes || updates.notes) {
+          dbUpdates.verification_notes = updates.verificationNotes || updates.notes;
+        }
         await supabase.from('official_profiles').update(dbUpdates).eq('id', profileId);
       } catch (err) {
         console.error('Supabase updateOfficialProfile error:', err);
@@ -880,11 +958,14 @@ export const db = {
         if (filter.marketId) {
           query = query.eq('market_id', filter.marketId);
         }
-        if (filter.commodity) {
-          query = query.ilike('commodity_name', filter.commodity);
+        if (filter.commodityName || filter.commodity) {
+          query = query.ilike('commodity_name', filter.commodityName || filter.commodity);
         }
         if (filter.submittedBy) {
           query = query.eq('submitted_by', filter.submittedBy);
+        }
+        if (filter.reportingDate) {
+          query = query.eq('reporting_date', filter.reportingDate);
         }
         if (filter.startDate) {
           query = query.gte('reporting_date', filter.startDate);
@@ -938,8 +1019,8 @@ export const db = {
           .eq('status', 'PUBLISHED')
           .order('reporting_date', { ascending: false });
 
-        if (filter.commodity) {
-          query = query.ilike('commodity_name', filter.commodity);
+        if (filter.commodityName || filter.commodity) {
+          query = query.ilike('commodity_name', filter.commodityName || filter.commodity);
         }
         if (filter.marketId) {
           query = query.eq('market_id', filter.marketId);
@@ -1128,12 +1209,17 @@ export const db = {
         const totalMarkets = marketsRes.count || 7;
 
         return {
+          pendingOfficials,
+          pendingPrices: pendingSubmissions,
           pendingSubmissions,
           publishedToday,
-          pendingOfficials,
           verifiedOfficials,
+          activeOfficials: verifiedOfficials,
           totalMarkets,
-          activeAlerts: pendingSubmissions > 0 ? 1 : 0
+          distinctMarketsToday: publishedToday,
+          rejectedOrCorrection: 0,
+          totalSubmissions: prices.length,
+          activeAlerts: (pendingSubmissions > 0 || pendingOfficials > 0) ? 1 : 0
         };
       } catch (err) {
         console.warn('Supabase getAdminDashboardStats error:', err.message);

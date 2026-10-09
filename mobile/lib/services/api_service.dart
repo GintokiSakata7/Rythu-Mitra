@@ -11,7 +11,7 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  final String _baseUrl = AppConfig.baseUrl;
+  String get _baseUrl => AppConfig.baseUrl;
   final Duration _timeout = const Duration(seconds: 15);
 
   Future<Map<String, dynamic>> get(String path, {Map<String, String>? query}) async {
