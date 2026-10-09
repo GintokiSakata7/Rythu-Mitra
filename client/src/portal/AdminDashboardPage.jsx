@@ -137,31 +137,6 @@ export default function AdminDashboardPage() {
         </Link>
 
         <Link
-          to="/portal/admin/commodities"
-          style={{
-            background: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #e2e8f0',
-            padding: '1.25rem',
-            textDecoration: 'none',
-            display: 'block'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-            <div style={{ padding: '8px', borderRadius: '8px', background: '#ecfdf5', color: '#059669' }}>
-              <PackagePlus size={20} />
-            </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>Commodities & Items Catalog</h3>
-              <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Register crops, varieties & active status</span>
-            </div>
-          </div>
-          <p style={{ margin: 0, fontSize: '0.84rem', color: '#475569', lineHeight: 1.4 }}>
-            Add new crops, grains, and spices to the state APMC system. Manage standard varieties, grades, and toggle catalog availability.
-          </p>
-        </Link>
-
-        <Link
           to="/portal/admin/markets"
           style={{
             background: '#ffffff',
@@ -183,31 +158,6 @@ export default function AdminDashboardPage() {
           </div>
           <p style={{ margin: 0, fontSize: '0.84rem', color: '#475569', lineHeight: 1.4 }}>
             Monitor which regional wholesale mandis have submitted prices today, identify overdue reports, and enforce timely data.
-          </p>
-        </Link>
-
-        <Link
-          to="/portal/admin/audit"
-          style={{
-            background: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #e2e8f0',
-            padding: '1.25rem',
-            textDecoration: 'none',
-            display: 'block'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-            <div style={{ padding: '8px', borderRadius: '8px', background: '#fef3c7', color: '#d97706' }}>
-              <History size={20} />
-            </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>Security Audit Trail</h3>
-              <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Cryptographic action logs</span>
-            </div>
-          </div>
-          <p style={{ margin: 0, fontSize: '0.84rem', color: '#475569', lineHeight: 1.4 }}>
-            Inspect full immutable change logs of all price submissions, approvals, rejections, and user account status transitions.
           </p>
         </Link>
       </div>
