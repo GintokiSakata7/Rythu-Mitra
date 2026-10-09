@@ -29,7 +29,7 @@ export default function HomePage() {
         {/* PRIMARY SIDE-BY-SIDE ENTRY MODES */}
         <div className="home-entry-modes-grid">
           {/* Card 1: Voice Mode */}
-          <Link to="/find" className="home-mode-card voice-card-accent">
+          <Link to="/assistant" className="home-mode-card voice-card-accent">
             <div className="mode-card-icon-bubble voice-pulse">
               <Mic2 size={26} />
             </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   Check, Crosshair, Edit3, Loader2, MapPin, Mic, Mic2,
   Navigation, RefreshCw, Sparkles, Truck, Wheat
@@ -10,10 +11,18 @@ import MarketMap from '../components/MarketMap.jsx';
 import VoiceFlow from '../components/VoiceFlow.jsx';
 import { api } from '../lib/api.js';
 
-
-
 export default function FindOpportunityPage() {
-  const [mode, setMode] = useState('manual');
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const requestedMode = location.state?.mode || searchParams.get('mode');
+  const [mode, setMode] = useState(requestedMode === 'voice' ? 'voice' : 'manual');
+
+  useEffect(() => {
+    const currentRequestedMode = location.state?.mode || searchParams.get('mode');
+    if (currentRequestedMode === 'voice' || currentRequestedMode === 'manual') {
+      setMode(currentRequestedMode);
+    }
+  }, [location.state, searchParams]);
   const [locations, setLocations] = useState({
     Nalgonda: { latitude: 17.05, longitude: 79.27 },
     Miryalaguda: { latitude: 16.87, longitude: 79.56 },
