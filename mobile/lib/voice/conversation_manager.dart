@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/app_models.dart';
+import '../core/constants/app_constants.dart';
 import 'intent_engine.dart';
 
 enum ConvStep {
@@ -51,6 +52,27 @@ class ConversationManager extends ChangeNotifier {
     _lng = lng;
     _locationText = displayName;
     _usingGps = true;
+    notifyListeners();
+  }
+
+  void setLocationFromText(String town, {double? lat, double? lng}) {
+    _locationText = town;
+    _usingGps = false;
+    if (lat != null && lng != null) {
+      _lat = lat;
+      _lng = lng;
+    } else {
+      final clean = town.trim().toLowerCase();
+      for (final preset in AppConstants.presetLocations) {
+        final pName = (preset['name'] as String).toLowerCase();
+        if (pName.contains(clean) || clean.contains(pName)) {
+          _lat = (preset['lat'] as num).toDouble();
+          _lng = (preset['lng'] as num).toDouble();
+          _locationText = preset['name'];
+          break;
+        }
+      }
+    }
     notifyListeners();
   }
 
@@ -109,9 +131,9 @@ class ConversationManager extends ChangeNotifier {
     if (!_usingGps && _locationText == null) {
       _step = ConvStep.needLocation;
       return _l(lang,
-        en: "Where is your farm? Say 'use my location' or a town name.",
-        te: "మీ పొలం ఎక్కడుంది? 'నా లొకేషన్ ఉపయోగించు' అని చెప్పండి లేదా పట్టణం పేరు చెప్పండి.",
-        hi: "आपका खेत कहाँ है? 'मेरी लोकेशन इस्तेमाल करो' बोलें या गाँव/शहर का नाम बताएं।",
+        en: "Where is your farm? Tap '📍 Use Current Location' below or say your town name.",
+        te: "మీ పొలం ఎక్కడుంది? క్రింద ఉన్న '📍 నా లొకేషన్' బటన్ నొక్కండి లేదా మీ ఊరి పేరు చెప్పండి.",
+        hi: "आपका खेत कहाँ है? नीचे दिए गए '📍 मेरी लोकेशन' बटन दबाएं या अपने गाँव का नाम बताएं।",
       );
     }
     if (_hasTransport == null) {
@@ -137,9 +159,9 @@ class ConversationManager extends ChangeNotifier {
     return RecommendationRequest(
       crop: _crop ?? 'Tomato',
       quantityKg: ((_quantityQuintals ?? 10) * 100).toInt(),
-      latitude: _lat ?? 17.05,
-      longitude: _lng ?? 79.27,
-      locationText: _locationText ?? 'Current Location',
+      latitude: _lat ?? 17.385,
+      longitude: _lng ?? 78.4867,
+      locationText: _locationText ?? 'Current Device Location',
       hasTransport: _hasTransport ?? false,
       language: lang,
     );

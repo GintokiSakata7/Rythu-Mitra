@@ -30,6 +30,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
 
   bool _isListening = false;
   bool _isProcessing = false;
+  bool _isDetectingLocation = false;
   String _partialText = '';
   
   late AnimationController _pulseCtrl;
@@ -193,25 +194,27 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
       } else {
         // Handle conversational intents
-        if (intent.useGps == true) {
-          await _addBotMessage(lang == 'te' ? "లొకేషన్ తీసుకుంటున్నాను..." : lang == 'hi' ? "स्थान प्राप्त कर रहा हूँ..." : "Fetching your location...");
-          final loc = await locationService.getCurrentLocation();
-          if (loc.result != null) {
-            manager.setGpsLocation(loc.result!.lat, loc.result!.lng, loc.result!.displayName ?? 'Current Location');
-          } else {
-            final errorMsg = lang == 'te' ? "లొకేషన్ తీసుకోలేకపోయాము. డిఫాల్ట్ లొకేషన్ వాడుతున్నాను." : lang == 'hi' ? "स्थान प्राप्त नहीं हो सका। डिफ़ॉल्ट स्थान का उपयोग कर रहा हूँ।" : "Could not get location. Using default location.";
-            await _addBotMessage(loc.error?.message ?? errorMsg);
-            manager.setGpsLocation(17.05, 79.27, 'Nalgonda');
-          }
+        final lower = text.toLowerCase().trim();
+        final isGpsPrompt = intent.useGps == true ||
+            lower == 'gps' ||
+            lower == 'location' ||
+            lower.contains('gps') ||
+            lower.contains('లొకేషన్') ||
+            lower.contains('లోకేషన్') ||
+            lower.contains('స్థానం') ||
+            lower.contains('लोकेशन');
+
+        if (isGpsPrompt) {
+          await _useGpsLocation();
+          return;
         } else if (manager.step == ConvStep.needLocation && intent.rawText.trim().isNotEmpty) {
           // The user provided a town name! Let's find its latitude and longitude!
           await _addBotMessage(lang == 'te' ? "లొకేషన్ వెతుకుతున్నాను..." : lang == 'hi' ? "स्थान खोज रहा हूँ..." : "Locating ${intent.rawText.trim()}...");
           final loc = await locationService.getLocationFromAddress(intent.rawText.trim());
           if (loc != null) {
-             manager.setGpsLocation(loc.lat, loc.lng, loc.displayName ?? intent.rawText.trim());
+            manager.setLocationFromText(loc.displayName ?? intent.rawText.trim(), lat: loc.lat, lng: loc.lng);
           } else {
-             // Fallback to Nalgonda if geocoding fails
-             manager.setGpsLocation(17.05, 79.27, intent.rawText.trim());
+            manager.setLocationFromText(intent.rawText.trim());
           }
         }
 
@@ -243,6 +246,135 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
     }
   }
 
+  Future<void> _useGpsLocation() async {
+    if (_isDetectingLocation) return;
+    setState(() => _isDetectingLocation = true);
+
+    final lang = context.read<LanguageProvider>().langCode;
+    final manager = context.read<ConversationManager>();
+
+    _addBotMessage(lang == 'te'
+        ? "లొకేషన్ తీసుకుంటున్నాను... దయచేసి వేచి ఉండండి."
+        : (lang == 'hi'
+            ? "स्थान प्राप्त कर रहा हूँ... कृपया प्रतीक्षा करें।"
+            : "Detecting your live GPS location..."));
+
+    try {
+      final loc = await locationService.getCurrentLocation();
+      if (!mounted) return;
+
+      if (loc.result != null) {
+        final res = loc.result!;
+        final placeName = res.displayName ?? '${res.lat.toStringAsFixed(2)}, ${res.lng.toStringAsFixed(2)}';
+        manager.setGpsLocation(res.lat, res.lng, placeName);
+
+        final detectedMsg = lang == 'te'
+            ? "మీ లొకేషన్ గుర్తించబడింది: $placeName"
+            : (lang == 'hi'
+                ? "आपका स्थान मिल गया: $placeName"
+                : "Location confirmed: $placeName");
+        _addBotMessage(detectedMsg);
+
+        // Advance to next conversation question
+        final nextQuestion = manager.processIntent(
+          AssistantIntent(type: IntentType.findBestPrice, useGps: true, locationText: placeName),
+          lang,
+        );
+
+        if (nextQuestion != null) {
+          await _addBotMessage(nextQuestion);
+        } else if (manager.isReadyToSearch) {
+          await _addBotMessage(manager.confirmationMessage(lang));
+          await Future.delayed(const Duration(seconds: 2));
+          if (mounted) {
+            final req = manager.buildRequest(lang);
+            manager.reset();
+            Navigator.push(context, MaterialPageRoute(builder: (_) => SearchAnimationScreen(request: req, fromVoice: true)));
+          }
+        }
+      } else if (loc.error != null) {
+        if (loc.error!.type == LocationErrorType.gpsDisabled) {
+          _showGpsDisabledDialog(lang);
+          await _addBotMessage(lang == 'te'
+              ? "మీ ఫోన్ GPS ఆఫ్‌లో ఉంది. దయచేసి సెట్టింగ్స్‌లో ఆన్ చేయండి."
+              : (lang == 'hi'
+                  ? "आपके फोन का GPS बंद है। कृपया सेटिंग्स में इसे चालू करें।"
+                  : "Device GPS is turned off. Please turn it on in settings."));
+        } else if (loc.error!.type == LocationErrorType.permissionPermanentlyDenied ||
+            loc.error!.type == LocationErrorType.permissionDenied) {
+          _showPermissionDialog(lang);
+          await _addBotMessage(lang == 'te'
+              ? "లొకేషన్ అనుమతి అవసరం. దయచేసి యాప్ సెట్టింగ్స్‌లో అనుమతించండి."
+              : (lang == 'hi'
+                  ? "स्थान अनुमति आवश्यक है। कृपया ऐप सेटिंग्स में अनुमति दें।"
+                  : "Location permission is required to detect nearby mandis."));
+        } else {
+          await _addBotMessage(loc.error!.message);
+        }
+      }
+    } catch (e) {
+      await _addBotMessage(lang == 'te'
+          ? "లొకేషన్ పొందడంలో లోపం జరిగింది. దయచేసి మీ ఊరి పేరు టైప్ చేయండి."
+          : "Could not fetch GPS. Please type your town or district name.");
+    } finally {
+      if (mounted) setState(() => _isDetectingLocation = false);
+    }
+  }
+
+  void _showGpsDisabledDialog(String lang) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(lang == 'te' ? 'GPS ఆఫ్‌లో ఉంది' : (lang == 'hi' ? 'GPS बंद है' : 'GPS is Disabled')),
+        content: Text(lang == 'te'
+            ? 'ఖచ్చితమైన మార్కెట్ ధరలు లెక్కించడానికి దయచేసి మీ ఫోన్ GPS ని ఆన్ చేయండి.'
+            : (lang == 'hi'
+                ? 'सटीक मंडी मूल्य गणना के लिए कृपया अपने फोन का GPS चालू करें।'
+                : 'Please turn on GPS on your device to calculate accurate distances and mandi prices.')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(lang == 'te' ? 'రద్దు' : 'Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              locationService.openLocationSettings();
+            },
+            child: Text(lang == 'te' ? 'సెట్టింగ్స్ తెరవండి' : 'Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionDialog(String lang) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(lang == 'te' ? 'లొకేషన్ అనుమతి కావాలి' : (lang == 'hi' ? 'स्थान अनुमति चाहिए' : 'Location Permission Needed')),
+        content: Text(lang == 'te'
+            ? 'రైతు మిత్ర యాప్‌కు మీ సమీప మార్కెట్లను కనుగొనడానికి లొకేషన్ అనుమతి ఇవ్వండి.'
+            : (lang == 'hi'
+                ? 'निकटतम मंडियों को खोजने के लिए कृपया ऐप को स्थान अनुमति दें।'
+                : 'Please grant location permission in App Settings so RythuMitra can find your closest mandis.')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(lang == 'te' ? 'రద్దు' : 'Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              locationService.openAppSettings();
+            },
+            child: Text(lang == 'te' ? 'యాప్ సెట్టింగ్స్' : 'App Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showErrorDialog(String title, String message) {
     showDialog(
       context: context,
@@ -256,6 +388,15 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
           )
         ],
       ),
+    );
+  }
+
+  Widget _buildQuickChip(String label, VoidCallback onTap) {
+    return ActionChip(
+      label: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+      backgroundColor: Colors.grey.shade100,
+      side: BorderSide(color: Colors.grey.shade300),
+      onPressed: onTap,
     );
   }
 
@@ -361,7 +502,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
 
           // Input area
           Container(
-            padding: const EdgeInsets.all(16).copyWith(bottom: 32),
+            padding: const EdgeInsets.all(16).copyWith(bottom: 28),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
@@ -376,101 +517,260 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                 )
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Big Voice Orb
-                GestureDetector(
-                  onTap: () {
-                    if (_isListening) {
-                      _stopListening();
-                    } else {
-                      _startListening();
-                    }
-                  },
-                  child: AnimatedBuilder(
-                    animation: _pulseCtrl,
-                    builder: (context, child) {
-                      final scale = _isListening ? 1.0 + (_pulseCtrl.value * 0.2) : 1.0;
-                      final shadow = _isListening ? 20.0 + (_pulseCtrl.value * 10) : 8.0;
-                      
-                      return Transform.scale(
-                        scale: scale,
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: _isListening ? AppTheme.dangerRed : AppTheme.forestGreen,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: (_isListening ? AppTheme.dangerRed : AppTheme.forestGreen)
-                                    .withValues(alpha: 0.4),
-                                blurRadius: shadow,
-                                offset: const Offset(0, 4),
+            child: Consumer<ConversationManager>(
+              builder: (context, manager, _) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Contextual Action Card based on Conversation Step
+                    if (manager.step == ConvStep.needLocation) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppTheme.forestGreen, width: 1.5),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              lang == 'te'
+                                  ? "ఖచ్చితమైన మార్కెట్ లెక్కల కోసం GPS బటన్ నొక్కండి:"
+                                  : (lang == 'hi'
+                                      ? "सटीक मंडी गणना के लिए GPS बटन दबाएं:"
+                                      : "For accurate market calculation, tap GPS button:"),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.forestGreen,
                               ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.forestGreen,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 2,
+                                ),
+                                onPressed: _isDetectingLocation ? null : _useGpsLocation,
+                                icon: _isDetectingLocation
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : const Icon(Icons.my_location, size: 20),
+                                label: Text(
+                                  _isDetectingLocation
+                                      ? (lang == 'te' ? "GPS లొకేషన్ గుర్తిస్తున్నాం..." : "Detecting GPS...")
+                                      : (lang == 'te'
+                                          ? "📍 నా లొకేషన్ ఉపయోగించు (GPS)"
+                                          : (lang == 'hi' ? "📍 मेरा स्थान (GPS)" : "📍 Use My GPS Location")),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else if (manager.usingGps && manager.locationText != null) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.green.shade300),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                "📍 ${manager.locationText} (${manager.lat?.toStringAsFixed(2)}, ${manager.lng?.toStringAsFixed(2)})",
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green.shade800),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: _useGpsLocation,
+                              child: Text(
+                                lang == 'te' ? 'మార్చు' : (lang == 'hi' ? 'बदलें' : 'Change'),
+                                style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else if (manager.step == ConvStep.needTransport) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ActionChip(
+                              backgroundColor: const Color(0xFFF0FDF4),
+                              side: const BorderSide(color: AppTheme.forestGreen),
+                              avatar: const Icon(Icons.local_shipping, size: 18, color: AppTheme.forestGreen),
+                              label: Text(
+                                lang == 'te' ? "అవును (స్వంత వాహనం)" : (lang == 'hi' ? "हाँ (स्वयं वाहन)" : "Yes (Own Vehicle)"),
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.forestGreen),
+                              ),
+                              onPressed: () => _processInput(lang == 'te' ? "అవును" : "yes"),
+                            ),
+                            const SizedBox(width: 8),
+                            ActionChip(
+                              backgroundColor: Colors.orange.shade50,
+                              side: BorderSide(color: Colors.orange.shade300),
+                              avatar: const Icon(Icons.no_crash, size: 18, color: Colors.deepOrange),
+                              label: Text(
+                                lang == 'te' ? "లేదు (అద్దె వాహనం)" : (lang == 'hi' ? "नहीं (किराया वाहन)" : "No (Need Transport)"),
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                              ),
+                              onPressed: () => _processInput(lang == 'te' ? "లేదు" : "no"),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else if (manager.step == ConvStep.needCrop) ...[
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            children: [
+                              _buildQuickChip("🍅 ${lang == 'te' ? 'టమాట' : 'Tomato'}", () => _processInput("Tomato")),
+                              const SizedBox(width: 6),
+                              _buildQuickChip("🧅 ${lang == 'te' ? 'ఉల్లి' : 'Onion'}", () => _processInput("Onion")),
+                              const SizedBox(width: 6),
+                              _buildQuickChip("🌶️ ${lang == 'te' ? 'మిర్చి' : 'Chilli'}", () => _processInput("Chilli")),
+                              const SizedBox(width: 6),
+                              _buildQuickChip("🌾 ${lang == 'te' ? 'వరి' : 'Paddy'}", () => _processInput("Paddy")),
                             ],
                           ),
-                          child: Icon(
-                            _isListening ? Icons.mic : Icons.mic_none,
-                            color: Colors.white,
-                            size: 40,
+                        ),
+                      ),
+                    ] else if (manager.step == ConvStep.needQuantity) ...[
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            children: [
+                              _buildQuickChip("10 Quintals", () => _processInput("10 quintals")),
+                              const SizedBox(width: 6),
+                              _buildQuickChip("20 Quintals", () => _processInput("20 quintals")),
+                              const SizedBox(width: 6),
+                              _buildQuickChip("50 Quintals", () => _processInput("50 quintals")),
+                            ],
                           ),
                         ),
-                      );
-                    }
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _isListening ? s('listening') : s('speak_now'),
-                  style: TextStyle(
-                    fontSize: 14, 
-                    fontWeight: FontWeight.bold,
-                    color: _isListening ? AppTheme.dangerRed : Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _textCtrl,
-                        decoration: InputDecoration(
-                          hintText: s('type_here'),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFFF5F5F5),
-                        ),
-                        onSubmitted: (text) {
-                          _textCtrl.clear();
-                          _processInput(text);
+                      ),
+                    ],
+
+                    // Big Voice Orb
+                    GestureDetector(
+                      onTap: () {
+                        if (_isListening) {
+                          _stopListening();
+                        } else {
+                          _startListening();
+                        }
+                      },
+                      child: AnimatedBuilder(
+                        animation: _pulseCtrl,
+                        builder: (context, child) {
+                          final scale = _isListening ? 1.0 + (_pulseCtrl.value * 0.2) : 1.0;
+                          final shadow = _isListening ? 20.0 + (_pulseCtrl.value * 10) : 8.0;
+                          
+                          return Transform.scale(
+                            scale: scale,
+                            child: Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: _isListening ? AppTheme.dangerRed : AppTheme.forestGreen,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (_isListening ? AppTheme.dangerRed : AppTheme.forestGreen)
+                                        .withValues(alpha: 0.4),
+                                    blurRadius: shadow,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                _isListening ? Icons.mic : Icons.mic_none,
+                                color: Colors.white,
+                                size: 40,
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      decoration: const BoxDecoration(
-                        color: AppTheme.harvestGold,
-                        shape: BoxShape.circle,
+                    const SizedBox(height: 16),
+                    Text(
+                      _isListening ? s('listening') : s('speak_now'),
+                      style: TextStyle(
+                        fontSize: 14, 
+                        fontWeight: FontWeight.bold,
+                        color: _isListening ? AppTheme.dangerRed : Colors.black54,
                       ),
-                      child: IconButton(
-                        icon: const Icon(Icons.send, color: Colors.black87),
-                        onPressed: () {
-                          final text = _textCtrl.text;
-                          _textCtrl.clear();
-                          _processInput(text);
-                        },
-                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _textCtrl,
+                            decoration: InputDecoration(
+                              hintText: s('type_here'),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: const Color(0xFFF5F5F5),
+                            ),
+                            onSubmitted: (text) {
+                              _textCtrl.clear();
+                              _processInput(text);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          decoration: const BoxDecoration(
+                            color: AppTheme.harvestGold,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.send, color: Colors.black87),
+                            onPressed: () {
+                              final text = _textCtrl.text;
+                              _textCtrl.clear();
+                              _processInput(text);
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-              ],
+                );
+              },
             ),
           ),
         ],

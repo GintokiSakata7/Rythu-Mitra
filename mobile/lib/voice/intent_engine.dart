@@ -1,4 +1,3 @@
-import '../core/constants/app_constants.dart';
 
 enum IntentType {
   findBestMarket,
@@ -125,9 +124,9 @@ final _cropKeywords = <String, String>{
 
 /// GPS trigger words in all three languages
 const _gpsKeywords = [
-  'current location', 'my location', 'use location', 'gps', 'near me',
-  'నా లొకేషన్', 'నా స్థానం', 'ప్రస్తుత స్థానం', 'జిపిఎస్',
-  'मेरी लोकेशन', 'मेरा स्थान', 'वर्तमान स्थान', 'जीपीएस',
+  'current location', 'my location', 'use location', 'gps', 'near me', 'location', 'here',
+  'నా లొకేషన్', 'నా స్థానం', 'ప్రస్తుత స్థానం', 'జిపిఎస్', 'లొకేషన్', 'లోకేషన్', 'స్థానం',
+  'मेरी लोकेशन', 'मेरा स्थान', 'वर्तमान स्थान', 'जीपीएस', 'लोकेशन', 'स्थान',
 ];
 
 /// Market search trigger words

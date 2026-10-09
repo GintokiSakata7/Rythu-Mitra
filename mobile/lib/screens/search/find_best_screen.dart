@@ -25,11 +25,94 @@ class _FindBestScreenState extends State<FindBestScreen> {
   double _quantity = 15; // default 15
   String _quantityUnit = 'Quintal'; // 'Quintal', 'Ton', 'kg'
   final TextEditingController _quantityController = TextEditingController(text: '15');
-  String _locationName = 'Nalgonda';
-  double _lat = 17.05;
-  double _lng = 79.27;
+  String _locationName = 'Hyderabad';
+  double _lat = 17.385;
+  double _lng = 78.4867;
   bool? _hasTransport;
   bool _isDetectingLocation = false;
+  bool _isGpsSelected = false;
+
+  Future<void> _detectGpsLocation() async {
+    setState(() => _isDetectingLocation = true);
+    final loc = await locationService.getCurrentLocation();
+    if (!mounted) return;
+    setState(() => _isDetectingLocation = false);
+
+    if (loc.result != null) {
+      final res = loc.result!;
+      setState(() {
+        _locationName = res.displayName ?? 'Current Device Location';
+        _lat = res.lat;
+        _lng = res.lng;
+        _isGpsSelected = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('📍 GPS Detected: $_locationName'),
+          backgroundColor: AppTheme.forestGreen,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } else if (loc.error != null) {
+      if (loc.error!.type == LocationErrorType.gpsDisabled) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.location_off, color: AppTheme.dangerRed),
+                SizedBox(width: 8),
+                Text('GPS Disabled'),
+              ],
+            ),
+            content: const Text(
+              'Location services are disabled on your phone. Please turn on GPS to allow RythuMitra to detect your farm coordinates.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  locationService.openLocationSettings();
+                },
+                child: const Text('Open Settings'),
+              ),
+            ],
+          ),
+        );
+      } else if (loc.error!.type == LocationErrorType.permissionPermanentlyDenied) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Location Permission Needed'),
+            content: const Text(
+              'Location permission was permanently denied. Please grant permission in App Settings to use device GPS.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  locationService.openAppSettings();
+                },
+                child: const Text('App Settings'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc.error!.message)),
+        );
+      }
+    }
+  }
 
   void _nextStep() {
     if (_currentStep < 3) {
@@ -419,7 +502,7 @@ class _FindBestScreenState extends State<FindBestScreen> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: _prevStep,
-                  child: Text(s('back') ?? 'Back'),
+                  child: Text(s('back')),
                 ),
               ),
               const SizedBox(width: 16),
@@ -452,59 +535,121 @@ class _FindBestScreenState extends State<FindBestScreen> {
       subtitle: s('location_sub'),
       child: Column(
         children: [
-          ElevatedButton.icon(
-            onPressed: () async {
-              setState(() => _isDetectingLocation = true);
-              final loc = await locationService.getCurrentLocation();
-              if (mounted) {
-                setState(() => _isDetectingLocation = false);
-                if (loc.result != null) {
-                  _locationName = loc.result!.displayName ?? 'Current Location';
-                  _lat = loc.result!.lat;
-                  _lng = loc.result!.lng;
-                } else if (loc.error != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(loc.error!.message)),
-                  );
-                }
-              }
-            },
-            icon: _isDetectingLocation
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.black87,
-                      strokeWidth: 2,
+          if (_isGpsSelected)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.forestGreen, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.forestGreen.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: AppTheme.forestGreen,
+                      shape: BoxShape.circle,
                     ),
-                  )
-                : const Icon(Icons.my_location, color: Colors.black87),
-            label: Text(
-              _isDetectingLocation ? s('detecting') : s('use_gps'),
-              style: const TextStyle(color: Colors.black87),
+                    child: const Icon(Icons.check, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '📍 GPS LOCATION ACTIVE',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.forestGreen,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _locationName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          'Lat: ${_lat.toStringAsFixed(4)}, Lng: ${_lng.toStringAsFixed(4)}',
+                          style: const TextStyle(fontSize: 11, color: Colors.black54),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: _isDetectingLocation
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.forestGreen),
+                          )
+                        : const Icon(Icons.refresh, color: AppTheme.forestGreen),
+                    tooltip: 'Re-detect GPS',
+                    onPressed: _isDetectingLocation ? null : _detectGpsLocation,
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isDetectingLocation ? null : _detectGpsLocation,
+                icon: _isDetectingLocation
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.black87,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.my_location, color: Colors.black87),
+                label: Text(
+                  _isDetectingLocation ? s('detecting') : s('use_gps'),
+                  style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.harvestGold,
+                  foregroundColor: Colors.black87,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 2,
+                ),
+              ),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.harvestGold,
-              foregroundColor: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
           const Row(
             children: [
               Expanded(child: Divider()),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('OR CHOOSE TOWN',
-                    style: TextStyle(color: Colors.grey, fontSize: 12)),
+                child: Text('OR CHOOSE TOWN / MANDI',
+                    style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
               Expanded(child: Divider()),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Expanded(
             child: ListView(
               children: AppConstants.presetLocations.map((loc) {
-                final isSelected = _locationName == loc['name'];
+                final isSelected = !_isGpsSelected && _locationName == loc['name'];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
@@ -516,16 +661,18 @@ class _FindBestScreenState extends State<FindBestScreen> {
                       ),
                     ),
                     tileColor: Colors.white,
-                    leading: const Icon(Icons.location_city, color: Colors.grey),
-                    title: Text(loc['name']!),
+                    leading: Icon(Icons.location_city, color: isSelected ? AppTheme.forestGreen : Colors.grey),
+                    title: Text(loc['name']!, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                    subtitle: Text('Lat: ${loc['lat']}, Lng: ${loc['lng']}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                     trailing: isSelected
                         ? const Icon(Icons.check_circle, color: AppTheme.forestGreen)
                         : null,
                     onTap: () {
                       setState(() {
+                        _isGpsSelected = false;
                         _locationName = loc['name'];
-                        _lat = loc['lat'];
-                        _lng = loc['lng'];
+                        _lat = (loc['lat'] as num).toDouble();
+                        _lng = (loc['lng'] as num).toDouble();
                       });
                     },
                   ),
@@ -539,14 +686,14 @@ class _FindBestScreenState extends State<FindBestScreen> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: _prevStep,
-                  child: Text(s('back') ?? 'Back'),
+                  child: Text(s('back')),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    if (_lat == null || _lng == null) {
+                    if (_locationName.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Please select a location first.')),
                       );
@@ -597,7 +744,7 @@ class _FindBestScreenState extends State<FindBestScreen> {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: _prevStep,
-              child: Text(s('back') ?? 'Back'),
+              child: Text(s('back')),
             ),
           ),
         ],

@@ -31,19 +31,25 @@ class LocationResult {
 
 class LocationService {
   Future<({LocationResult? result, LocationError? error})> getCurrentLocation() async {
-    // Check if location service is enabled
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    // 1. Check if device location service is enabled
+    bool serviceEnabled = false;
+    try {
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    } catch (_) {
+      serviceEnabled = false;
+    }
+
     if (!serviceEnabled) {
       return (
         result: null,
         error: const LocationError(
           LocationErrorType.gpsDisabled,
-          'Location services are disabled. Please enable GPS.',
+          'Location services (GPS) are turned off. Please turn on GPS in your device settings.',
         )
       );
     }
 
-    // Check permission
+    // 2. Check and request location permission
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -52,85 +58,99 @@ class LocationService {
           result: null,
           error: const LocationError(
             LocationErrorType.permissionDenied,
-            'Location permission denied.',
+            'Location permission was denied. Please allow location access to find nearby markets.',
           )
         );
       }
     }
+
     if (permission == LocationPermission.deniedForever) {
       return (
         result: null,
         error: const LocationError(
           LocationErrorType.permissionPermanentlyDenied,
-          'Location permission permanently denied. Please enable in app settings.',
+          'Location permission is permanently denied. Please enable location permissions in App Settings.',
         )
       );
     }
 
-    // Get position
+    // 3. Acquire position
+    Position? position;
+
+    // Fast check: Try last known position first (instant cached candidate)
     try {
-      Position? position;
-      try {
-        position = await Geolocator.getLastKnownPosition().timeout(const Duration(seconds: 2));
-      } catch (_) {}
-      
-      try {
-        position ??= await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.medium,
-            timeLimit: Duration(seconds: 5),
-          ),
-        ).timeout(const Duration(seconds: 5));
-      } catch (_) {}
+      position = await Geolocator.getLastKnownPosition();
+    } catch (_) {}
 
-      if (position == null) {
-         throw Exception('Location timeout');
-      }
-
-      // Reverse geocode
-      String? displayName;
-      try {
-        final placemarks = await placemarkFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-        if (placemarks.isNotEmpty) {
-          final p = placemarks.first;
-          displayName = [
-            p.subLocality,
-            p.locality,
-            p.administrativeArea,
-          ].where((s) => s != null && s.isNotEmpty).join(', ');
-        }
-      } catch (_) {
-        // Reverse geocode is best-effort
-      }
-
-      return (
-        result: LocationResult(
-          lat: position.latitude,
-          lng: position.longitude,
-          displayName: displayName,
-          accuracyMeters: position.accuracy,
+    // Get fresh accurate position
+    try {
+      final fresh = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
         ),
-        error: null,
       );
-    } on LocationServiceDisabledException {
+      position = fresh;
+    } catch (_) {
+      // High accuracy timed out or failed (e.g. indoors); try medium accuracy
+      if (position == null) {
+        try {
+          position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.medium,
+              timeLimit: Duration(seconds: 8),
+            ),
+          );
+        } catch (_) {}
+      }
+    }
+
+    if (position == null) {
       return (
         result: null,
-        error: const LocationError(LocationErrorType.gpsDisabled, 'GPS disabled.')
-      );
-    } catch (e) {
-      return (
-        result: const LocationResult(
-          lat: 17.05,
-          lng: 79.27,
-          displayName: 'Nalgonda (Mocked)',
-          accuracyMeters: 5.0,
-        ),
-        error: null
+        error: const LocationError(
+          LocationErrorType.timeout,
+          'Unable to acquire GPS signal. Please move to an open area or select your town manually.',
+        )
       );
     }
+
+    // 4. Reverse geocode coordinates to town/village name
+    String? displayName;
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      ).timeout(const Duration(seconds: 4));
+
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        final parts = [
+          p.subLocality,
+          p.locality,
+          p.subAdministrativeArea,
+          p.administrativeArea,
+        ].where((s) => s != null && s.isNotEmpty && s.trim().isNotEmpty && s != 'null').toSet().toList();
+
+        if (parts.isNotEmpty) {
+          displayName = parts.take(2).join(', ');
+        }
+      }
+    } catch (_) {
+      // Geocoding network or service failure is non-fatal
+    }
+
+    displayName ??= 'GPS Location (${position.latitude.toStringAsFixed(3)}, ${position.longitude.toStringAsFixed(3)})';
+
+    return (
+      result: LocationResult(
+        lat: position.latitude,
+        lng: position.longitude,
+        displayName: displayName,
+        accuracyMeters: position.accuracy,
+      ),
+      error: null,
+    );
   }
 
   Future<LocationResult?> getLocationFromAddress(String address) async {
