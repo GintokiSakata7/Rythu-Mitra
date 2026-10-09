@@ -9,7 +9,6 @@ import OfficialSubmissionsPage from './OfficialSubmissionsPage.jsx';
 export default function OfficialDashboardPage() {
   const { user, officialProfile, isVerifiedOfficial, refreshProfile } = useAuth();
   const [stats, setStats] = useState(null);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState('overview'); // 'overview', 'submit', 'history'
 
