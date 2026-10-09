@@ -29,12 +29,6 @@ class VoiceInitResult {
   });
 }
 
-/// Preferred BCP-47 locales for each app language (in priority order)
-const Map<String, List<String>> _preferredLocales = {
-  'en': ['en-IN', 'en-US', 'en-GB', 'en-AU'],
-  'te': ['te-IN'],
-  'hi': ['hi-IN'],
-};
 
 class VoiceService {
   final SpeechToText _speech = SpeechToText();

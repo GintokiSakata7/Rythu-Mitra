@@ -3,10 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/trends_provider.dart';
-import '../../providers/location_provider.dart';
 import '../../models/trend_model.dart';
-import '../../models/app_models.dart';
-import '../search/search_animation_screen.dart';
 
 class TrendsScreen extends StatefulWidget {
   const TrendsScreen({super.key});
@@ -46,11 +43,19 @@ class _TrendsScreenState extends State<TrendsScreen> {
     });
   }
 
+  void _showTrendDetailsSheet(BuildContext context, MarketTrendItem item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _TrendDetailsSheet(item: item),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().langCode;
     final prov = context.watch<TrendsProvider>();
-    final locProv = context.watch<LocationProvider>();
 
     return Scaffold(
       backgroundColor: AppTheme.warmCream,
@@ -102,7 +107,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           Text(
-                            'Powered by public.market_prices database table',
+                            'Live APMC daily market arrivals & auction rates',
                             style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                           ),
                         ],
@@ -152,25 +157,26 @@ class _TrendsScreenState extends State<TrendsScreen> {
                           selectedColor: AppTheme.forestGreen,
                           labelStyle: TextStyle(
                             color: isSelected ? Colors.white : Colors.black87,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                       );
                     }
                     final crop = _popularCrops[i - 1];
-                    final isSelected = prov.selectedCrop == crop['name'];
+                    final isSelected = prov.selectedCrop.toLowerCase() == crop['name']!.toLowerCase();
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
-                        label: Text('${crop['emoji']} ${crop['name']}'),
+                        avatar: Text(crop['emoji']!, style: const TextStyle(fontSize: 13)),
+                        label: Text(crop['name']!),
                         selected: isSelected,
-                        onSelected: (_) => prov.selectCrop(crop['name']!),
+                        onSelected: (_) => prov.selectCrop(isSelected ? '' : crop['name']!),
                         selectedColor: AppTheme.forestGreen,
                         labelStyle: TextStyle(
                           color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                     );
@@ -179,73 +185,87 @@ class _TrendsScreenState extends State<TrendsScreen> {
               ),
             ),
 
-            // Market Filter Chips
+            // Market Filter Dropdown Bar
             SliverToBoxAdapter(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
                 color: Colors.white,
                 child: Row(
                   children: [
-                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                    const Icon(Icons.location_on, size: 16, color: AppTheme.forestGreen),
                     const SizedBox(width: 6),
                     Text(
-                      lang == 'te' ? 'మార్కెట్ / నియోజకవర్గం:' : 'Market / Yard:',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54),
+                      'Market:',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: _popularMarkets.map((m) {
-                            final isSel = (m == 'All Mandis' && prov.selectedMarket.isEmpty) ||
-                                (prov.selectedMarket == m);
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: InkWell(
-                                onTap: () => prov.selectMarket(m == 'All Mandis' ? '' : m),
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isSel ? const Color(0xFFE8F5E9) : const Color(0xFFF5F5F5),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isSel ? AppTheme.forestGreen : Colors.transparent,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    m,
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                                      color: isSel ? AppTheme.forestGreen : Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            isDense: true,
+                            isExpanded: true,
+                            value: prov.selectedMarket.isEmpty ? 'All Mandis' : prov.selectedMarket,
+                            items: _popularMarkets.map((m) {
+                              return DropdownMenuItem<String>(
+                                value: m,
+                                child: Text(m, style: const TextStyle(fontSize: 12.5)),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                prov.selectMarket(val == 'All Mandis' ? '' : val);
+                              }
+                            },
+                          ),
                         ),
                       ),
                     ),
+                    if (prov.selectedCrop.isNotEmpty || prov.selectedMarket.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                        tooltip: 'Clear filters',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () {
+                          prov.selectCrop('');
+                          prov.selectMarket('');
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
 
-            const SliverToBoxAdapter(child: Divider(height: 1)),
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
-            // Loading / Error / Content
-            if (prov.loading)
+            // Body Content based on state
+            if (prov.loading && prov.items.isEmpty)
               const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: AppTheme.forestGreen),
+                      SizedBox(height: 12),
+                      Text('Loading APMC trends from Supabase...'),
+                    ],
+                  ),
+                ),
               )
-            else if (prov.error.isNotEmpty)
+            else if (prov.error.isNotEmpty && prov.items.isEmpty)
               SliverFillRemaining(
                 child: Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -313,7 +333,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'Rs/Kg & Rs/Quintal',
+                        'Tap item for full details',
                         style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                       ),
                     ],
@@ -330,26 +350,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                       final item = prov.items[index];
                       return _TrendCard(
                         item: item,
-                        onOptimize: () {
-                          final req = RecommendationRequest(
-                            crop: item.crop,
-                            quantityKg: 2000,
-                            latitude: locProv.latitude,
-                            longitude: locProv.longitude,
-                            locationText: locProv.displayName,
-                            quality: 'A',
-                            hasTransport: false,
-                            perishability: 'high',
-                            includeBuyers: true,
-                            language: context.read<LanguageProvider>().langCode,
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => SearchAnimationScreen(request: req),
-                            ),
-                          );
-                        },
+                        onTap: () => _showTrendDetailsSheet(context, item),
                       );
                     },
                     childCount: prov.items.length,
@@ -479,124 +480,571 @@ class _SummaryCard extends StatelessWidget {
 
 class _TrendCard extends StatelessWidget {
   final MarketTrendItem item;
-  final VoidCallback onOptimize;
+  final VoidCallback onTap;
 
-  const _TrendCard({required this.item, required this.onOptimize});
+  const _TrendCard({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE8F0E9)),
-        boxShadow: const [
-          BoxShadow(color: Color(0x04000000), blurRadius: 6, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE8F0E9)),
+            boxShadow: const [
+              BoxShadow(color: Color(0x04000000), blurRadius: 6, offset: Offset(0, 2)),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(8),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.storefront, color: AppTheme.forestGreen, size: 16),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${item.market} APMC',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              Text(
+                                '${item.crop} (${item.variety}) • ${item.date}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    child: const Icon(Icons.storefront, color: AppTheme.forestGreen, size: 16),
                   ),
                   const SizedBox(width: 8),
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${item.market} APMC',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        '₹${item.modalPriceKg.toStringAsFixed(1)}/kg',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.successGreen,
+                        ),
                       ),
                       Text(
-                        '${item.crop} (${item.variety}) • ${item.date}',
-                        style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                        '₹${item.modalPriceQuintal.toStringAsFixed(0)} / qtl',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                       ),
                     ],
                   ),
                 ],
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '₹${item.modalPriceKg.toStringAsFixed(1)}/kg',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.successGreen,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Text(
+                          '₹${item.minPriceKg.toStringAsFixed(1)} - ₹${item.maxPriceKg.toStringAsFixed(1)}/kg',
+                          style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            '• ${item.arrivalsQuintal.toStringAsFixed(0)} qtl',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    '₹${item.modalPriceQuintal.toStringAsFixed(0)} / qtl',
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F8F3),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFC8E6C9)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.info_outline, size: 12, color: AppTheme.forestGreen),
+                        SizedBox(width: 4),
+                        Text(
+                          'Details',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.forestGreen,
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(Icons.keyboard_arrow_right, size: 13, color: AppTheme.forestGreen),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          const Divider(height: 1),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Range: ₹${item.minPriceKg.toStringAsFixed(1)} - ₹${item.maxPriceKg.toStringAsFixed(1)}/kg',
-                    style: const TextStyle(fontSize: 11.5, color: Colors.black54),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '• ${item.arrivalsQuintal.toStringAsFixed(0)} qtl arrived',
-                    style: const TextStyle(fontSize: 11.5, color: Colors.black54),
-                  ),
-                ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrendDetailsSheet extends StatelessWidget {
+  final MarketTrendItem item;
+
+  const _TrendDetailsSheet({required this.item});
+
+  String _formatAmount(double val) {
+    if (val <= 0) return '—';
+    if (val >= 10000000) return '₹${(val / 10000000).toStringAsFixed(2)} Cr';
+    if (val >= 100000) return '₹${(val / 100000).toStringAsFixed(2)} Lakh';
+    return '₹${val.toStringAsFixed(0)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final spreadKg = item.maxPriceKg - item.minPriceKg;
+    final spreadQuintal = item.maxPriceQuintal - item.minPriceQuintal;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        top: 12,
+        left: 20,
+        right: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              InkWell(
-                onTap: onOptimize,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            ),
+            const SizedBox(height: 16),
+
+            // Top Header: Mandi & Commodity
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F8F3),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFC8E6C9)),
+                    color: AppTheme.forestGreen.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: const Icon(Icons.storefront, color: AppTheme.forestGreen, size: 28),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Optimize',
-                        style: TextStyle(
+                        '${item.market} APMC',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.forestGreen,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              item.crop,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Text(
+                              item.variety,
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.calendar_today, size: 12, color: AppTheme.forestGreen),
+                      const SizedBox(width: 4),
+                      Text(
+                        item.date,
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.forestGreen,
                         ),
                       ),
-                      SizedBox(width: 2),
-                      Icon(Icons.arrow_forward_ios, size: 9, color: AppTheme.forestGreen),
                     ],
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+
+            // Price Details Header
+            const Text(
+              'Price Details',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Modal Price Hero Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F8F3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFC8E6C9)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Modal / Common Auction Price',
+                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '₹${item.modalPriceKg.toStringAsFixed(2)} / kg',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.forestGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        'Per Quintal',
+                        style: TextStyle(fontSize: 11, color: Colors.black45),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '₹${item.modalPriceQuintal.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Min, Max, Spread Row
+            Row(
+              children: [
+                Expanded(
+                  child: _infoCard(
+                    title: 'Minimum Price',
+                    primary: '₹${item.minPriceKg.toStringAsFixed(2)}/kg',
+                    secondary: '₹${item.minPriceQuintal.toStringAsFixed(0)}/qtl',
+                    icon: Icons.trending_down,
+                    iconColor: AppTheme.dangerRed,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _infoCard(
+                    title: 'Maximum Price',
+                    primary: '₹${item.maxPriceKg.toStringAsFixed(2)}/kg',
+                    secondary: '₹${item.maxPriceQuintal.toStringAsFixed(0)}/qtl',
+                    icon: Icons.trending_up,
+                    iconColor: AppTheme.successGreen,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _infoCard(
+                    title: 'Price Spread',
+                    primary: '₹${spreadKg.toStringAsFixed(2)}/kg',
+                    secondary: '₹${spreadQuintal.toStringAsFixed(0)}/qtl',
+                    icon: Icons.compare_arrows,
+                    iconColor: Colors.blueGrey,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+
+            // Arrivals & Volume Section
+            const Text(
+              'Arrivals & Market Volume',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                children: [
+                  _detailRow(
+                    'Day Arrivals',
+                    '${item.arrivalsQuintal.toStringAsFixed(1)} Quintals (${(item.arrivalsQuintal * 100).toStringAsFixed(0)} kg)',
+                    Icons.inventory_2_outlined,
+                  ),
+                  if (item.progArrivalsQuintal > 0) ...[
+                    const Divider(height: 16),
+                    _detailRow(
+                      'Progressive Arrivals',
+                      '${item.progArrivalsQuintal.toStringAsFixed(1)} Quintals',
+                      Icons.history,
+                    ),
+                  ],
+                  if (item.valuation > 0) ...[
+                    const Divider(height: 16),
+                    _detailRow(
+                      'Daily Valuation',
+                      _formatAmount(item.valuation),
+                      Icons.currency_rupee,
+                    ),
+                  ],
+                  if (item.marketFee > 0) ...[
+                    const Divider(height: 16),
+                    _detailRow(
+                      'Market Cess / Fee',
+                      _formatAmount(item.marketFee),
+                      Icons.receipt_long,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // Mandi Information Section
+            const Text(
+              'Mandi Details',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                children: [
+                  _detailRow('Market Committee', item.amcName.isNotEmpty ? item.amcName : item.market, Icons.business),
+                  const Divider(height: 16),
+                  _detailRow('Yard Name', item.market, Icons.location_on_outlined),
+                  if (item.yardCode != null && item.yardCode! > 0) ...[
+                    const Divider(height: 16),
+                    _detailRow('Yard Code', item.yardCode.toString(), Icons.pin),
+                  ],
+                  const Divider(height: 16),
+                  _detailRow('Authority', 'Telangana Agricultural Marketing Dept', Icons.verified_user_outlined),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Notice
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FBE7),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE6EE9C)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: Color(0xFF827717)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Official daily APMC arrival record. Rates are determined by live open auctions at the mandi yard.',
+                      style: TextStyle(fontSize: 11, color: Colors.brown.shade800),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Close Button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: Colors.grey.shade300),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Close', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoCard({
+    required String title,
+    required String primary,
+    required String secondary,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: iconColor),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 10, color: Colors.black54),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 6),
+          Text(
+            primary,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            secondary,
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _detailRow(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppTheme.forestGreen),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Colors.black54),
+        ),
+        const Spacer(),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
+          ),
+        ),
+      ],
     );
   }
 }

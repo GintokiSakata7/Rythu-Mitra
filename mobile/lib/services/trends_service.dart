@@ -17,7 +17,7 @@ class TrendsResponse {
 
 class TrendsService {
   static const String _supabaseUrl =
-      'https://ucgwzgbcjmzmnrdnjlhl.supabase.co/rest/v1/market_prices';
+      'https://ucgwzgbcjmzmnrdnjlhl.supabase.co/rest/v1/day_prices_between_01_08_2026_31_08_2026';
   static const String _supabaseKey =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZ3d6Z2Jjam16bW5yZG5qbGhsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTQ2ODMxOCwiZXhwIjoyMTA3MDQ0MzE4fQ.3Dl_v8PBcVuHTPtkwMT1CDnNrxvXyrpJzcCrLJWHi84';
 
@@ -58,12 +58,12 @@ class TrendsService {
     int limit = 60,
   }) async {
     try {
-      var urlStr = '$_supabaseUrl?select=*&order=price_date.desc&limit=$limit';
+      var urlStr = '$_supabaseUrl?select=*&order=DDate.desc&limit=$limit';
       if (crop.isNotEmpty) {
-        urlStr += '&commodity_name=ilike.*${Uri.encodeComponent(crop)}*';
+        urlStr += '&or=(CommName.ilike.*${Uri.encodeComponent(crop)}*,commodity.ilike.*${Uri.encodeComponent(crop)}*)';
       }
       if (market.isNotEmpty) {
-        urlStr += '&yard_name=ilike.*${Uri.encodeComponent(market)}*';
+        urlStr += '&or=(YardName.ilike.*${Uri.encodeComponent(market)}*,yard_name.ilike.*${Uri.encodeComponent(market)}*,AmcName.ilike.*${Uri.encodeComponent(market)}*)';
       }
 
       final uri = Uri.parse(urlStr);
@@ -111,7 +111,7 @@ class TrendsService {
           return TrendsResponse(
             items: items,
             summary: summary,
-            source: 'Supabase (market_prices table)',
+            source: 'Supabase (day_prices table)',
           );
         }
       }

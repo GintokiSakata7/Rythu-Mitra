@@ -36,48 +36,58 @@ marketRouter.get('/commodities', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-// GET /api/markets/trends — live market trends and recent prices from market_prices table
+// GET /api/markets/trends — live market trends from day_prices_between_01_08_2026_31_08_2026
 marketRouter.get('/trends', async (req, res, next) => {
   try {
     const crop = (req.query.crop || '').trim();
     const market = (req.query.market || '').trim();
-    const limit = Math.min(Number(req.query.limit) || 100, 200);
+    const limit = Math.min(Number(req.query.limit) || 100, 300);
+
+    const tableName = 'day_prices_between_01_08_2026_31_08_2026';
 
     let query = supabase
-      .from('market_prices')
+      .from(tableName)
       .select('*')
-      .order('price_date', { ascending: false })
+      .order('DDate', { ascending: false })
       .limit(limit);
 
     if (crop) {
-      query = query.ilike('commodity_name', `%${crop}%`);
+      query = query.or(`CommName.ilike.%${crop}%,commodity.ilike.%${crop}%`);
     }
     if (market) {
-      query = query.or(`yard_name.ilike.%${market}%,amc_name.ilike.%${market}%`);
+      query = query.or(`YardName.ilike.%${market}%,yard_name.ilike.%${market}%,AmcName.ilike.%${market}%`);
     }
 
     const { data, error } = await query;
     if (error) {
-      console.error('[marketRouter] Error fetching trends from market_prices:', error);
+      console.error(`[marketRouter] Error fetching trends from ${tableName}:`, error);
       return res.status(500).json({ error: error.message });
     }
 
-    const items = (data || []).map(r => ({
-      id: r.id,
-      date: r.price_date,
-      market: r.yard_name || r.amc_name,
-      amcName: r.amc_name,
-      yardCode: r.yard_code,
-      crop: r.commodity_name,
-      variety: r.variety_name,
-      arrivalsQuintal: Number(r.arrivals || 0),
-      minPriceQuintal: Number(r.min_price || 0),
-      maxPriceQuintal: Number(r.max_price || 0),
-      modalPriceQuintal: Number(r.modal_price || 0),
-      minPriceKg: Number((Number(r.min_price || 0) / 100).toFixed(2)),
-      maxPriceKg: Number((Number(r.max_price || 0) / 100).toFixed(2)),
-      modalPriceKg: Number((Number(r.modal_price || 0) / 100).toFixed(2)),
-    }));
+    const items = (data || []).map(r => {
+      const minQ = Number(r.Minimum || r.min_price || 0);
+      const maxQ = Number(r.Maximum || r.max_price || 0);
+      const modQ = Number(r.Model || r.modal_price || 0);
+      return {
+        id: r.id,
+        date: r.DDate || r.date || r.price_date,
+        market: r.YardName || r.yard_name || r.AmcName || 'Telangana Mandi',
+        amcName: r.AmcName || r.amc_name || '',
+        yardCode: r.YardCode || r.yard_code,
+        crop: r.CommName || r.commodity || r.commodity_name,
+        variety: r.VarityName || r.variety || 'Common',
+        arrivalsQuintal: Number(r.Arrivals || r.arrivals || 0),
+        progArrivalsQuintal: Number(r.ProgArrivals || r.prog_arrivals || 0),
+        minPriceQuintal: minQ,
+        maxPriceQuintal: maxQ,
+        modalPriceQuintal: modQ,
+        minPriceKg: Number((minQ / 100).toFixed(2)),
+        maxPriceKg: Number((maxQ / 100).toFixed(2)),
+        modalPriceKg: Number((modQ / 100).toFixed(2)),
+        valuation: Number(r.Valuation || r.valuation || 0),
+        marketFee: Number(r.MarketFee || r.market_fee || 0),
+      };
+    });
 
     // Compute summary stats if items exist
     let summary = null;
@@ -108,7 +118,7 @@ marketRouter.get('/trends', async (req, res, next) => {
       trends: items,
       summary,
       count: items.length,
-      source: 'Supabase (market_prices)'
+      source: `Supabase (${tableName})`
     });
   } catch (error) { next(error); }
 });

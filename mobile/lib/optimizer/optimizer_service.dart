@@ -42,8 +42,6 @@ class OptimizerService {
     // Determine base price based on crop
     double basePrice = _basePrices[req.crop] ?? 2000.0;
     
-    // Convert to ₹/kg for calculation
-    double basePriceKg = basePrice / 100.0;
 
     final mockMarkets = [
       MockMarket(id: 'HYD-01', name: 'Bowenpally Wholesale Market', city: 'Hyderabad', lat: 17.4563, lng: 78.4975, pricePerQuintal: basePrice * 1.1),
