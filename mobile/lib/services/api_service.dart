@@ -11,35 +11,51 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  final String _baseUrl = AppConfig.baseUrl;
-  final Duration _timeout = const Duration(seconds: 15);
+  final List<String> _baseUrls = [
+    AppConfig.baseUrl,
+    'http://127.0.0.1:4000/api',
+    'http://10.0.2.2:4000/api',
+  ];
+  String _activeBaseUrl = AppConfig.baseUrl;
+  final Duration _timeout = const Duration(seconds: 10);
 
   Future<Map<String, dynamic>> get(String path, {Map<String, String>? query}) async {
-    Uri uri = Uri.parse('$_baseUrl$path');
-    if (query != null) uri = uri.replace(queryParameters: query);
-
-    try {
-      final response = await http.get(uri).timeout(_timeout);
-      return _handleResponse(response);
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw ApiException('Network error: $e');
+    dynamic lastError;
+    for (final base in [_activeBaseUrl, ..._baseUrls.where((u) => u != _activeBaseUrl)]) {
+      try {
+        Uri uri = Uri.parse('$base$path');
+        if (query != null) uri = uri.replace(queryParameters: query);
+        final response = await http.get(uri).timeout(_timeout);
+        final result = _handleResponse(response);
+        _activeBaseUrl = base;
+        return result;
+      } catch (e) {
+        lastError = e;
+      }
     }
+    if (lastError is ApiException) throw lastError;
+    throw ApiException('Network error: $lastError');
   }
 
   Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
-    final uri = Uri.parse('$_baseUrl$path');
-    try {
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      ).timeout(_timeout);
-      return _handleResponse(response);
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw ApiException('Network error: $e');
+    dynamic lastError;
+    for (final base in [_activeBaseUrl, ..._baseUrls.where((u) => u != _activeBaseUrl)]) {
+      try {
+        final uri = Uri.parse('$base$path');
+        final response = await http.post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
+        ).timeout(_timeout);
+        final result = _handleResponse(response);
+        _activeBaseUrl = base;
+        return result;
+      } catch (e) {
+        lastError = e;
+      }
     }
+    if (lastError is ApiException) throw lastError;
+    throw ApiException('Network error: $lastError');
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {
