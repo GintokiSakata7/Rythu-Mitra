@@ -3,13 +3,11 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../localization/app_strings.dart';
 import '../../providers/language_provider.dart';
-import '../../providers/location_provider.dart';
 import '../../voice/voice_service.dart';
 import '../../voice/intent_engine.dart';
 import '../../voice/conversation_manager.dart';
 import '../../location/location_service.dart';
 import '../search/search_animation_screen.dart';
-import '../trends/trends_screen.dart';
 import '../buyers/buyer_list_screen.dart';
 import '../demand/post_demand_screen.dart';
 import '../profile/profile_screen.dart';
@@ -41,51 +39,36 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
     super.initState();
     _pulseCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
     _initVoice();
   }
 
   Future<void> _initVoice() async {
-    try {
-      await _tts.awaitSpeakCompletion(false);
-      await _tts.setSpeechRate(0.48);
-      await _tts.setVolume(1.0);
-      await _tts.setPitch(1.0);
-    } catch (_) {}
+    await _tts.awaitSpeakCompletion(true);
+    await _tts.setSpeechRate(0.5);
+    await _tts.setVolume(1.0);
+    await _tts.setPitch(1.0);
 
-    // Initialize Speech To Text engine in background
     if (!voiceService.isInitialized) {
       await voiceService.initialize();
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
       final lang = context.read<LanguageProvider>().langCode;
-      final manager = context.read<ConversationManager>();
-      final locProv = context.read<LocationProvider>();
-
-      manager.reset();
-      // If user's device location was already obtained on startup, pre-seed it
-      if (locProv.hasLocation) {
-        manager.setGpsLocation(locProv.latitude, locProv.longitude, locProv.displayName);
-      }
-
       final greeting = lang == 'te' 
-          ? "నమస్కారం! నేను రైతు మిత్ర. మీ పంట వివరాలు మాట్లాడండి లేదా కింద ఉన్న బటన్లను నొక్కండి." 
-          : (lang == 'hi' 
-              ? "नमस्कार! मैं ऋतु मित्र हूँ। अपनी फसल का नाम बोलें या नीचे दिए गए विकल्प चुनें।" 
-              : "Hello! I am Rythu Mitra. Speak what crop you want to sell, or tap below.");
-      
+          ? "నమస్కారం! నేను రైతు మిత్ర. మీకు ఏం సహాయం కావాలి?" 
+          : (lang == 'hi' ? "नमस्कार! मैं ऋतु मित्र हूँ। मैं आपकी क्या मदद कर सकता हूँ?" : "Hello! I am Rythu Mitra. What can I help you with?");
       _addBotMessage(greeting);
+      context.read<ConversationManager>().reset();
     });
   }
 
   Future<void> _speak(String text) async {
     if (!mounted) return;
     final lang = context.read<LanguageProvider>().langCode;
-    String ttsLang = 'en-IN';
+    String ttsLang = 'en-US';
     if (lang == 'te') ttsLang = 'te-IN';
     if (lang == 'hi') ttsLang = 'hi-IN';
 
@@ -104,47 +87,29 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
   }
 
   Future<void> _addBotMessage(String text) async {
-    if (!mounted) return;
     setState(() {
       _messages.insert(0, {'isBot': true, 'text': text});
     });
-    _speak(text);
+    await _speak(text);
   }
 
   void _addUserMessage(String text) {
-    if (!mounted) return;
     setState(() {
       _messages.insert(0, {'isBot': false, 'text': text});
     });
   }
 
   void _startListening() async {
-    // 1. Immediately stop any active speech audio so mic isn't blocked
-    try {
-      await _tts.stop();
-    } catch (_) {}
-    if (!mounted) return;
-
     final lang = context.read<LanguageProvider>().langCode;
-
-    // 2. Ensure speech engine is initialized and mic permission is granted
-    if (!voiceService.isInitialized) {
-      final initRes = await voiceService.initialize();
-      if (!initRes.success || !voiceService.isInitialized) {
-        if (!mounted) return;
-        if (initRes.errorMessage?.contains('permanently') == true) {
-          _showPermissionDialog(lang);
-        } else {
-          _showErrorDialog(
-            lang == 'te' ? "మైక్రోఫోన్ అనుమతి అవసరం" : (lang == 'hi' ? "माइक अनुमति आवश्यक" : "Microphone Access Required"),
-            initRes.errorMessage ?? (lang == 'te' ? "వాయిస్ అసిస్టెంట్ వాడటానికి దయచేసి మైక్ అనుమతించండి." : "Please allow microphone access to speak with RythuMitra."),
-          );
-        }
-        return;
-      }
-    }
-
     final locale = voiceService.getBestLocale(lang);
+    
+    if (locale == null) {
+      _showErrorDialog(
+        lang == 'te' ? "వాయిస్ సపోర్ట్ లేదు" : (lang == 'hi' ? "आवाज़ का समर्थन नहीं" : "Speech Not Available"),
+        lang == 'te' ? "ఈ పరికరంలో వాయిస్ రికగ్నిషన్ పనిచేయడం లేదు. దయచేసి టైప్ చేయండి." : (lang == 'hi' ? "इस डिवाइस पर स्पीच रिकग्निशन उपलब्ध नहीं है। कृपया टाइप करें।" : "Speech recognition is not available on this device. Please type instead."),
+      );
+      return;
+    }
 
     setState(() {
       _isListening = true;
@@ -154,9 +119,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
     await voiceService.startListening(
       localeId: locale,
       onPartial: (partial) {
-        if (mounted && _isListening) {
-          setState(() => _partialText = partial);
-        }
+        if (mounted) setState(() => _partialText = partial);
       },
       onFinal: (finalText) {
         if (mounted) {
@@ -164,44 +127,28 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
             _isListening = false;
             _partialText = '';
           });
-          if (finalText.trim().isNotEmpty) {
-            _processInput(finalText.trim());
-          }
+          _processInput(finalText);
         }
       },
       onError: (error) {
         if (mounted) {
-          final captured = _partialText.trim();
           setState(() {
             _isListening = false;
             _partialText = '';
           });
-
-          // If words were captured before error/timeout, process them!
-          if (captured.isNotEmpty) {
-            _processInput(captured);
-            return;
-          }
-
           final l = context.read<LanguageProvider>().langCode;
           _addBotMessage(l == 'te' 
-              ? "వాయిస్ సరిగ్గా వినబడలేదు. దయచేసి మళ్ళీ మైక్ నొక్కి మాట్లాడండి లేదా కింద టైప్ చేయండి." 
-              : (l == 'hi' 
-                  ? "आवाज़ स्पष्ट नहीं मिली। कृपया पुनः माइक दबाएं या नीचे लिखें।" 
-                  : "Could not hear clearly. Please tap the mic and try again, or type below."));
+              ? "క్షమించండి, నాకు అర్థం కాలేదు. దయచేసి మళ్ళీ మాట్లాడండి." 
+              : l == 'hi' 
+                  ? "क्षमा करें, मैं समझ नहीं पाया। कृपया पुनः प्रयास करें।" 
+                  : "Sorry, I didn't catch that. Please try again.");
         }
       },
       onDone: () {
         if (mounted && _isListening) {
-          final captured = _partialText.trim();
           setState(() {
             _isListening = false;
-            _partialText = '';
           });
-          // Natural speech completion: process whatever was said!
-          if (captured.isNotEmpty) {
-            _processInput(captured);
-          }
         }
       },
     );
@@ -209,138 +156,91 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
 
   void _stopListening() async {
     if (_isListening) {
-      final captured = _partialText.trim();
-      setState(() {
-        _isListening = false;
-        _partialText = '';
-      });
       await voiceService.stopListening();
-      if (captured.isNotEmpty) {
-        _processInput(captured);
-      }
     }
   }
 
   Future<void> _processInput(String text) async {
-    final clean = text.trim();
-    if (clean.isEmpty) return;
-
-    // Immediately stop TTS
-    try {
-      await _tts.stop();
-    } catch (_) {}
-    if (!mounted) return;
-
-    _addUserMessage(clean);
+    if (text.isEmpty) return;
+    _addUserMessage(text);
     setState(() => _isProcessing = true);
 
     try {
       final lang = context.read<LanguageProvider>().langCode;
-      final intent = intentEngine.extractLocal(clean, lang);
+      final intent = intentEngine.extractLocal(text, lang);
       final manager = context.read<ConversationManager>();
 
-      // 1. Direct App Navigation Intents
+      // Handle direct navigation intents
       if (intent.type == IntentType.searchBuyers) {
-        await _addBotMessage(lang == 'te' ? "కొనుగోలుదారుల నెట్‌వర్క్‌ని తెరుస్తున్నాను..." : (lang == 'hi' ? "खरीदार नेटवर्क खोल रहा हूँ..." : "Opening the Buyer Network..."));
-        await Future.delayed(const Duration(milliseconds: 600));
+        await _addBotMessage(lang == 'te' ? "కొనుగోలుదారుల నెట్‌వర్క్‌ని తెరుస్తున్నాను..." : lang == 'hi' ? "खरीदार नेटवर्क खोल रहा हूँ..." : "Navigating to the Buyer Network...");
+        await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const BuyerListScreen()));
-        return;
-      }
-      
-      if (intent.type == IntentType.postDemand) {
-        await _addBotMessage(lang == 'te' ? "డిమాండ్ పోస్ట్ స్క్రీన్‌ని తెరుస్తున్నాను..." : (lang == 'hi' ? "डिमांड स्क्रीन खोल रहा हूँ..." : "Opening Post Demand screen..."));
-        await Future.delayed(const Duration(milliseconds: 600));
+      } else if (intent.type == IntentType.postDemand) {
+        await _addBotMessage(lang == 'te' ? "డిమాండ్ స్క్రీన్‌ని తెరుస్తున్నాను..." : lang == 'hi' ? "डिमांड स्क्रीन खोल रहा हूँ..." : "Opening Post Demand screen...");
+        await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const PostDemandScreen()));
-        return;
-      }
-
-      if (intent.type == IntentType.showPrices) {
-        final crop = intent.crop ?? 'Tomato';
-        await _addBotMessage(lang == 'te' 
-            ? "$crop మార్కెట్ ట్రెండ్స్ మరియు ధరలు చూపిస్తున్నాను..." 
-            : (lang == 'hi' ? "$crop के बाज़ार भाव दिखा रहा हूँ..." : "Showing current APMC market trends and prices for $crop..."));
-        await Future.delayed(const Duration(milliseconds: 600));
-        if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const TrendsScreen()));
-        return;
-      }
-
-      if (intent.type == IntentType.showProfile) {
-        await _addBotMessage(lang == 'te' ? "రైతు ప్రొఫైల్ తెరుస్తున్నాను..." : "Opening your profile...");
-        await Future.delayed(const Duration(milliseconds: 600));
+      } else if (intent.type == IntentType.showProfile) {
+        await _addBotMessage(lang == 'te' ? "ప్రొఫైల్ తెరుస్తున్నాను..." : lang == 'hi' ? "प्रोफाइल खोल रहा हूँ..." : "Opening profile...");
+        await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
-        return;
-      }
-
-      if (intent.type == IntentType.showNotifications) {
-        await _addBotMessage(lang == 'te' ? "నోటిఫికేషన్‌లు తెరుస్తున్నాను..." : "Opening notifications...");
-        await Future.delayed(const Duration(milliseconds: 600));
+      } else if (intent.type == IntentType.showNotifications) {
+        await _addBotMessage(lang == 'te' ? "నోటిఫికేషన్‌లు తెరుస్తున్నాను..." : lang == 'hi' ? "नोटिफिकेशन खोल रहा हूँ..." : "Opening notifications...");
+        await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
-        return;
-      }
-
-      if (intent.type == IntentType.openSettings) {
-        await _addBotMessage(lang == 'te' ? "సెట్టింగ్‌లు తెరుస్తున్నాను..." : "Opening settings...");
-        await Future.delayed(const Duration(milliseconds: 600));
+      } else if (intent.type == IntentType.openSettings) {
+        await _addBotMessage(lang == 'te' ? "సెట్టింగ్‌లు తెరుస్తున్నాను..." : lang == 'hi' ? "सेटिंग्स खोल रहा हूँ..." : "Opening settings...");
+        await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
-        return;
-      }
-
-      if (intent.type == IntentType.help) {
-        await _addBotMessage(lang == 'te'
-            ? "నేను రైతు మిత్ర అసిస్టెంట్! మీరు ఇలా మాట్లాడవచ్చు:\n• 'నా దగ్గర 20 క్వింటాళ్ళ టమాటా ఉంది వరంగల్‌లో'\n• 'ఉల్లిపాయకు ఉత్తమ మార్కెట్ వెతుకు'\n• 'టమాటా మార్కెట్ ధరలు చూపించు'\n• 'కొనుగోలుదారులను చూపించు'\n• '📍 నా GPS లొకేషన్'"
-            : (lang == 'hi'
-                ? "मैं ऋतु मित्र असिस्टेंट हूँ! आप कह सकते हैं:\n• 'मेरे पास 20 क्विंटल टमाटर है वारंगल में'\n• 'टमाटर के बाज़ार भाव दिखाओ'\n• 'खरीदार नेटवर्क दिखाओ'\n• '📍 मेरी GPS लोकेशन'"
-                : "I am RythuMitra Assistant! You can say:\n• 'I have 20 quintals of Tomato in Warangal'\n• 'Find best market for Onion'\n• 'Show market prices'\n• 'Show buyers'\n• '📍 Use my GPS location'"));
-        return;
-      }
-
-      // 2. Handle GPS Trigger Words
-      final lower = clean.toLowerCase();
-      final isGpsPrompt = intent.useGps == true ||
-          lower == 'gps' ||
-          lower == 'location' ||
-          lower.contains('gps') ||
-          lower.contains('లొకేషన్') ||
-          lower.contains('లోకేషన్') ||
-          lower.contains('స్థానం') ||
-          lower.contains('लोकेशन');
-
-      if (isGpsPrompt) {
-        await _useGpsLocation();
-        return;
-      }
-
-      // 3. Conversational Pipeline
-      if (manager.step == ConvStep.needLocation && clean.isNotEmpty) {
-        // Town provided directly
-        manager.setLocationFromText(clean);
-      }
-
-      final nextQuestion = manager.processIntent(intent, lang);
-      
-      if (nextQuestion != null) {
-        await _addBotMessage(nextQuestion);
-      } else if (manager.isReadyToSearch) {
-        await _addBotMessage(manager.confirmationMessage(lang));
-        await Future.delayed(const Duration(milliseconds: 1400));
-        if (mounted) {
-          final req = manager.buildRequest(lang);
-          manager.reset();
-          Navigator.push(context, MaterialPageRoute(builder: (_) => SearchAnimationScreen(request: req, fromVoice: true)));
-        }
       } else {
-        await _addBotMessage(lang == 'te' 
-            ? "దయచేసి మీరు ఏ పంట అమ్ముతున్నారో చెప్పండి. (ఉదా: 'నా దగ్గర 10 క్వింటాళ్ళ టమాటా ఉంది')" 
-            : (lang == 'hi' 
-                ? "कृपया बताएं कि आप कौन सी फसल बेचना चाहते हैं। (जैसे: '10 क्विंटल टमाटर')" 
-                : "Please tell me which crop you want to sell. (e.g. 'I have 10 quintals of Tomato')"));
+        // Handle conversational intents
+        final lower = text.toLowerCase().trim();
+        final isGpsPrompt = intent.useGps == true ||
+            lower == 'gps' ||
+            lower == 'location' ||
+            lower.contains('gps') ||
+            lower.contains('లొకేషన్') ||
+            lower.contains('లోకేషన్') ||
+            lower.contains('స్థానం') ||
+            lower.contains('लोकेशन');
+
+        if (isGpsPrompt) {
+          await _useGpsLocation();
+          return;
+        } else if (manager.step == ConvStep.needLocation && intent.rawText.trim().isNotEmpty) {
+          // The user provided a town name! Let's find its latitude and longitude!
+          await _addBotMessage(lang == 'te' ? "లొకేషన్ వెతుకుతున్నాను..." : lang == 'hi' ? "स्थान खोज रहा हूँ..." : "Locating ${intent.rawText.trim()}...");
+          final loc = await locationService.getLocationFromAddress(intent.rawText.trim());
+          if (loc != null) {
+            manager.setLocationFromText(loc.displayName ?? intent.rawText.trim(), lat: loc.lat, lng: loc.lng);
+          } else {
+            manager.setLocationFromText(intent.rawText.trim());
+          }
+        }
+
+        final nextQuestion = manager.processIntent(intent, lang);
+        
+        if (nextQuestion != null) {
+          await _addBotMessage(nextQuestion);
+        } else if (manager.isReadyToSearch) {
+          await _addBotMessage(manager.confirmationMessage(lang));
+          await Future.delayed(const Duration(seconds: 2));
+          if (mounted) {
+            final req = manager.buildRequest(lang);
+            manager.reset();
+            Navigator.push(context, MaterialPageRoute(builder: (_) => SearchAnimationScreen(request: req, fromVoice: true)));
+          }
+        } else {
+          await _addBotMessage(lang == 'te' ? "దయచేసి మీరు ఏ పంట అమ్ముతున్నారో చెప్పండి." : lang == 'hi' ? "कृपया बताएं कि आप कौन सी फसल बेचना चाहते हैं।" : "I am RythuMitra assistant. Just say 'I have tomato to sell'.");
+        }
       }
     } catch (e) {
       if (!mounted) return;
       final l = context.read<LanguageProvider>().langCode;
       await _addBotMessage(l == 'te' 
-          ? "క్షమించండి, ప్రక్రియలో లోపం జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి." 
-          : "Sorry, an unexpected error occurred. Please try again.");
+          ? "క్షమించండి, పొరపాటు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి." 
+          : l == 'hi' 
+              ? "क्षमा करें, कोई त्रुटि हुई। कृपया पुनः प्रयास करें।" 
+              : "Sorry, I encountered an error. Please try again.");
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -354,10 +254,10 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
     final manager = context.read<ConversationManager>();
 
     await _addBotMessage(lang == 'te'
-        ? "మీ GPS లొకేషన్ గుర్తిస్తున్నాను... దయచేసి వేచి ఉండండి."
+        ? "లొకేషన్ తీసుకుంటున్నాను... దయచేసి వేచి ఉండండి."
         : (lang == 'hi'
-            ? "GPS स्थान प्राप्त कर रहा हूँ... कृपया प्रतीक्षा करें।"
-            : "Acquiring your live GPS coordinates..."));
+            ? "स्थान प्राप्त कर रहा हूँ... कृपया प्रतीक्षा करें।"
+            : "Detecting your live GPS location..."));
 
     try {
       final loc = await locationService.getCurrentLocation();
@@ -375,7 +275,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                 : "Location confirmed: $placeName");
         await _addBotMessage(detectedMsg);
 
-        // Advance conversation
+        // Advance to next conversation question
         final nextQuestion = manager.processIntent(
           AssistantIntent(
             type: IntentType.findBestMarket,
@@ -390,7 +290,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
           await _addBotMessage(nextQuestion);
         } else if (manager.isReadyToSearch) {
           await _addBotMessage(manager.confirmationMessage(lang));
-          await Future.delayed(const Duration(milliseconds: 1400));
+          await Future.delayed(const Duration(seconds: 2));
           if (mounted) {
             final req = manager.buildRequest(lang);
             manager.reset();
@@ -400,17 +300,27 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
       } else if (loc.error != null) {
         if (loc.error!.type == LocationErrorType.gpsDisabled) {
           _showGpsDisabledDialog(lang);
+          await _addBotMessage(lang == 'te'
+              ? "మీ ఫోన్ GPS ఆఫ్‌లో ఉంది. దయచేసి సెట్టింగ్స్‌లో ఆన్ చేయండి."
+              : (lang == 'hi'
+                  ? "आपके फोन का GPS बंद है। कृपया सेटिंग्स में इसे चालू करें।"
+                  : "Device GPS is turned off. Please turn it on in settings."));
         } else if (loc.error!.type == LocationErrorType.permissionPermanentlyDenied ||
             loc.error!.type == LocationErrorType.permissionDenied) {
           _showPermissionDialog(lang);
+          await _addBotMessage(lang == 'te'
+              ? "లొకేషన్ అనుమతి అవసరం. దయచేసి యాప్ సెట్టింగ్స్‌లో అనుమతించండి."
+              : (lang == 'hi'
+                  ? "स्थान अनुमति आवश्यक है। कृपया ऐप सेटिंग्स में अनुमति दें।"
+                  : "Location permission is required to detect nearby mandis."));
         } else {
           await _addBotMessage(loc.error!.message);
         }
       }
     } catch (e) {
       await _addBotMessage(lang == 'te'
-          ? "GPS పొందడంలో లోపం జరిగింది. దయచేసి మీ ఊరి పేరు చెప్పండి లేదా టైప్ చేయండి."
-          : "Could not fetch GPS. Please say or type your town name.");
+          ? "లొకేషన్ పొందడంలో లోపం జరిగింది. దయచేసి మీ ఊరి పేరు టైప్ చేయండి."
+          : "Could not fetch GPS. Please type your town or district name.");
     } finally {
       if (mounted) setState(() => _isDetectingLocation = false);
     }
@@ -447,12 +357,12 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(lang == 'te' ? 'అనుమతి అవసరం' : (lang == 'hi' ? 'अनुमति चाहिए' : 'Permission Required')),
+        title: Text(lang == 'te' ? 'లొకేషన్ అనుమతి కావాలి' : (lang == 'hi' ? 'स्थान अनुमति चाहिए' : 'Location Permission Needed')),
         content: Text(lang == 'te'
-            ? 'రైతు మిత్ర యాప్‌కు మైక్ మరియు లొకేషన్ అనుమతులు అవసరం. దయచేసి యాప్ సెట్టింగ్స్‌లో అనుమతించండి.'
+            ? 'రైతు మిత్ర యాప్‌కు మీ సమీప మార్కెట్లను కనుగొనడానికి లొకేషన్ అనుమతి ఇవ్వండి.'
             : (lang == 'hi'
-                ? 'कृपया ऐप सेटिंग्स में माइक और लोकेशन अनुमति दें।'
-                : 'Microphone and Location permissions are needed. Please enable them in App Settings.')),
+                ? 'निकटतम मंडियों को खोजने के लिए कृपया ऐप को स्थान अनुमति दें।'
+                : 'Please grant location permission in App Settings so RythuMitra can find your closest mandis.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -463,7 +373,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
               Navigator.pop(ctx);
               locationService.openAppSettings();
             },
-            child: Text(lang == 'te' ? 'యాప్ సెట్టింగ్స్' : 'Open Settings'),
+            child: Text(lang == 'te' ? 'యాప్ సెట్టింగ్స్' : 'App Settings'),
           ),
         ],
       ),
@@ -486,42 +396,13 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildQuickChip(String label, VoidCallback onTap, {Color? bg, Color? border, Color? textColor}) {
+  Widget _buildQuickChip(String label, VoidCallback onTap) {
     return ActionChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12.5,
-          fontWeight: FontWeight.bold,
-          color: textColor ?? Colors.black87,
-        ),
-      ),
-      backgroundColor: bg ?? Colors.grey.shade100,
-      side: BorderSide(color: border ?? Colors.grey.shade300),
+      label: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+      backgroundColor: Colors.grey.shade100,
+      side: BorderSide(color: Colors.grey.shade300),
       onPressed: onTap,
     );
-  }
-
-  void _restartSession() {
-    _tts.stop();
-    final manager = context.read<ConversationManager>();
-    manager.reset();
-    final locProv = context.read<LocationProvider>();
-    if (locProv.hasLocation) {
-      manager.setGpsLocation(locProv.latitude, locProv.longitude, locProv.displayName);
-    }
-    final lang = context.read<LanguageProvider>().langCode;
-    setState(() {
-      _messages.clear();
-      _partialText = '';
-      _isListening = false;
-    });
-    final greeting = lang == 'te' 
-        ? "నమస్కారం! సెషన్ రీసెట్ చేయబడింది. మీరు ఏ పంట అమ్మాలనుకుంటున్నారు?" 
-        : (lang == 'hi' 
-            ? "नमस्ते! नया सत्र शुरू हुआ। आप कौन सी फसल बेचना चाहते हैं?" 
-            : "Hello! Session restarted. Which crop would you like to sell?");
-    _addBotMessage(greeting);
   }
 
   @override
@@ -542,24 +423,12 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
       appBar: AppBar(
         title: Text(s('voice_assistant')),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Restart Conversation',
-            onPressed: _restartSession,
-          ),
           Padding(
-            padding: const EdgeInsets.only(right: 14, left: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  lang.toUpperCase(),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                ),
+              child: Text(
+                lang.toUpperCase(),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           )
@@ -583,7 +452,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.8,
+                      maxWidth: MediaQuery.of(context).size.width * 0.75,
                     ),
                     decoration: BoxDecoration(
                       color: isBot ? Colors.white : AppTheme.harvestGold,
@@ -606,7 +475,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                         Flexible(
                           child: Text(
                             msg['text'],
-                            style: const TextStyle(fontSize: 14.5, color: Colors.black87, height: 1.35),
+                            style: const TextStyle(fontSize: 15, color: Colors.black87),
                           ),
                         ),
                         if (isBot) ...[
@@ -625,48 +494,20 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
           ),
           
           if (_partialText.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white70,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.forestGreen.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.record_voice_over, size: 16, color: AppTheme.forestGreen),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _partialText,
-                      style: const TextStyle(color: Colors.black87, fontStyle: FontStyle.italic, fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(_partialText, style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
             ),
 
           if (_isProcessing)
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.forestGreen),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(s('processing'), style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                ],
-              ),
+              child: Text(s('processing'), style: const TextStyle(color: Colors.grey)),
             ),
 
           // Input area
           Container(
-            padding: const EdgeInsets.all(16).copyWith(bottom: 24),
+            padding: const EdgeInsets.all(16).copyWith(bottom: 28),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
@@ -689,7 +530,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                     // Contextual Action Card based on Conversation Step
                     if (manager.step == ConvStep.needLocation) ...[
                       Container(
-                        margin: const EdgeInsets.only(bottom: 14),
+                        margin: const EdgeInsets.only(bottom: 16),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF0FDF4),
@@ -718,7 +559,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.forestGreen,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   elevation: 2,
                                 ),
@@ -736,32 +577,17 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                                       : (lang == 'te'
                                           ? "📍 నా లొకేషన్ ఉపయోగించు (GPS)"
                                           : (lang == 'hi' ? "📍 मेरा स्थान (GPS)" : "📍 Use My GPS Location")),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  _buildQuickChip("Warangal", () => _processInput("Warangal")),
-                                  const SizedBox(width: 6),
-                                  _buildQuickChip("Bowenpally", () => _processInput("Bowenpally")),
-                                  const SizedBox(width: 6),
-                                  _buildQuickChip("Nalgonda", () => _processInput("Nalgonda")),
-                                  const SizedBox(width: 6),
-                                  _buildQuickChip("Khammam", () => _processInput("Khammam")),
-                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ] else if (manager.locationText != null) ...[
+                    ] else if (manager.usingGps && manager.locationText != null) ...[
                       Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.green.shade50,
                           borderRadius: BorderRadius.circular(20),
@@ -770,11 +596,11 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.check_circle, size: 15, color: Colors.green),
+                            const Icon(Icons.check_circle, size: 16, color: Colors.green),
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                "📍 ${manager.locationText}",
+                                "📍 ${manager.locationText} (${manager.lat?.toStringAsFixed(2)}, ${manager.lng?.toStringAsFixed(2)})",
                                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green.shade800),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -783,8 +609,8 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                             InkWell(
                               onTap: _useGpsLocation,
                               child: Text(
-                                lang == 'te' ? 'GPS మార్చు' : 'Change GPS',
-                                style: const TextStyle(fontSize: 11.5, color: Colors.blue, fontWeight: FontWeight.bold),
+                                lang == 'te' ? 'మార్చు' : (lang == 'hi' ? 'बदलें' : 'Change'),
+                                style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ],
@@ -812,7 +638,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                               side: BorderSide(color: Colors.orange.shade300),
                               avatar: const Icon(Icons.no_crash, size: 18, color: Colors.deepOrange),
                               label: Text(
-                                lang == 'te' ? "లేదు (అద్దె రవాణా)" : (lang == 'hi' ? "नहीं (किराया वाहन)" : "No (Need Transport)"),
+                                lang == 'te' ? "లేదు (అద్దె వాహనం)" : (lang == 'hi' ? "नहीं (किराया वाहन)" : "No (Need Transport)"),
                                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange),
                               ),
                               onPressed: () => _processInput(lang == 'te' ? "లేదు" : "no"),
@@ -834,8 +660,6 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                               _buildQuickChip("🌶️ ${lang == 'te' ? 'మిర్చి' : 'Chilli'}", () => _processInput("Chilli")),
                               const SizedBox(width: 6),
                               _buildQuickChip("🌾 ${lang == 'te' ? 'వరి' : 'Paddy'}", () => _processInput("Paddy")),
-                              const SizedBox(width: 6),
-                              _buildQuickChip("☁️ ${lang == 'te' ? 'పత్తి' : 'Cotton'}", () => _processInput("Cotton")),
                             ],
                           ),
                         ),
@@ -852,49 +676,6 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                               _buildQuickChip("20 Quintals", () => _processInput("20 quintals")),
                               const SizedBox(width: 6),
                               _buildQuickChip("50 Quintals", () => _processInput("50 quintals")),
-                              const SizedBox(width: 6),
-                              _buildQuickChip("100 Quintals", () => _processInput("100 quintals")),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ] else if (manager.step == ConvStep.idle) ...[
-                      // Welcome Suggestion Chips
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Row(
-                            children: [
-                              _buildQuickChip(
-                                "🍅 ${lang == 'te' ? 'టమాట అమ్ము' : 'Sell Tomato'}",
-                                () => _processInput("Tomato"),
-                                bg: const Color(0xFFF1F8F3),
-                                border: const Color(0xFFC8E6C9),
-                                textColor: AppTheme.forestGreen,
-                              ),
-                              const SizedBox(width: 6),
-                              _buildQuickChip(
-                                "🌾 ${lang == 'te' ? 'వరి అమ్ము' : 'Sell Paddy'}",
-                                () => _processInput("Paddy"),
-                                bg: const Color(0xFFF1F8F3),
-                                border: const Color(0xFFC8E6C9),
-                                textColor: AppTheme.forestGreen,
-                              ),
-                              const SizedBox(width: 6),
-                              _buildQuickChip(
-                                "📊 ${lang == 'te' ? 'మార్కెట్ ధరలు' : 'Market Prices'}",
-                                () => _processInput("Show prices"),
-                                bg: Colors.amber.shade50,
-                                border: Colors.amber.shade200,
-                              ),
-                              const SizedBox(width: 6),
-                              _buildQuickChip(
-                                "🤝 ${lang == 'te' ? 'కొనుగోలుదారులు' : 'Buyers'}",
-                                () => _processInput("Show buyers"),
-                                bg: Colors.blue.shade50,
-                                border: Colors.blue.shade200,
-                              ),
                             ],
                           ),
                         ),
@@ -914,7 +695,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                         animation: _pulseCtrl,
                         builder: (context, child) {
                           final scale = _isListening ? 1.0 + (_pulseCtrl.value * 0.2) : 1.0;
-                          final shadow = _isListening ? 22.0 + (_pulseCtrl.value * 12) : 8.0;
+                          final shadow = _isListening ? 20.0 + (_pulseCtrl.value * 10) : 8.0;
                           
                           return Transform.scale(
                             scale: scale,
@@ -943,18 +724,16 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                         },
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     Text(
-                      _isListening 
-                          ? (lang == 'te' ? 'వింటున్నాను... మాట్లాడండి' : (lang == 'hi' ? 'सुन रहा हूँ... बोलिए' : 'Listening... Speak now'))
-                          : (lang == 'te' ? 'మాట్లాడటానికి మైక్ నొక్కండి' : (lang == 'hi' ? 'बोलने के लिए माइक दबाएं' : 'Tap mic to speak')),
+                      _isListening ? s('listening') : s('speak_now'),
                       style: TextStyle(
-                        fontSize: 13.5, 
+                        fontSize: 14, 
                         fontWeight: FontWeight.bold,
                         color: _isListening ? AppTheme.dangerRed : Colors.black54,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     
                     Row(
                       children: [
@@ -963,7 +742,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                             controller: _textCtrl,
                             decoration: InputDecoration(
                               hintText: s('type_here'),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(24),
                                 borderSide: BorderSide.none,

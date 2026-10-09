@@ -29,46 +29,40 @@ class VoiceInitResult {
   });
 }
 
+
 class VoiceService {
   final SpeechToText _speech = SpeechToText();
   bool _initialized = false;
   List<LocaleName> _availableLocales = [];
-  String _lastRecognizedWords = '';
   
   void Function(VoiceError)? _currentOnError;
   void Function()? _currentOnDone;
 
-  bool get isInitialized => _initialized && _speech.isAvailable;
+  bool get isInitialized => _initialized;
   List<LocaleName> get availableLocales => _availableLocales;
-  String get lastRecognizedWords => _lastRecognizedWords;
 
   Future<VoiceInitResult> initialize() async {
-    try {
-      // 1. Check microphone permission
-      var status = await Permission.microphone.status;
-      if (status.isPermanentlyDenied) {
-        return const VoiceInitResult(
+    // Check microphone permission first
+    final status = await Permission.microphone.status;
+    if (status.isPermanentlyDenied) {
+      return const VoiceInitResult(
+        success: false,
+        errorMessage: 'Microphone permission permanently denied. Please enable in app settings.',
+      );
+    }
+    if (status.isDenied) {
+      final result = await Permission.microphone.request();
+      if (result.isDenied || result.isPermanentlyDenied) {
+        return VoiceInitResult(
           success: false,
-          errorMessage: 'Microphone permission is permanently denied. Please enable in App Settings.',
+          errorMessage: result.isPermanentlyDenied
+              ? 'Microphone permission permanently denied.'
+              : 'Microphone permission denied.',
         );
       }
-      if (!status.isGranted) {
-        status = await Permission.microphone.request();
-        if (status.isPermanentlyDenied) {
-          return const VoiceInitResult(
-            success: false,
-            errorMessage: 'Microphone permission is permanently denied. Please enable in App Settings.',
-          );
-        }
-        if (!status.isGranted) {
-          return const VoiceInitResult(
-            success: false,
-            errorMessage: 'Microphone permission was denied. Please allow microphone access to speak.',
-          );
-        }
-      }
+    }
 
-      // 2. Initialize SpeechToText engine
+    try {
       _initialized = await _speech.initialize(
         onError: (error) {
           if (_currentOnError != null) {
@@ -82,18 +76,15 @@ class VoiceService {
         },
         debugLogging: false,
       );
-
       if (_initialized) {
         _availableLocales = await _speech.locales();
       }
-
       return VoiceInitResult(
         success: _initialized,
         availableLocales: _availableLocales,
-        errorMessage: _initialized ? null : 'Speech recognition is not available or disabled on this device.',
+        errorMessage: _initialized ? null : 'Speech recognition not available on this device.',
       );
     } catch (e) {
-      _initialized = false;
       return VoiceInitResult(
         success: false,
         errorMessage: 'Failed to initialize speech recognition: $e',
@@ -101,46 +92,17 @@ class VoiceService {
     }
   }
 
-  /// Returns the best available BCP-47 locale on this device for the requested app language.
-  String getBestLocale(String appLangCode) {
-    if (_availableLocales.isEmpty) {
-      if (appLangCode == 'te') return 'te-IN';
-      if (appLangCode == 'hi') return 'hi-IN';
-      return 'en-IN';
-    }
+  /// Returns the best available BCP-47 locale for the given app language code.
+  /// Returns null if none of the preferred locales are available on this device.
+  String? getBestLocale(String appLangCode) {
+    if (appLangCode == 'te') return 'te-IN';
+    if (appLangCode == 'hi') return 'hi-IN';
+    return 'en-IN'; // Default to Indian English
+  }
 
-    final normalizedPreferred = <String>[];
-    if (appLangCode == 'te') {
-      normalizedPreferred.addAll(['te-in', 'te_in', 'te']);
-    } else if (appLangCode == 'hi') {
-      normalizedPreferred.addAll(['hi-in', 'hi_in', 'hi']);
-    } else {
-      normalizedPreferred.addAll(['en-in', 'en_in', 'en-us', 'en_us', 'en']);
-    }
-
-    // Try exact match in device locales
-    for (final pref in normalizedPreferred) {
-      for (final loc in _availableLocales) {
-        final locId = loc.localeId.toLowerCase().replaceAll('_', '-');
-        if (locId == pref || locId.startsWith('$pref-')) {
-          return loc.localeId;
-        }
-      }
-    }
-
-    // Fallback: try en-IN
-    for (final loc in _availableLocales) {
-      final locId = loc.localeId.toLowerCase().replaceAll('_', '-');
-      if (locId.contains('en-in') || locId.contains('en-us')) {
-        return loc.localeId;
-      }
-    }
-
-    // Safe fallback to first available or standard code
-    if (_availableLocales.isNotEmpty) {
-      return _availableLocales.first.localeId;
-    }
-    return appLangCode == 'te' ? 'te-IN' : (appLangCode == 'hi' ? 'hi-IN' : 'en-IN');
+  /// Whether the selected app language has speech recognition support
+  bool isLocaleAvailable(String appLangCode) {
+    return getBestLocale(appLangCode) != null;
   }
 
   Future<void> startListening({
@@ -152,61 +114,44 @@ class VoiceService {
   }) async {
     _currentOnError = onError;
     _currentOnDone = onDone;
-    _lastRecognizedWords = '';
     
-    // Auto-initialize if not ready
-    if (!_initialized || !_speech.isAvailable) {
-      final res = await initialize();
-      if (!res.success) {
-        onError(VoiceError(VoiceErrorType.unavailable, res.errorMessage ?? 'Speech recognition not ready'));
-        return;
-      }
+    if (!_initialized) {
+      onError(const VoiceError(VoiceErrorType.unavailable, 'Speech not initialized'));
+      return;
     }
     
-    // Explicit microphone check
-    final status = await Permission.microphone.status;
-    if (!status.isGranted) {
-      final req = await Permission.microphone.request();
-      if (!req.isGranted) {
-        onError(const VoiceError(VoiceErrorType.permissionDenied, 'Microphone permission denied'));
-        return;
-      }
+    // Explicitly request microphone permission
+    final status = await Permission.microphone.request();
+    if (status != PermissionStatus.granted) {
+      onError(const VoiceError(VoiceErrorType.permissionDenied, 'Microphone permission denied'));
+      return;
     }
 
-    try {
-      await _speech.listen(
-        listenOptions: SpeechListenOptions(
-          localeId: localeId,
-          listenMode: ListenMode.dictation,
-          partialResults: true,
-          cancelOnError: false,
-          listenFor: const Duration(seconds: 45),
-          pauseFor: const Duration(seconds: 4),
-        ),
-        onResult: (result) {
-          _lastRecognizedWords = result.recognizedWords;
-          if (result.finalResult) {
-            onFinal(result.recognizedWords);
-          } else {
-            onPartial(result.recognizedWords);
-          }
-        },
-      );
-    } catch (e) {
-      onError(VoiceError(VoiceErrorType.recognitionError, 'Speech listen error: $e'));
-    }
+    await _speech.listen(
+      listenOptions: SpeechListenOptions(
+        localeId: localeId,
+        listenMode: ListenMode.confirmation,
+        partialResults: true,
+        cancelOnError: true,
+        listenFor: const Duration(seconds: 45),
+        pauseFor: const Duration(seconds: 5),
+      ),
+      onResult: (result) {
+        if (result.finalResult) {
+          onFinal(result.recognizedWords);
+        } else {
+          onPartial(result.recognizedWords);
+        }
+      },
+    );
   }
 
   Future<void> stopListening() async {
-    try {
-      await _speech.stop();
-    } catch (_) {}
+    await _speech.stop();
   }
 
   Future<void> cancel() async {
-    try {
-      await _speech.cancel();
-    } catch (_) {}
+    await _speech.cancel();
   }
 
   void _handleSpeechError(SpeechRecognitionError error, void Function(VoiceError) callback) {
