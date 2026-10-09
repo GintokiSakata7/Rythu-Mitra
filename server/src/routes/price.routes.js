@@ -207,9 +207,15 @@ priceRouter.post('/submissions', authenticateToken, requireRole('official', 'adm
         return res.status(403).json({ error: 'Official profile not found. Please complete official registration.' });
       }
 
-      if (profile.verificationStatus !== 'APPROVED') {
+      if (profile.verificationStatus === 'REJECTED' || profile.verificationStatus === 'SUSPENDED') {
         return res.status(403).json({
-          error: `Account verification status is '${profile.verificationStatus}'. Only APPROVED officials can submit daily prices.`
+          error: `Account verification status is '${profile.verificationStatus}'. Unauthorized to submit prices.`
+        });
+      }
+
+      if (profile.verificationStatus !== 'APPROVED' && !isDraft) {
+        return res.status(403).json({
+          error: `Account verification status is '${profile.verificationStatus}'. Only APPROVED officials can submit daily prices for admin approval. You can save as Draft in the meantime.`
         });
       }
 

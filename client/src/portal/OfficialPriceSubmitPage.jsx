@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Send, Save, AlertCircle, CheckCircle, ArrowLeft, Building2, 
@@ -17,6 +17,10 @@ const POPULAR_CROPS = [
 export default function OfficialPriceSubmitPage() {
   const { officialProfile, isVerifiedOfficial, user } = useAuth();
   const navigate = useNavigate();
+
+  const minPriceInputRef = useRef(null);
+  const priceSectionRef = useRef(null);
+  const commoditySelectRef = useRef(null);
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -45,6 +49,11 @@ export default function OfficialPriceSubmitPage() {
   const [submitting, setSubmitting] = useState(false);
   const [successInfo, setSuccessInfo] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Inline action status right above the buttons
+  const [inlineActionError, setInlineActionError] = useState('');
+  const [inlineActionSuccess, setInlineActionSuccess] = useState('');
+  const [highlightPrices, setHighlightPrices] = useState(false);
 
   // Add Item Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -76,6 +85,10 @@ export default function OfficialPriceSubmitPage() {
       setShowAddModal(true);
       return;
     }
+    // Clear feedback when typing
+    setInlineActionError('');
+    setErrorMessage('');
+    setHighlightPrices(false);
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -123,21 +136,30 @@ export default function OfficialPriceSubmitPage() {
   };
 
   const validate = () => {
-    const min = Number(formData.minPrice);
-    const max = Number(formData.maxPrice);
-    const modal = Number(formData.modalPrice);
-
-    if (isNaN(min) || isNaN(max) || isNaN(modal)) {
-      return 'Please enter valid numerical values for Min, Max, and Modal prices.';
+    if (!formData.commodityName || !formData.commodityName.trim()) {
+      return 'Please select or add a commodity first.';
     }
-    if (min <= 0 || max <= 0 || modal <= 0) {
-      return 'Prices must be greater than zero.';
+
+    const minStr = String(formData.minPrice || '').trim();
+    const modalStr = String(formData.modalPrice || '').trim();
+    const maxStr = String(formData.maxPrice || '').trim();
+
+    if (!minStr || !modalStr || !maxStr) {
+      return `Please enter the Min, Modal, and Max prices for ${formData.commodityName} before saving.`;
+    }
+
+    const min = Number(minStr);
+    const max = Number(maxStr);
+    const modal = Number(modalStr);
+
+    if (isNaN(min) || isNaN(max) || isNaN(modal) || min <= 0 || max <= 0 || modal <= 0) {
+      return 'Prices must be positive numbers greater than 0.';
     }
     if (min > max) {
       return 'Minimum price cannot exceed Maximum price.';
     }
     if (modal < min || modal > max) {
-      return `Modal price (₹${modal}) must fall within the Minimum (₹${min}) and Maximum (₹${max}) price range.`;
+      return `Modal price (₹${modal}) must fall within the Min (₹${min}) and Max (₹${max}) price range.`;
     }
     return null;
   };
@@ -146,12 +168,29 @@ export default function OfficialPriceSubmitPage() {
     const validationError = validate();
     if (validationError) {
       setErrorMessage(validationError);
+      setInlineActionError(validationError);
+      setHighlightPrices(true);
+      // Auto-focus min price input and scroll into view smoothly
+      setTimeout(() => {
+        if (minPriceInputRef.current) {
+          minPriceInputRef.current.focus();
+        }
+        if (priceSectionRef.current) {
+          priceSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 50);
       return;
     }
 
     setSubmitting(true);
     setErrorMessage('');
+    setInlineActionError('');
+    setInlineActionSuccess('');
+    setHighlightPrices(false);
     setSuccessInfo(null);
+
+    // If official is awaiting approval, automatically treat as Draft so it never 403s
+    const effectiveIsDraft = isDraft || !isVerifiedOfficial;
 
     try {
       const payload = {
@@ -160,32 +199,58 @@ export default function OfficialPriceSubmitPage() {
         maxPrice: Number(formData.maxPrice),
         modalPrice: Number(formData.modalPrice),
         arrivalQuantity: Number(formData.arrivalQuantity || 0),
-        isDraft
+        isDraft: effectiveIsDraft
       };
 
       const res = await api.submitPrice(payload);
 
       if (andAddNext) {
-        setItemToast(`✓ Submitted price for ${formData.commodityName} successfully (Lot #${res.submissionId.slice(-6)})! Ready to enter next item.`);
-        setTimeout(() => setItemToast(null), 6000);
-        // Clear price fields for next commodity, keep date and yard
-        setFormData(prev => ({
-          ...prev,
-          minPrice: '',
-          maxPrice: '',
-          modalPrice: '',
-          arrivalQuantity: '',
-          remarks: ''
-        }));
+        const savedCommodity = formData.commodityName;
+        const savedModal = formData.modalPrice;
+        const msg = effectiveIsDraft && !isVerifiedOfficial
+          ? `✓ Draft lot saved for ${savedCommodity} (Modal: ₹${savedModal}/${formData.unit})! Form ready for next crop.`
+          : `✓ Submitted price for ${savedCommodity} successfully (Lot #${res.submissionId.slice(-6)})! Form ready for next crop.`;
+
+        setInlineActionSuccess(msg);
+        setItemToast(msg);
+        setTimeout(() => {
+          setInlineActionSuccess('');
+          setItemToast(null);
+        }, 7000);
+
+        // Reset price fields for next commodity, keep date and yard
+        setFormData(prev => {
+          const curIndex = commodities.findIndex(c => c.toLowerCase() === prev.commodityName.toLowerCase());
+          const nextCommodity = (curIndex >= 0 && curIndex + 1 < commodities.length) ? commodities[curIndex + 1] : prev.commodityName;
+
+          return {
+            ...prev,
+            commodityName: nextCommodity,
+            minPrice: '',
+            maxPrice: '',
+            modalPrice: '',
+            arrivalQuantity: '',
+            remarks: ''
+          };
+        });
+
+        // Focus commodity select or min price
+        setTimeout(() => {
+          if (commoditySelectRef.current) {
+            commoditySelectRef.current.focus();
+          }
+        }, 80);
       } else {
         setSuccessInfo({
-          message: res.message,
+          message: res.message || (effectiveIsDraft ? 'Draft saved successfully.' : 'Price submitted for review.'),
           submissionId: res.submissionId,
-          isDraft
+          isDraft: effectiveIsDraft
         });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Price submission failed.');
+      const errMsg = err.message || 'Price submission failed.';
+      setErrorMessage(errMsg);
+      setInlineActionError(errMsg);
     } finally {
       setSubmitting(false);
     }
@@ -322,6 +387,7 @@ export default function OfficialPriceSubmitPage() {
                 </button>
               </div>
               <select
+                ref={commoditySelectRef}
                 name="commodityName"
                 value={formData.commodityName}
                 onChange={handleChange}
@@ -369,17 +435,35 @@ export default function OfficialPriceSubmitPage() {
           </div>
 
           {/* Auction Price Fields */}
-          <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}>
-              Price Information ({formData.unit})
+          <div
+            ref={priceSectionRef}
+            style={{
+              background: '#f8fafc',
+              padding: '1rem',
+              borderRadius: '12px',
+              border: highlightPrices ? '2px solid #ef4444' : '1px solid #e2e8f0',
+              transition: 'all 0.2s ease',
+              boxShadow: highlightPrices ? '0 0 0 3px rgba(239, 68, 68, 0.15)' : 'none'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: highlightPrices ? '#b91c1c' : '#0f172a' }}>
+                Price Information ({formData.unit}) *
+              </div>
+              {highlightPrices && (
+                <span style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 700 }}>
+                  ⚠️ Prices Required to Save Item
+                </span>
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: highlightPrices && !formData.minPrice ? '#dc2626' : '#475569', marginBottom: '4px' }}>
                   Min Price ({formData.unit}) *
                 </label>
                 <input
+                  ref={minPriceInputRef}
                   type="number"
                   required
                   min={0}
@@ -388,12 +472,20 @@ export default function OfficialPriceSubmitPage() {
                   value={formData.minPrice}
                   onChange={handleChange}
                   placeholder="e.g. 2200"
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: highlightPrices && !formData.minPrice ? '2px solid #ef4444' : '1px solid #cbd5e1',
+                    fontSize: '0.9rem',
+                    background: highlightPrices && !formData.minPrice ? '#fff5f5' : '#fff'
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: highlightPrices && !formData.modalPrice ? '#dc2626' : '#475569', marginBottom: '4px' }}>
                   Modal Price (Most Traded) *
                 </label>
                 <input
@@ -405,12 +497,21 @@ export default function OfficialPriceSubmitPage() {
                   value={formData.modalPrice}
                   onChange={handleChange}
                   placeholder="e.g. 2600"
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: '8px', border: '2px solid #059669', fontSize: '0.9rem', fontWeight: 700 }}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: highlightPrices && !formData.modalPrice ? '2px solid #ef4444' : '2px solid #059669',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                    background: highlightPrices && !formData.modalPrice ? '#fff5f5' : '#fff'
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: highlightPrices && !formData.maxPrice ? '#dc2626' : '#475569', marginBottom: '4px' }}>
                   Max Price ({formData.unit}) *
                 </label>
                 <input
@@ -422,7 +523,15 @@ export default function OfficialPriceSubmitPage() {
                   value={formData.maxPrice}
                   onChange={handleChange}
                   placeholder="e.g. 2800"
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: highlightPrices && !formData.maxPrice ? '2px solid #ef4444' : '1px solid #cbd5e1',
+                    fontSize: '0.9rem',
+                    background: highlightPrices && !formData.maxPrice ? '#fff5f5' : '#fff'
+                  }}
                 />
               </div>
 
@@ -479,8 +588,63 @@ export default function OfficialPriceSubmitPage() {
             </div>
           </div>
 
+          {/* Action Feedback Banners (Right above buttons for immediate visibility) */}
+          {inlineActionError && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1.5px solid #f87171',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              color: '#991b1b',
+              fontSize: '0.88rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={20} color="#dc2626" />
+                <span style={{ fontWeight: 600 }}>{inlineActionError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowAddModal(true); setInlineActionError(''); }}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #fca5a5',
+                  background: '#ffffff',
+                  color: '#b91c1c',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                + Or Register Another Item
+              </button>
+            </div>
+          )}
+
+          {inlineActionSuccess && (
+            <div style={{
+              background: '#ecfdf5',
+              border: '1.5px solid #34d399',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              color: '#065f46',
+              fontSize: '0.88rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <CheckCircle2 size={20} color="#059669" />
+              <span style={{ fontWeight: 700 }}>{inlineActionSuccess}</span>
+            </div>
+          )}
+
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', marginTop: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', marginTop: '4px', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
             <button
               type="button"
               disabled={submitting}
@@ -510,7 +674,7 @@ export default function OfficialPriceSubmitPage() {
               style={{
                 padding: '10px 18px',
                 borderRadius: '8px',
-                border: '1px solid #059669',
+                border: '1.5px solid #059669',
                 background: '#ecfdf5',
                 color: '#065f46',
                 fontWeight: 700,
@@ -518,12 +682,13 @@ export default function OfficialPriceSubmitPage() {
                 cursor: submitting ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                boxShadow: '0 1px 2px rgba(5, 150, 105, 0.1)'
               }}
-              title="Submit this item price and immediately continue entering next crop"
+              title="Save this commodity price and immediately continue entering next crop"
             >
-              <Plus size={15} />
-              <span>Save & Add Next Item</span>
+              <Plus size={16} />
+              <span>{submitting ? 'Saving...' : 'Save & Add Next Item'}</span>
             </button>
 
             <button
@@ -545,7 +710,7 @@ export default function OfficialPriceSubmitPage() {
               }}
             >
               <Send size={15} />
-              <span>Submit for Admin Review</span>
+              <span>{submitting ? 'Submitting...' : 'Submit for Admin Review'}</span>
             </button>
           </div>
         </form>
@@ -720,3 +885,4 @@ export default function OfficialPriceSubmitPage() {
     </div>
   );
 }
+
