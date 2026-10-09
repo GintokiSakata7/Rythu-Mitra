@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Mic, MicOff, Volume2, VolumeX, Navigation, MapPin, Check,
   ChevronRight, ArrowLeft, RefreshCw, Sparkles, TrendingUp,
