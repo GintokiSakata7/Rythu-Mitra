@@ -1,15 +1,22 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Factory, Home, Leaf, Mic2, Search, Store } from 'lucide-react';
+import { Factory, Home, Mic2, Search, Store, Globe, TrendingUp } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext.jsx';
 
 export default function Navbar() {
   const location = useLocation();
+  const { t, language, changeLanguage } = useLanguage();
+
+  // If in Portal root, hide farmer public navbar for clean separation of concerns
+  if (location.pathname.startsWith('/portal')) {
+    return null;
+  }
 
   const navLinks = [
-    { to: '/', label: 'Home', icon: Home },
-    { to: '/find', label: 'Find Best Option', icon: Search },
-    { to: '/assistant', label: 'Voice Assistant', icon: Mic2, badge: 'AI' },
-    { to: '/buyers', label: 'Buyer Network', icon: Factory },
-    { to: '/post-requirement', label: 'Post Demand', icon: Store }
+    { to: '/', label: t('nav_home'), icon: Home },
+    { to: '/find', label: t('nav_find'), icon: Search },
+    { to: '/assistant', label: t('nav_voice'), icon: Mic2, isVoiceFocus: true },
+    { to: '/buyers', label: t('nav_buyers'), icon: Factory },
+    { to: '/post-requirement', label: t('nav_post'), icon: Store }
   ];
 
   return (
@@ -22,28 +29,65 @@ export default function Navbar() {
             </div>
             <div className="brand-text">
               <span className="brand-name">RythuMitra</span>
-              <span className="brand-sub">రైతుమిత్ర • रैतुमित्र</span>
+              <span className="brand-sub">రైతుమిత్ర • रैతుमित्र</span>
             </div>
           </NavLink>
 
+          {/* Desktop Navigation Menu */}
           <nav className="desktop-nav-menu">
-            {navLinks.map(({ to, label, icon: Icon, badge }) => (
+            {navLinks.map(({ to, label, icon: Icon, badge, isVoiceFocus }) => (
               <NavLink
                 key={to}
                 to={to}
-                className={({ isActive }) => (isActive ? 'nav-tab active' : 'nav-tab')}
+                className={({ isActive }) =>
+                  isVoiceFocus
+                    ? `nav-tab voice-focus-pill ${isActive ? 'active' : ''}`
+                    : `nav-tab ${isActive ? 'active' : ''}`
+                }
               >
-                <Icon size={16} />
-                <span>{label}</span>
-                {badge && <span className="nav-badge">{badge}</span>}
+                {isVoiceFocus ? (
+                  <>
+                    <span className="voice-mic-glow-icon">
+                      <Mic2 size={16} />
+                    </span>
+                    <span className="voice-tab-label">{label}</span>
+                    <span className="voice-focus-ai-tag">AI Voice</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon size={16} />
+                    <span>{label}</span>
+                    {badge && <span className="nav-badge">{badge}</span>}
+                  </>
+                )}
               </NavLink>
             ))}
           </nav>
 
           <div className="nav-right-actions">
-            <div className="status-pill">
-              <span className="live-pulse" />
-              <span>Engine Online</span>
+            {/* Mobile-only Quick Voice Assistant Mic Button */}
+            <NavLink
+              to="/assistant"
+              className="mobile-quick-voice-btn"
+              title="Voice Assistant"
+              aria-label="Start Voice Assistant"
+            >
+              <Mic2 size={15} />
+              <span>Voice</span>
+            </NavLink>
+
+            <div className="lang-picker-box">
+              <Globe size={13} className="lang-globe-icon" color="#15803d" />
+              <select 
+                value={language}
+                onChange={(e) => changeLanguage(e.target.value)}
+                className="clean-language-select"
+                aria-label="Select Language"
+              >
+                <option value="en">English</option>
+                <option value="te">తెలుగు</option>
+                <option value="hi">हिंदी</option>
+              </select>
             </div>
           </div>
         </div>
@@ -53,21 +97,26 @@ export default function Navbar() {
       <nav className="mobile-bottom-bar" aria-label="Mobile Navigation">
         <NavLink to="/" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <Home size={20} />
-          <span>Home</span>
+          <span>{t('nav_home')}</span>
         </NavLink>
         <NavLink to="/find" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <Search size={20} />
-          <span>Find</span>
+          <span>{t('nav_find')}</span>
         </NavLink>
-        <NavLink to="/assistant" className={({ isActive }) => (isActive ? 'mobile-nav-item special-active' : 'mobile-nav-item special')}>
+        <NavLink to="/assistant" className={({ isActive }) => (isActive ? 'mobile-nav-item special active' : 'mobile-nav-item special')}>
           <div className="special-mic-btn">
-            <Mic2 size={22} />
+            <Mic2 size={24} />
+            <span className="mic-pulse-ring" />
           </div>
-          <span>Voice Mode</span>
+          <span className="voice-nav-text">{t('nav_voice')}</span>
+        </NavLink>
+        <NavLink to="/prices" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
+          <TrendingUp size={20} />
+          <span>Rates</span>
         </NavLink>
         <NavLink to="/buyers" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <Factory size={20} />
-          <span>Buyers</span>
+          <span>{t('nav_buyers')}</span>
         </NavLink>
       </nav>
     </>

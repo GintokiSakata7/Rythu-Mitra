@@ -7,8 +7,10 @@ import {
 import { Link } from 'react-router-dom';
 import SectionHeader from '../components/SectionHeader.jsx';
 import { api } from '../lib/api.js';
+import { useLanguage } from '../contexts/LanguageContext.jsx';
 
 export default function PostRequirementPage() {
+  const { t } = useLanguage();
   const [step, setStep] = useState(1); // 1: Govt Verification, 2: Farmer Agreement, 3: Publish Requirement, 4: Done
 
   // Step 1: Verification Form
@@ -154,9 +156,9 @@ export default function PostRequirementPage() {
   return (
     <div className="post-requirement-page">
       <SectionHeader
-        eyebrow="VERIFIED BUYER PORTAL"
-        title="Direct Buyer Verification & Requirement Publishing"
-        description="To eliminate fraudulent listings and protect farmers from payment default, buyers must verify their Government registration (GSTIN & FSSAI) and execute the Farmer Protection Agreement before requirements are activated."
+        eyebrow={t('post_eyebrow')}
+        title={t('post_title')}
+        description={t('post_desc')}
       />
 
       {/* Progress Stepper */}
@@ -164,8 +166,8 @@ export default function PostRequirementPage() {
         <div className={`step-node ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
           <div className="step-circle">{step > 1 ? <Check size={16} /> : '1'}</div>
           <div className="step-text">
-            <strong>Govt Verification</strong>
-            <small>GSTIN & FSSAI KYB</small>
+            <strong>{t('post_step1')}</strong>
+            <small>{t('post_step1_sub')}</small>
           </div>
         </div>
 
@@ -174,8 +176,8 @@ export default function PostRequirementPage() {
         <div className={`step-node ${step >= 2 ? 'active' : ''} ${step > 2 ? 'completed' : ''}`}>
           <div className="step-circle">{step > 2 ? <Check size={16} /> : '2'}</div>
           <div className="step-text">
-            <strong>Farmer Agreement</strong>
-            <small>Anti-fraud covenants</small>
+            <strong>{t('post_step2')}</strong>
+            <small>{t('post_step2_sub')}</small>
           </div>
         </div>
 
@@ -184,8 +186,8 @@ export default function PostRequirementPage() {
         <div className={`step-node ${step >= 3 ? 'active' : ''} ${step > 3 ? 'completed' : ''}`}>
           <div className="step-circle">{step > 3 ? <Check size={16} /> : '3'}</div>
           <div className="step-text">
-            <strong>Post Requirement</strong>
-            <small>Crops & Logistics</small>
+            <strong>{t('post_step3')}</strong>
+            <small>{t('post_step3_sub')}</small>
           </div>
         </div>
       </div>
@@ -198,30 +200,27 @@ export default function PostRequirementPage() {
               <ShieldCheck size={28} />
             </div>
             <div>
-              <div className="eyebrow-chip">RYTHUMITRA TRUST PROTOCOL</div>
-              <h2>Step 1: Verify Government Registration Credentials</h2>
-              <p>
-                To safeguard smallholder farmers from middlemen fraud, we verify that your enterprise holds active
-                Goods and Services Tax (GSTIN) and Food Safety (FSSAI) registrations.
-              </p>
+              <div className="eyebrow-chip">{t('post_protocol')}</div>
+              <h2>{t('post_step1_title')}</h2>
+              <p>{t('post_step1_desc')}</p>
             </div>
           </div>
 
           <div className="demo-quickfill-bar">
-            <span>Test with Sample Credentials:</span>
+            <span>{t('post_test_sample')}</span>
             <button
               type="button"
               className="quickfill-btn"
               onClick={() => loadSampleCredentials('processor')}
             >
-              <Sparkles size={13} /> Deccan Fresh Foods (Processing)
+              <Sparkles size={13} /> {t('post_deccan')}
             </button>
             <button
               type="button"
               className="quickfill-btn"
               onClick={() => loadSampleCredentials('kitchen')}
             >
-              <Sparkles size={13} /> Urban Bowl Kitchens (Hospitality)
+              <Sparkles size={13} /> {t('post_urban')}
             </button>
           </div>
 

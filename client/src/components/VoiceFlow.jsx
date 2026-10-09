@@ -3,7 +3,7 @@ import {
   Mic, MicOff, Volume2, VolumeX, Navigation, MapPin, Check,
   ChevronRight, ArrowLeft, RefreshCw, Sparkles, TrendingUp,
   Truck, Clock, AlertTriangle, ShieldCheck, Award, Loader2,
-  Play, Pause, X, Radio
+  Play, Pause, X, Radio, Square
 } from 'lucide-react';
 import { api } from '../lib/api.js';
 import OpportunityCard from './OpportunityCard.jsx';
@@ -49,7 +49,11 @@ const LANG_DATA = {
     risk_cost: 'వృధా/నష్టభయం',
     why_this_won: 'ఈ మార్కెట్ ఎందుకు గెలిచింది?',
     listen_again: 'మళ్ళీ వినండి',
-    stop_audio: 'ఆపండి',
+    stop_audio: 'వాయిస్ ఆపండి (Stop)',
+    voice_audio_label: 'వాయిస్ ఆడియో',
+    voice_on: 'ఆన్ (ON)',
+    voice_off: 'ఆఫ్ (OFF)',
+    voice_muted: 'ఆడియో ఆఫ్ • ఆన్ చేయడానికి నొక్కండి',
     restart: 'నయా వాయిస్ సెషన్',
     edit: 'సవరించండి',
     crops: [
@@ -109,7 +113,11 @@ const LANG_DATA = {
     risk_cost: 'जोखिम खर्च',
     why_this_won: 'यह विकल्प सर्वश्रेष्ठ क्यों है?',
     listen_again: 'फिर से सुनें',
-    stop_audio: 'रोकें',
+    stop_audio: 'आवाज़ रोकें (Stop)',
+    voice_audio_label: 'वॉइस ऑडियो',
+    voice_on: 'चालू (ON)',
+    voice_off: 'बंद (OFF)',
+    voice_muted: 'ऑडियो बंद है • चालू करने के लिए टैप करें',
     restart: 'नया वॉइस सत्र',
     edit: 'बदलें',
     crops: [
@@ -169,7 +177,11 @@ const LANG_DATA = {
     risk_cost: 'Spoilage Discount',
     why_this_won: 'Why this option delivers highest profit',
     listen_again: 'Listen Again',
-    stop_audio: 'Stop Audio',
+    stop_audio: 'Stop Voice',
+    voice_audio_label: 'Voice Audio',
+    voice_on: 'ON',
+    voice_off: 'OFF',
+    voice_muted: 'Voice OFF • Tap to Enable',
     restart: 'Start New Voice Search',
     edit: 'Edit Details',
     crops: [
@@ -200,7 +212,7 @@ const LANG_DATA = {
 // ============================================================
 let sharedVoiceAudioContext = null;
 
-function getSharedVoiceAudioContext() {
+export function getSharedVoiceAudioContext() {
   if (typeof window === 'undefined') return null;
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx) return null;
@@ -389,10 +401,12 @@ function pickBestVoice(voices, langCode) {
   return en || voices[0];
 }
 
+import { useLanguage } from '../contexts/LanguageContext.jsx';
+
 export default function VoiceFlow({ onSwitchToManual }) {
   // Steps: 0: Language, 1: Crop, 2: Quantity, 3: Location, 4: Transport, 5: Recommendation
-  const [step, setStep] = useState(0);
-  const [lang, setLang] = useState('te');
+  const [step, setStep] = useState(1); // Start at step 1 since language is already selected globally
+  const { language: lang, changeLanguage: setLang } = useLanguage();
   const t = LANG_DATA[lang] || LANG_DATA.en;
 
   // Assistant states: 'idle' | 'speaking' | 'listening' | 'thinking'
@@ -404,6 +418,10 @@ export default function VoiceFlow({ onSwitchToManual }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [voiceAudioEnabled, setVoiceAudioEnabled] = useState(true);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const voiceAudioEnabledRef = useRef(true);
+  const speechSessionRef = useRef(0);
 
   // Harvest state
   const [answers, setAnswers] = useState({
@@ -445,6 +463,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
   const animFrameRef = useRef(null);
   const synthRef = useRef(null);
   const currentAudioRef = useRef(null);
+  const activeAudiosRef = useRef(new Set());
   const speechWatchdogRef = useRef(null);
   const autoListenTimeoutRef = useRef(null);
   const interimDebounceRef = useRef(null);
@@ -462,27 +481,53 @@ export default function VoiceFlow({ onSwitchToManual }) {
   }, []);
 
   // ============================================================
-  // VOICE ENGINE
+  // VOICE ENGINE & BULLETPROOF AUDIO CANCELLATION
   // ============================================================
   const stopSpeech = useCallback(() => {
-    if (currentAudioRef.current) {
-      try {
-        currentAudioRef.current.pause();
-        currentAudioRef.current.currentTime = 0;
-      } catch {}
-      currentAudioRef.current = null;
-    }
-    if ('speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch {}
-    }
+    speechSessionRef.current += 1;
     if (speechWatchdogRef.current) {
       clearTimeout(speechWatchdogRef.current);
       speechWatchdogRef.current = null;
     }
+    if (autoListenTimeoutRef.current) {
+      clearTimeout(autoListenTimeoutRef.current);
+      autoListenTimeoutRef.current = null;
+    }
+
+    // Force terminate all HTML5 Audio elements immediately
+    activeAudiosRef.current.forEach(aud => {
+      try {
+        aud.pause();
+        aud.currentTime = 0;
+        aud.src = '';
+        aud.load();
+      } catch {}
+    });
+    activeAudiosRef.current.clear();
+
+    // Force terminate current HTML5 Audio element immediately
+    if (currentAudioRef.current) {
+      try {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+        currentAudioRef.current.src = '';
+        currentAudioRef.current.load();
+      } catch {}
+      currentAudioRef.current = null;
+    }
+
+    // Force cancel Web Speech Synthesis immediately
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+
     synthRef.current = null;
     window.__rythumitraActiveUtterance = null;
+    setIsPlayingAudio(false);
     setAssistantState(prev => (prev === 'speaking' ? 'idle' : prev));
   }, []);
 
@@ -510,6 +555,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
       clearTimeout(interimDebounceRef.current);
       interimDebounceRef.current = null;
     }
+    setIsPlayingAudio(false);
     setAssistantState('idle');
   }, [stopSpeech, stopListening]);
 
@@ -619,6 +665,11 @@ export default function VoiceFlow({ onSwitchToManual }) {
 
   // Browser SpeechSynthesis fallback
   const speakWithBrowserSynth = useCallback((text, onFinish) => {
+    if (!voiceAudioEnabledRef.current) {
+      if (onFinish) onFinish();
+      return;
+    }
+
     if (!('speechSynthesis' in window)) {
       if (onFinish) onFinish();
       return;
@@ -629,6 +680,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
       window.speechSynthesis.resume();
     } catch {}
 
+    const session = speechSessionRef.current;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = t.code;
     utterance.rate = lang === 'en' ? 1.01 : 0.96;
@@ -644,19 +696,27 @@ export default function VoiceFlow({ onSwitchToManual }) {
     synthRef.current = utterance;
 
     utterance.onend = () => {
-      synthRef.current = null;
-      window.__rythumitraActiveUtterance = null;
-      if (onFinish) onFinish();
+      if (speechSessionRef.current === session) {
+        synthRef.current = null;
+        window.__rythumitraActiveUtterance = null;
+        setIsPlayingAudio(false);
+        if (onFinish) onFinish();
+      }
     };
     utterance.onerror = () => {
-      synthRef.current = null;
-      window.__rythumitraActiveUtterance = null;
-      if (onFinish) onFinish();
+      if (speechSessionRef.current === session) {
+        synthRef.current = null;
+        window.__rythumitraActiveUtterance = null;
+        setIsPlayingAudio(false);
+        if (onFinish) onFinish();
+      }
     };
 
     try {
+      setIsPlayingAudio(true);
       window.speechSynthesis.speak(utterance);
     } catch {
+      setIsPlayingAudio(false);
       if (onFinish) onFinish();
     }
   }, [lang, t.code]);
@@ -668,7 +728,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
   // ============================================================
   const speakText = useCallback(
     (text, { autoListen = false, onFinish = null } = {}) => {
-      if (!text?.trim()) {
+      if (!voiceAudioEnabledRef.current || !text?.trim()) {
         if (onFinish) onFinish();
         return;
       }
@@ -676,11 +736,13 @@ export default function VoiceFlow({ onSwitchToManual }) {
       stopListening();
       stopSpeech();
 
+      const session = ++speechSessionRef.current;
       setAssistantState('speaking');
+      setIsPlayingAudio(true);
 
       let finished = false;
       const finish = () => {
-        if (finished) return;
+        if (finished || speechSessionRef.current !== session) return;
         finished = true;
 
         if (speechWatchdogRef.current) {
@@ -697,16 +759,19 @@ export default function VoiceFlow({ onSwitchToManual }) {
 
         synthRef.current = null;
         window.__rythumitraActiveUtterance = null;
+        setIsPlayingAudio(false);
         setAssistantState('idle');
 
         if (onFinish) {
           onFinish();
         }
 
-        // Automatic turn-taking: only starts listening when audio has completely finished!
-        if (autoListen) {
+        // Automatic turn-taking: only starts listening when audio has completely finished and voice enabled!
+        if (autoListen && voiceAudioEnabledRef.current) {
           autoListenTimeoutRef.current = setTimeout(() => {
-            startListeningRef.current?.();
+            if (speechSessionRef.current === session) {
+              startListeningRef.current?.();
+            }
           }, 200);
         }
       };
@@ -722,27 +787,54 @@ export default function VoiceFlow({ onSwitchToManual }) {
         const audioUrl = api.ttsUrl(text, lang);
         const audio = new Audio(audioUrl);
         currentAudioRef.current = audio;
+        activeAudiosRef.current.add(audio);
 
         audio.onended = () => {
-          finish();
+          activeAudiosRef.current.delete(audio);
+          if (speechSessionRef.current === session) {
+            finish();
+          }
         };
 
         audio.onerror = () => {
-          // If network stream fails, seamlessly fall back to browser speech synthesis
-          currentAudioRef.current = null;
-          speakWithBrowserSynth(text, finish);
+          activeAudiosRef.current.delete(audio);
+          if (speechSessionRef.current === session && voiceAudioEnabledRef.current) {
+            currentAudioRef.current = null;
+            speakWithBrowserSynth(text, finish);
+          }
         };
 
         const playPromise = audio.play();
         if (playPromise !== undefined) {
-          playPromise.catch((e) => {
-            console.warn('Audio stream play blocked, falling back to speech synthesis:', e);
-            currentAudioRef.current = null;
-            speakWithBrowserSynth(text, finish);
-          });
+          playPromise
+            .then(() => {
+              // Silenced if user pressed OFF or STOP while buffering
+              if (speechSessionRef.current !== session || !voiceAudioEnabledRef.current) {
+                try {
+                  audio.pause();
+                  audio.currentTime = 0;
+                  audio.src = '';
+                  audio.load();
+                } catch {}
+                activeAudiosRef.current.delete(audio);
+                if (currentAudioRef.current === audio) {
+                  currentAudioRef.current = null;
+                }
+              }
+            })
+            .catch((e) => {
+              activeAudiosRef.current.delete(audio);
+              console.warn('Audio stream play blocked, falling back to speech synthesis:', e);
+              if (speechSessionRef.current === session && voiceAudioEnabledRef.current) {
+                currentAudioRef.current = null;
+                speakWithBrowserSynth(text, finish);
+              }
+            });
         }
       } catch (e) {
-        speakWithBrowserSynth(text, finish);
+        if (speechSessionRef.current === session && voiceAudioEnabledRef.current) {
+          speakWithBrowserSynth(text, finish);
+        }
       }
     },
     [lang, stopListening, stopSpeech, speakWithBrowserSynth]
@@ -1083,9 +1175,35 @@ export default function VoiceFlow({ onSwitchToManual }) {
     }
   };
 
+  const handleToggleVoiceAudio = useCallback(() => {
+    setVoiceAudioEnabled(prev => {
+      const next = !prev;
+      voiceAudioEnabledRef.current = next;
+      if (!next) {
+        // Turning OFF: terminate all speech immediately
+        stopSpeech();
+        stopListening();
+        setIsPlayingAudio(false);
+      } else {
+        // Turning ON: if on step 5, re-speak explanation
+        if (stepRef.current === 5 && result?.explanation) {
+          setTimeout(() => {
+            speakText(result.explanation, { autoListen: false });
+          }, 100);
+        }
+      }
+      return next;
+    });
+  }, [result, stopSpeech, stopListening, speakText]);
+
+  const handleForceStopAudio = useCallback(() => {
+    stopSpeech();
+    setIsPlayingAudio(false);
+  }, [stopSpeech]);
+
   const restartSession = () => {
     stopAllAudio();
-    setStep(0);
+    setStep(1);
     setResult(null);
     setTranscript('');
     transcriptRef.current = '';
@@ -1110,52 +1228,58 @@ export default function VoiceFlow({ onSwitchToManual }) {
       {/* Dynamic Ambient Background Aurora */}
       <div className={`alexa-aurora-glow aura-${assistantState}`} />
 
-      {/* Top Status & Language Bar */}
+      {/* Top Status & Language Bar with Voice Audio ON/OFF Toggle */}
       <div className="alexa-top-bar">
         <div className="alexa-brand-tag">
           <span className="live-radar-dot" />
           <span>RYTHUMITRA • VOICE MODE</span>
         </div>
-        <div className="alexa-lang-pill">
-          <Radio size={12} className="spin-slow" />
-          <span>{LANG_DATA[lang]?.nativeLabel || 'Telugu'}</span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Quick Voice Audio ON/OFF switch in top bar */}
+          <button
+            type="button"
+            onClick={handleToggleVoiceAudio}
+            className={`top-audio-toggle ${voiceAudioEnabled ? 'is-on' : 'is-off'}`}
+            title={voiceAudioEnabled ? 'Click to Mute Voice (OFF)' : 'Click to Enable Voice (ON)'}
+          >
+            {voiceAudioEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+            <span>Voice Audio: <strong>{voiceAudioEnabled ? 'ON' : 'OFF'}</strong></span>
+          </button>
+
+          <div className="alexa-lang-pill">
+            <Radio size={12} className="spin-slow" />
+            <span>{LANG_DATA[lang]?.nativeLabel || 'Telugu'}</span>
+          </div>
         </div>
       </div>
 
-      {/* STEP 0: VOICE-FIRST START PANEL */}
-      {step === 0 && (
-        <div className="voice-start-panel slide-fade">
-          <div className="voice-language-switch">
-            <button
-              type="button"
-              className={lang === 'te' ? 'active' : ''}
-              onClick={() => setLang('te')}
-            >
-              తెలుగు
-            </button>
-            <button
-              type="button"
-              className={lang === 'hi' ? 'active' : ''}
-              onClick={() => setLang('hi')}
-            >
-              हिंदी
-            </button>
-            <button
-              type="button"
-              className={lang === 'en' ? 'active' : ''}
-              onClick={() => setLang('en')}
-            >
-              English
-            </button>
-          </div>
-
-          <h2 className="voice-start-title">Talk to RythuMitra</h2>
-
-          <p className="voice-start-subtitle">
-            Speak naturally. Tell me what you're selling, how much you have, and where your farm is.
-          </p>
+      {/* STEP 0: VOICE-FIRST START PANEL (Language Switcher) */}
+      <div className="alexa-top-bar" style={{ marginTop: '10px', justifyContent: 'center' }}>
+        <div className="voice-language-switch">
+          <button
+            type="button"
+            className={lang === 'te' ? 'active' : ''}
+            onClick={() => setLang('te')}
+          >
+            తెలుగు
+          </button>
+          <button
+            type="button"
+            className={lang === 'hi' ? 'active' : ''}
+            onClick={() => setLang('hi')}
+          >
+            हिंदी
+          </button>
+          <button
+            type="button"
+            className={lang === 'en' ? 'active' : ''}
+            onClick={() => setLang('en')}
+          >
+            English
+          </button>
         </div>
-      )}
+      </div>
 
       {/* ==================== THE LIVING ALEXA / CHATGPT VOICE ORB ==================== */}
       <div className="alexa-orb-stage">
@@ -1192,12 +1316,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
               return;
             }
 
-            // First voice interaction starts from Step 0
-            if (step === 0) {
-              setStep(1);
-              setTimeout(() => {
-                speakText(`${t.welcome} ${t.q1}`, { autoListen: true });
-              }, 80);
+            // First voice interaction starts from Step 1
+            if (step === 1 && assistantState === 'idle') {
+              speakText(`${t.welcome} ${t.q1}`, { autoListen: true });
               return;
             }
 
@@ -1270,7 +1391,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
         </div>
 
         {/* Start Hint or Idle Hint */}
-        {step === 0 ? (
+        {step === 1 && assistantState === 'idle' ? (
           <div className="voice-start-hint">
             <Mic size={15} />
             <span>Tap the microphone to start</span>
@@ -1450,23 +1571,75 @@ export default function VoiceFlow({ onSwitchToManual }) {
             <div className="alexa-verdict-container">
               {/* Alexa Audio Dock Bar */}
               <div className="alexa-audio-dock">
-                <button
-                  type="button"
-                  className="alexa-audio-dock-btn"
-                  onClick={() => {
-                    if (assistantState === 'speaking') {
-                      stopAllAudio();
-                    } else {
-                      speakText(result.explanation, { autoListen: false });
-                    }
-                  }}
-                >
-                  {assistantState === 'speaking' ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                  <span>{assistantState === 'speaking' ? t.stop_audio : t.listen_again}</span>
-                </button>
-                <span className="dock-lang-label">
-                  🎙️ {LANG_DATA[lang]?.name} AI Explanation
-                </span>
+                <div className="dock-left-controls">
+                  {/* Master Voice Audio ON/OFF switch */}
+                  <button
+                    type="button"
+                    className={`voice-audio-toggle-btn ${voiceAudioEnabled ? 'is-on' : 'is-off'}`}
+                    onClick={handleToggleVoiceAudio}
+                    title={voiceAudioEnabled ? 'Voice Audio is ON (Click to Turn OFF)' : 'Voice Audio is OFF (Click to Turn ON)'}
+                  >
+                    <span className="toggle-audio-icon">
+                      {voiceAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                    </span>
+                    <span className="toggle-audio-text">
+                      {t.voice_audio_label || 'Voice Audio'}:
+                    </span>
+                    <span className="toggle-pill-switch">
+                      <span className={`pill-choice ${voiceAudioEnabled ? 'active-on' : 'active-off'}`}>
+                        {voiceAudioEnabled ? (t.voice_on || 'ON') : (t.voice_off || 'OFF')}
+                      </span>
+                    </span>
+                  </button>
+
+                  {/* Playback Control (Stop or Listen Again) */}
+                  {voiceAudioEnabled ? (
+                    isPlayingAudio || assistantState === 'speaking' ? (
+                      <button
+                        type="button"
+                        className="alexa-audio-dock-btn stop-speaking-btn"
+                        onClick={handleForceStopAudio}
+                        title="Stop voice immediately"
+                      >
+                        <Square size={13} fill="currentColor" />
+                        <span>{t.stop_audio || 'Stop Voice'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="alexa-audio-dock-btn play-again-btn"
+                        onClick={() => speakText(result.explanation, { autoListen: false })}
+                        title="Listen to AI Explanation again"
+                      >
+                        <Volume2 size={16} />
+                        <span>{t.listen_again || 'Listen Again'}</span>
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      type="button"
+                      className="alexa-audio-dock-btn is-muted-btn"
+                      onClick={handleToggleVoiceAudio}
+                      title="Audio is currently muted. Click to turn ON"
+                    >
+                      <VolumeX size={15} />
+                      <span>{t.voice_muted || 'Voice OFF • Tap to Enable'}</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="dock-right-status">
+                  {isPlayingAudio || assistantState === 'speaking' ? (
+                    <span className="dock-speaking-pulse">
+                      <span className="sound-pulse-bar" /><span className="sound-pulse-bar" /><span className="sound-pulse-bar" />
+                      <span>{LANG_DATA[lang]?.name} AI Speaking...</span>
+                    </span>
+                  ) : (
+                    <span className="dock-lang-label">
+                      🎙️ {LANG_DATA[lang]?.name} AI Explanation
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Optimal Recommendation / Transport Loss Alert Card */}

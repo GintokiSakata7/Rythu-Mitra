@@ -4,8 +4,11 @@ import { Link } from 'react-router-dom';
 import SectionHeader from '../components/SectionHeader.jsx';
 import BuyerCard from '../components/BuyerCard.jsx';
 import { api } from '../lib/api.js';
+import { useLanguage } from '../contexts/LanguageContext.jsx';
+import { translateCrop, getEnglishCropName } from '../lib/cropTranslations.js';
 
 export default function BuyerPage() {
+  const { t, language } = useLanguage();
   const [requirements, setRequirements] = useState([]);
   const [crop, setCrop] = useState('');
   const [loading, setLoading] = useState(true);
@@ -14,7 +17,8 @@ export default function BuyerPage() {
   const fetchBuyers = (selectedCrop = '') => {
     setLoading(true);
     setError('');
-    api.buyers(selectedCrop)
+    const englishCrop = getEnglishCropName(selectedCrop, language);
+    api.buyers(englishCrop)
       .then((res) => {
         setRequirements(res.requirements || []);
       })
@@ -38,14 +42,14 @@ export default function BuyerPage() {
   }, []);
 
   const crops = [
-    { id: '', label: 'All Crops' },
+    { id: '', label: t('buyer_all_crops') },
     ...(dbCrops.length > 0 
-      ? dbCrops.map(c => ({ id: c.name, label: c.name }))
+      ? dbCrops.map(c => ({ id: c.name, label: translateCrop(c.name, language) }))
       : [
-          { id: 'Tomato', label: '🍅 Tomato' },
-          { id: 'Onion', label: '🧅 Onion' },
-          { id: 'Potato', label: '🥔 Potato' },
-          { id: 'Chilli', label: '🌶️ Chilli' }
+          { id: 'Tomato', label: translateCrop('Tomato', language) },
+          { id: 'Onion', label: translateCrop('Onion', language) },
+          { id: 'Potato', label: translateCrop('Potato', language) },
+          { id: 'Chilli', label: translateCrop('Chilli', language) }
         ]
     )
   ];
@@ -54,13 +58,13 @@ export default function BuyerPage() {
     <div className="buyer-directory-page">
       {/* Page Header */}
       <SectionHeader
-        eyebrow="DIRECT BUYER NETWORK"
-        title="Verified Direct Buyers & Factory Procurement"
-        description="Connect directly with verified food processors, restaurant groups, and institutional buyers. All listings are audited with Government GSTIN & FSSAI licenses to eliminate middlemen scams."
+        eyebrow={t('buyer_eyebrow')}
+        title={t('buyer_title')}
+        description={t('buyer_desc')}
         action={
           <Link className="button button-primary" to="/post-requirement">
             <ShieldCheck size={16} />
-            <span>Verify & Post Requirement</span>
+            <span>{t('buyer_btn_post')}</span>
             <ArrowRight size={16} />
           </Link>
         }
@@ -73,27 +77,24 @@ export default function BuyerPage() {
             <ShieldCheck size={32} />
           </div>
           <div className="bth-text">
-            <div className="bth-tag">100% GOVERNMENT-AUDITED DIRECT NETWORK</div>
-            <h2>Zero-Fraud Protection & Guaranteed Payment Window</h2>
-            <p>
-              To protect smallholders, every buyer must verify their active <strong>GSTIN</strong> and <strong>FSSAI Food License</strong>,
-              and execute binding legal covenants guaranteeing payment within 72 hours directly to the farmer with zero post-transit deductions.
-            </p>
+            <div className="bth-tag">{t('buyer_trust_tag')}</div>
+            <h2>{t('buyer_trust_title')}</h2>
+            <p>{t('buyer_trust_desc')}</p>
           </div>
         </div>
 
         <div className="bth-stats-strip">
           <div className="bth-stat-item">
             <strong>100%</strong>
-            <span>Govt KYB Audited</span>
+            <span>{t('buyer_stat_1')}</span>
           </div>
           <div className="bth-stat-item">
             <strong>48-72h</strong>
-            <span>Payment Window</span>
+            <span>{t('buyer_stat_2')}</span>
           </div>
           <div className="bth-stat-item">
             <strong>₹0</strong>
-            <span>Middleman Cut</span>
+            <span>{t('buyer_stat_3')}</span>
           </div>
         </div>
       </div>
@@ -103,22 +104,28 @@ export default function BuyerPage() {
         <div className="bft-search-lead">
           <Search size={16} />
           <span>
-            Open Requirements{' '}
-            <strong className="count-pill">{requirements.length} Active</strong>
+            {t('buyer_open_req')}{' '}
+            <strong className="count-pill">{requirements.length} {t('buyer_active')}</strong>
           </span>
         </div>
 
-        <div className="bft-pills-group">
-          {crops.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              className={`crop-filter-pill ${crop === c.id ? 'active' : ''}`}
-              onClick={() => setCrop(c.id)}
-            >
-              {c.label}
-            </button>
-          ))}
+        <div className="buyer-search-wrapper" style={{ flex: 1, paddingLeft: '16px', position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div style={{ position: 'absolute', left: '28px', color: '#64748b' }}>
+            <Search size={18} />
+          </div>
+          <input
+            type="text"
+            className="buyer-search-input"
+            placeholder={t('buyer_search_placeholder')}
+            value={crop}
+            onChange={(e) => setCrop(e.target.value)}
+            list="buyer-crops-list"
+          />
+          <datalist id="buyer-crops-list">
+            {crops.filter(c => c.id).map((c) => (
+              <option key={c.id} value={c.label} />
+            ))}
+          </datalist>
         </div>
       </div>
 
@@ -135,15 +142,15 @@ export default function BuyerPage() {
       {loading ? (
         <div className="buyer-loading-state">
           <RefreshCw size={24} className="spin" />
-          <p>Loading verified buyer network from Supabase database...</p>
+          <p>{t('buyer_loading')}</p>
         </div>
       ) : requirements.length === 0 ? (
         <div className="buyer-empty-state">
           <Building2 size={36} />
-          <h3>No open requirements for {crop || 'this crop'} right now</h3>
-          <p>Be the first commercial buyer to post a requirement for this commodity.</p>
+          <h3>{t('buyer_empty_title')}</h3>
+          <p>{t('buyer_empty_desc')}</p>
           <Link to="/post-requirement" className="button button-primary">
-            <ShieldCheck size={16} /> Verify & Post Requirement
+            <ShieldCheck size={16} /> {t('buyer_btn_post')}
           </Link>
         </div>
       ) : (
@@ -158,8 +165,7 @@ export default function BuyerPage() {
       <div className="buyer-directory-footer-note">
         <Filter size={16} />
         <span>
-          RythuMitra’s optimization engine evaluates these direct opportunities alongside local APMC mandis,
-          factoring in distance, travel hours, spoilage risk, and farmgate pickup to maximize your net take-home realization.
+          {t('buyer_footer')}
         </span>
       </div>
     </div>

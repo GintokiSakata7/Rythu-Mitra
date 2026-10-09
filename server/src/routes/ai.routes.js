@@ -32,9 +32,15 @@ aiRouter.get('/tts', async (req, res, next) => {
     const googleLang = lang === 'te' ? 'te' : lang === 'hi' ? 'hi' : 'en';
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${googleLang}&client=tw-ob`;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+
     const upstream = await fetch(ttsUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
 
     if (!upstream.ok) {
       return res.status(upstream.status).send('TTS upstream request failed');

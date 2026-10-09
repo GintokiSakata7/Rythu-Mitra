@@ -7,10 +7,9 @@ import SectionHeader from '../components/SectionHeader.jsx';
 import OpportunityCard from '../components/OpportunityCard.jsx';
 import OptimizerTrace from '../components/OptimizerTrace.jsx';
 import MarketMap from '../components/MarketMap.jsx';
-import VoiceFlow from '../components/VoiceFlow.jsx';
 import { api } from '../lib/api.js';
-
-
+import { useLanguage } from '../contexts/LanguageContext.jsx';
+import { translateCrop } from '../lib/cropTranslations.js';
 
 export default function FindOpportunityPage() {
   const [mode, setMode] = useState('manual');
@@ -56,9 +55,10 @@ export default function FindOpportunityPage() {
     quality: 'A',
     hasTransport: false,
     perishability: 'high',
-    includeBuyers: true,
-    language: 'en'
+    includeBuyers: true
   });
+  
+  const { language, t } = useLanguage();
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -115,6 +115,7 @@ export default function FindOpportunityPage() {
       const payload = {
         ...form,
         ...coordinates,
+        language: language || 'en',
         quantityKg: Number(form.quantityKg)
       };
       setResult(await api.recommend(payload));
@@ -127,76 +128,41 @@ export default function FindOpportunityPage() {
 
   return (
     <div className="find-page-container">
-      {/* Top Mobile-First Mode Selector Switcher */}
-      <div className="entry-mode-switch-card">
-        <div className="entry-mode-options">
-          <button
-            type="button"
-            className={`entry-mode-btn ${mode === 'manual' ? 'active' : ''}`}
-            onClick={() => setMode('manual')}
-          >
-            <Edit3 size={18} />
-            <div>
-              <strong>Manually Enter</strong>
-              <small>Type crop & location form</small>
-            </div>
-          </button>
+      <div>
+        <SectionHeader
+          eyebrow={t('find_eyebrow')}
+          title={t('find_title')}
+          description={t('find_desc')}
+        />
 
-          <button
-            type="button"
-            className={`entry-mode-btn special-voice ${mode === 'voice' ? 'active' : ''}`}
-            onClick={() => setMode('voice')}
-          >
-            <Mic size={20} className="pulse-mic-icon" />
-            <div>
-              <div className="badge-line">
-                <strong>Voice Mode</strong>
-                <span className="mode-pill-tag">AI సహచరి</span>
-              </div>
-              <small>Speak in Telugu, Hindi or English</small>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {mode === 'voice' ? (
-        <VoiceFlow onSwitchToManual={() => setMode('manual')} />
-      ) : (
-        <div>
-          <SectionHeader
-            eyebrow="MANUAL SEARCH ENGINE"
-            title="Search only as far as the economics justify."
-            description="Start nearby. Expand only when a farther market or buyer could realistically beat your current best realization."
-          />
-
-          <div className="finder-layout">
-            <form className="panel form-panel" onSubmit={submit}>
+        <div className="finder-layout">
+          <form className="panel form-panel" onSubmit={submit}>
               <div className="form-title">
                 <div className="form-icon">
                   <Wheat size={20} />
                 </div>
                 <div>
-                  <h3>Harvest Details</h3>
-                  <p>Tell us what you have and where you are.</p>
+                  <h3>{t('find_form_title')}</h3>
+                  <p>{t('find_form_desc')}</p>
                 </div>
               </div>
 
-              <Field label="Crop">
+              <Field label={t('find_label_crop')}>
                 <select value={form.crop} onChange={e => setForm({ ...form, crop: e.target.value })}>
                   {commodities.length > 0 ? commodities.map(c => (
-                    <option key={c.code} value={c.name}>{c.name}</option>
+                    <option key={c.code} value={c.name}>{translateCrop(c.name, language)}</option>
                   )) : (
                     <>
-                      <option value="Tomato">Tomato</option>
-                      <option value="Onion">Onion</option>
-                      <option value="Potato">Potato</option>
+                      <option value="Tomato">{translateCrop('Tomato', language)}</option>
+                      <option value="Onion">{translateCrop('Onion', language)}</option>
+                      <option value="Potato">{translateCrop('Potato', language)}</option>
                     </>
                   )}
                 </select>
               </Field>
 
               <div className="form-row">
-                <Field label="Quantity (kg)">
+                <Field label={t('find_label_qty')}>
                   <input
                     type="number"
                     min="100"
@@ -205,22 +171,22 @@ export default function FindOpportunityPage() {
                     onChange={e => setForm({ ...form, quantityKg: e.target.value })}
                   />
                 </Field>
-                <Field label="Quality">
+                <Field label={t('find_label_quality')}>
                   <select value={form.quality} onChange={e => setForm({ ...form, quality: e.target.value })}>
-                    <option value="A">Grade A (Premium)</option>
-                    <option value="B+">Grade B+ (Good)</option>
-                    <option value="B">Grade B (Standard)</option>
+                    <option value="A">{t('find_grade_a')}</option>
+                    <option value="B+">{t('find_grade_b_plus')}</option>
+                    <option value="B">{t('find_grade_b')}</option>
                   </select>
                 </Field>
               </div>
 
-              <Field label="Farm / Nearest Town">
+              <Field label={t('find_label_loc')}>
                 <div className="location-input-group">
                   <input
                     type="text"
                     list="locations-list"
                     className="form-input"
-                    placeholder="Search city or market..."
+                    placeholder={t('find_search_loc')}
                     value={form.locationText}
                     onChange={e => {
                       const sel = e.target.value;
@@ -246,15 +212,15 @@ export default function FindOpportunityPage() {
                     title="Detect GPS location"
                   >
                     {gpsLoading ? <Loader2 className="spin" size={16} /> : <Navigation size={16} />}
-                    <span>GPS</span>
+                    <span>{t('find_gps')}</span>
                   </button>
                 </div>
               </Field>
 
               <div className="transport-toggle">
                 <div>
-                  <span className="field-label">Transportation</span>
-                  <p>Can you move the harvest yourself?</p>
+                  <span className="field-label">{t('find_label_transport')}</span>
+                  <p>{t('find_transport_desc')}</p>
                 </div>
                 <button
                   type="button"
@@ -272,8 +238,8 @@ export default function FindOpportunityPage() {
                   onChange={e => setForm({ ...form, includeBuyers: e.target.checked })}
                 />
                 <span>
-                  <strong>Include direct buyers</strong>
-                  <small>Factories, restaurants and processors with open requirements.</small>
+                  <strong>{t('find_label_buyers')}</strong>
+                  <small>{t('find_buyers_desc')}</small>
                 </span>
               </label>
 
@@ -282,18 +248,18 @@ export default function FindOpportunityPage() {
               <button className="button button-primary full" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="spin" size={17} /> Optimizing...
+                    <Loader2 className="spin" size={17} /> {t('find_btn_loading')}
                   </>
                 ) : (
                   <>
-                    <Crosshair size={17} /> Find best option
+                    <Crosshair size={17} /> {t('find_btn_submit')}
                   </>
                 )}
               </button>
 
               <div className="demo-note">
                 <Sparkles size={15} />
-                <span>Runs optimizer with deterministic real-world cost functions.</span>
+                <span>{t('find_note')}</span>
               </div>
             </form>
 
@@ -303,9 +269,9 @@ export default function FindOpportunityPage() {
                   <div className="empty-orbit">
                     <Navigation size={26} />
                   </div>
-                  <h3>Your search result will appear here</h3>
+                  <h3>{t('find_empty_title')}</h3>
                   <p>
-                    Try 5,000 kg of tomatoes in Nalgonda with no transport to see progressive search and direct-buyer matching.
+                    {t('find_empty_desc')}
                   </p>
                   <button
                     className="button button-ghost"
@@ -313,7 +279,7 @@ export default function FindOpportunityPage() {
                       setForm({ ...form, quantityKg: 5000, locationText: 'Nalgonda', hasTransport: false });
                     }}
                   >
-                    <RefreshCw size={15} /> Load demo values
+                    <RefreshCw size={15} /> {t('find_btn_demo')}
                   </button>
                 </div>
               ) : (
@@ -373,8 +339,7 @@ export default function FindOpportunityPage() {
             </div>
           </div>
         </div>
-      )}
-    </div>
+      </div>
   );
 }
 
