@@ -41,9 +41,11 @@ app.use('/api/ai', aiRouter);
 // Fullstack: serve frontend SPA if built, otherwise API fallback
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path === '/health' || req.path === '/ping') return next();
-    res.sendFile(path.join(clientDist, 'index.html'));
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api') && req.path !== '/health' && req.path !== '/ping') {
+      return res.sendFile(path.join(clientDist, 'index.html'));
+    }
+    next();
   });
 } else {
   app.get('/', (_req, res) => res.json({ name: 'RythuMitra API', status: 'online' }));
