@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../localization/app_strings.dart';
 import '../../providers/language_provider.dart';
-import '../../models/app_models.dart';
 import '../../voice/voice_service.dart';
 import '../../voice/intent_engine.dart';
 import '../../voice/conversation_manager.dart';
@@ -235,6 +234,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
         }
       }
     } catch (e) {
+      if (!mounted) return;
       final l = context.read<LanguageProvider>().langCode;
       await _addBotMessage(l == 'te' 
           ? "క్షమించండి, పొరపాటు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి." 
@@ -253,7 +253,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
     final lang = context.read<LanguageProvider>().langCode;
     final manager = context.read<ConversationManager>();
 
-    _addBotMessage(lang == 'te'
+    await _addBotMessage(lang == 'te'
         ? "లొకేషన్ తీసుకుంటున్నాను... దయచేసి వేచి ఉండండి."
         : (lang == 'hi'
             ? "स्थान प्राप्त कर रहा हूँ... कृपया प्रतीक्षा करें।"
@@ -273,11 +273,16 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
             : (lang == 'hi'
                 ? "आपका स्थान मिल गया: $placeName"
                 : "Location confirmed: $placeName");
-        _addBotMessage(detectedMsg);
+        await _addBotMessage(detectedMsg);
 
         // Advance to next conversation question
         final nextQuestion = manager.processIntent(
-          AssistantIntent(type: IntentType.findBestPrice, useGps: true, locationText: placeName),
+          AssistantIntent(
+            type: IntentType.findBestMarket,
+            useGps: true,
+            locationText: placeName,
+            rawText: 'GPS',
+          ),
           lang,
         );
 
