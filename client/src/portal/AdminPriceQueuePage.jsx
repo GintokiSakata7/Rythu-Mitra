@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckSquare, CheckCircle2, AlertCircle, XCircle, ArrowLeft, Clock, ShieldCheck, User, Calendar } from 'lucide-react';
 import { api } from '../lib/api.js';
+import AdminAuditPage from './AdminAuditPage.jsx';
 
 export default function AdminPriceQueuePage() {
   const [submissions, setSubmissions] = useState([]);
@@ -18,7 +19,7 @@ export default function AdminPriceQueuePage() {
   const fetchQueue = async () => {
     setLoading(true);
     try {
-      const res = await api.getAdminPrices(statusFilter === 'ALL' ? '' : statusFilter);
+      const res = await api.getAdminPrices(statusFilter);
       setSubmissions(res.submissions || []);
     } catch (err) {
       console.error('Failed to load price review queue:', err);
@@ -295,6 +296,9 @@ export default function AdminPriceQueuePage() {
           </div>
         </div>
       )}
+
+      {/* Security Audit Trail embedded view */}
+      <AdminAuditPage standalone={false} />
     </div>
   );
 }

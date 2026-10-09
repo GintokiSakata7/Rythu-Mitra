@@ -40,6 +40,8 @@ export default function PostRequirementPage() {
   const [requirements, setRequirements] = useState([]);
   const [loadingReqs, setLoadingReqs] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [commoditiesList, setCommoditiesList] = useState([]);
+  const [loadingCommodities, setLoadingCommodities] = useState(false);
 
   // New Requirement form
   const [reqForm, setReqForm] = useState({
@@ -144,6 +146,25 @@ export default function PostRequirementPage() {
       setShowCreateForm(false);
     }
   }, [isBuyer]);
+
+  useEffect(() => {
+    async function fetchCommodities() {
+      setLoadingCommodities(true);
+      try {
+        const res = await api.commodities();
+        const list = res.commodities || [];
+        setCommoditiesList(list);
+        if (list.length > 0) {
+          setReqForm(prev => ({ ...prev, crop: list[0].name }));
+        }
+      } catch (err) {
+        console.error('Failed to load commodities', err);
+      } finally {
+        setLoadingCommodities(false);
+      }
+    }
+    fetchCommodities();
+  }, []);
 
   const handlePublish = async (e) => {
     e.preventDefault();
@@ -428,12 +449,17 @@ export default function PostRequirementPage() {
                 <select
                   value={reqForm.crop}
                   onChange={(e) => setReqForm({ ...reqForm, crop: e.target.value })}
+                  disabled={loadingCommodities}
                 >
-                  <option value="Tomato">Tomato (టమాట)</option>
-                  <option value="Onion">Onion (ఉల్లిపాయ)</option>
-                  <option value="Potato">Potato (బంగాళాదుంప)</option>
-                  <option value="Chilli">Chilli (మిరప)</option>
-                  <option value="Cotton">Cotton (పత్తి)</option>
+                  {loadingCommodities ? (
+                    <option value="">Loading crops...</option>
+                  ) : (
+                    commoditiesList.map(comm => (
+                      <option key={comm.id} value={comm.name}>
+                        {comm.name} {comm.localName ? `(${comm.localName})` : ''}
+                      </option>
+                    ))
+                  )}
                 </select>
               </Field>
 
@@ -601,21 +627,27 @@ export default function PostRequirementPage() {
           ) : (
             <div className="dashboard-grid" style={{ display: 'grid', gap: '20px' }}>
               {requirements.map((req) => (
-                <div key={req.id} className="panel flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h3 style={{ margin: '0 0 5px 0' }}>{req.quantityKg} kg {req.crop} @ ₹{req.offerPrice}/kg</h3>
-                    <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                      <span className="status-badge success" style={{ marginRight: '10px' }}>{req.status}</span>
-                      Required By: {req.requiredBy} • {req.city} {req.pickupProvided ? '(Pickup Provided)' : ''}
+                <div key={req.id} className="panel flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', backgroundColor: '#fff' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '700', color: '#0f172a' }}>{req.quantityKg} kg {req.crop} @ ₹{req.offerPrice}/kg</h3>
+                    <div style={{ color: '#64748b', fontSize: '0.95rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <span className="status-badge success" style={{ background: '#ecfdf5', color: '#059669', padding: '3px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '700', border: '1px solid #d1fae5' }}>{req.status.toUpperCase()}</span>
+                      <span>Required By: {req.requiredBy}</span>
+                      <span>•</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <MapPinned size={14} /> {req.city} {req.pickupProvided ? '(Pickup Provided)' : ''}
+                      </span>
                     </div>
                   </div>
                   <button 
-                    className="button button-ghost" 
+                    className="button" 
                     onClick={() => handleDelete(req.id)}
-                    style={{ color: '#ef4444' }}
+                    style={{ color: '#ef4444', background: '#fef2f2', border: '1px solid #fecaca', padding: '10px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                     title="Delete Requirement"
+                    onMouseOver={(e) => { e.currentTarget.style.background = '#fee2e2'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={20} />
                   </button>
                 </div>
               ))}

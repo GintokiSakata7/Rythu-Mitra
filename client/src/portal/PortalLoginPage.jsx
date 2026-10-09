@@ -75,19 +75,11 @@ export default function PortalLoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => handleDemoFill('official@bowenpally.mandi.gov.in', 'Official@123')}
+              onClick={() => handleDemoFill('vme@gmail.com', '123456')}
               style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '0.78rem', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
             >
-              <span><strong>Verified Official</strong> (Bowenpally APMC)</span>
+              <span><strong>Test Official</strong> (vme@gmail.com)</span>
               <span style={{ color: '#059669', fontWeight: 600 }}>Use</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoFill('official@warangal.mandi.gov.in', 'Official@123')}
-              style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '0.78rem', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-            >
-              <span><strong>Pending Official</strong> (Warangal Yard)</span>
-              <span style={{ color: '#d97706', fontWeight: 600 }}>Use</span>
             </button>
           </div>
         </div>

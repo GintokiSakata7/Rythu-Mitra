@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { History, ArrowLeft, ShieldCheck, Clock, FileText } from 'lucide-react';
 import { api } from '../lib/api.js';
 
-export default function AdminAuditPage() {
+export default function AdminAuditPage({ standalone = true }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,16 +23,27 @@ export default function AdminAuditPage() {
 
   return (
     <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <Link to="/portal/admin" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '6px' }}>
-            <ArrowLeft size={14} /> Back to Admin Console
-          </Link>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-            System Security & Price Audit Trail
-          </h1>
+      {standalone && (
+        <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <Link to="/portal/admin" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '6px' }}>
+              <ArrowLeft size={14} /> Back to Admin Console
+            </Link>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              System Security & Price Audit Trail
+            </h1>
+          </div>
         </div>
-      </div>
+      )}
+
+      {!standalone && (
+        <div style={{ marginTop: '2.5rem', marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <History size={18} /> Security Audit Trail Logs
+          </h2>
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>Immutable ledger of all administrative and official price actions.</p>
+        </div>
+      )}
 
       <div style={{ background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
         <div style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '0.85rem', color: '#475569', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

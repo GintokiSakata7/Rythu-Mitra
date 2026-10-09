@@ -3,11 +3,15 @@ import { Link } from 'react-router-dom';
 import { UserCheck, ShieldCheck, AlertCircle, Clock, CheckCircle2, Send, FileText, ArrowRight, Building2, MapPin } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { api } from '../lib/api.js';
+import OfficialPriceSubmitPage from './OfficialPriceSubmitPage.jsx';
+import OfficialSubmissionsPage from './OfficialSubmissionsPage.jsx';
 
 export default function OfficialDashboardPage() {
   const { user, officialProfile, isVerifiedOfficial, refreshProfile } = useAuth();
   const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeView, setActiveView] = useState('overview'); // 'overview', 'submit', 'history'
 
   useEffect(() => {
     async function loadOfficialDetails() {
@@ -28,6 +32,28 @@ export default function OfficialDashboardPage() {
     ? officialProfile.assignedMarketNames
     : officialProfile?.assignedMarketIds || ['Bowenpally Market'];
 
+  if (activeView === 'submit') {
+    return (
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        <button onClick={() => setActiveView('overview')} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', marginBottom: '15px' }}>
+          ← Back to Dashboard
+        </button>
+        <OfficialPriceSubmitPage />
+      </div>
+    );
+  }
+
+  if (activeView === 'history') {
+    return (
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        <button onClick={() => setActiveView('overview')} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', marginBottom: '15px' }}>
+          ← Back to Dashboard
+        </button>
+        <OfficialSubmissionsPage />
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
       {/* Top Banner */}
@@ -45,8 +71,8 @@ export default function OfficialDashboardPage() {
         </div>
 
         <div>
-          <Link
-            to="/portal/official/submit"
+          <button
+            onClick={() => setActiveView('submit')}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -57,13 +83,14 @@ export default function OfficialDashboardPage() {
               color: '#ffffff',
               fontWeight: 700,
               fontSize: '0.9rem',
-              textDecoration: 'none',
+              border: 'none',
+              cursor: 'pointer',
               boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)'
             }}
           >
             <Send size={15} />
             <span>Submit Daily Mandi Rate</span>
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -170,7 +197,8 @@ export default function OfficialDashboardPage() {
           </p>
         </div>
         <Link
-          to="/portal/official/submissions"
+        <button
+          onClick={() => setActiveView('history')}
           style={{
             padding: '9px 16px',
             borderRadius: '8px',
@@ -178,7 +206,8 @@ export default function OfficialDashboardPage() {
             color: '#334155',
             fontWeight: 700,
             fontSize: '0.86rem',
-            textDecoration: 'none',
+            border: 'none',
+            cursor: 'pointer',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px'
@@ -186,7 +215,7 @@ export default function OfficialDashboardPage() {
         >
           <span>View My Submissions</span>
           <ArrowRight size={15} />
-        </Link>
+        </button>
       </div>
     </div>
   );

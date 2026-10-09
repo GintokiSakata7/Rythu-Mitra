@@ -16,8 +16,6 @@ import PortalLayout from './portal/PortalLayout.jsx';
 import PortalLoginPage from './portal/PortalLoginPage.jsx';
 import PortalRegisterPage from './portal/PortalRegisterPage.jsx';
 import OfficialDashboardPage from './portal/OfficialDashboardPage.jsx';
-import OfficialPriceSubmitPage from './portal/OfficialPriceSubmitPage.jsx';
-import OfficialSubmissionsPage from './portal/OfficialSubmissionsPage.jsx';
 import AdminDashboardPage from './portal/AdminDashboardPage.jsx';
 import AdminOfficialsPage from './portal/AdminOfficialsPage.jsx';
 import AdminPriceQueuePage from './portal/AdminPriceQueuePage.jsx';
@@ -63,23 +61,6 @@ function MainAppShell() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="official/submit"
-                element={
-                  <ProtectedRoute allowedRoles={['official', 'admin']}>
-                    <OfficialPriceSubmitPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="official/submissions"
-                element={
-                  <ProtectedRoute allowedRoles={['official', 'admin']}>
-                    <OfficialSubmissionsPage />
-                  </ProtectedRoute>
-                }
-              />
-
               {/* Administrator Guarded Sub-Routes */}
               <Route
                 path="admin"
