@@ -11,7 +11,7 @@ class RecommendationService {
       return OptimizationResult.fromJson(data);
     } catch (e) {
       print('[ENGINE] [FALLBACK] Backend unreachable or error ($e). Executing local offline heuristic engine...');
-      final result = optimizerService.calculateBest(request);
+      final result = await optimizerService.calculateBest(request);
       print('[ENGINE] [FALLBACK] Local engine calculated ${result.alternatives.length + 1} market options successfully.');
       return result;
     }

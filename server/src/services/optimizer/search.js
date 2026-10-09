@@ -1,6 +1,6 @@
 import { env } from '../../lib/env.js';
 import { getNearbyMarkets, getBuyerRequirements, refreshMarketPrices } from '../data/marketRepository.js';
-import { calculateBreakEvenPrice, calculateMarketEconomics } from './costs.js';
+import { calculateBreakEvenPrice, calculateMarketEconomics, detectCropPerishability, getMaxSafeDistanceKm } from './costs.js';
 import { haversineKm } from './geo.js';
 import { rankMarkets } from './ranking.js';
 
@@ -24,7 +24,8 @@ function evaluateMarket(market, input) {
     pricePerKg: market.modalPrice,
     distanceKm: market.distanceKm,
     hasTransport: input.hasTransport,
-    perishability: input.perishability
+    perishability: input.perishability,
+    crop: input.crop
   });
   const qty = Math.max(input.quantityKg, 1);
   return {
@@ -43,15 +44,21 @@ function evaluateMarket(market, input) {
 
 function evaluateBuyer(buyer, input) {
   const distanceKm = haversineKm(input.latitude, input.longitude, buyer.latitude, buyer.longitude);
-  const isBuyerPickup = buyer.pickupProvided === true;
   const targetQty = Math.max(Math.min(input.quantityKg, buyer.quantityKg), 1);
+
+  // Real-world farmgate pickup qualification:
+  // Direct buyers offer free pickup ONLY within their local cluster (<= 50 km)
+  // OR for large bulk truckloads (>= 5,000 kg). Otherwise farmer bears freight & road risk.
+  const isEligibleForPickup = buyer.pickupProvided === true && (distanceKm <= 50 || targetQty >= 5000);
+
   const econ = calculateMarketEconomics({
     quantityKg: targetQty,
     pricePerKg: buyer.offerPrice,
     distanceKm,
-    hasTransport: isBuyerPickup ? false : input.hasTransport,
-    isBuyerPickup,
-    perishability: input.perishability
+    hasTransport: isEligibleForPickup ? false : input.hasTransport,
+    isBuyerPickup: isEligibleForPickup,
+    perishability: input.perishability,
+    crop: input.crop
   });
   return {
     ...buyer,
@@ -64,11 +71,13 @@ function evaluateBuyer(buyer, input) {
     expectedNetPerKgMin: Number((econ.netRealizationMin / targetQty).toFixed(2)),
     expectedNetPerKgMax: Number((econ.netRealizationMax / targetQty).toFixed(2)),
     expectedNetPerKgRange: `${formatNetPerKg(econ.netRealizationMin / targetQty)} – ${formatNetPerKg(econ.netRealizationMax / targetQty)}`,
-    pickupProvided: isBuyerPickup
+    pickupProvided: isEligibleForPickup,
+    originalPickupOffered: buyer.pickupProvided === true
   };
 }
 
 export async function optimizeSellingOpportunity(input) {
+  input.perishability = input.perishability || detectCropPerishability(input.crop);
   const trace = [];
   const allEvaluated = new Map();
   let requestCount = 0;
@@ -130,6 +139,12 @@ export async function optimizeSellingOpportunity(input) {
     const clearWinner = gap >= env.searchClearGap;
     const isProfitable = best.netRealization > 0;
     const hasEnoughCandidates = allEvaluated.size >= 3;
+
+    const maxSafeDist = getMaxSafeDistanceKm(input.perishability);
+    if (level.radiusKm > maxSafeDist && allEvaluated.size >= 1) {
+      stopReason = `Search radius capped at ${maxSafeDist} km to prevent crop spoilage for ${input.crop}.`;
+      break;
+    }
 
     if (level.level === 1 && clearWinner && isProfitable && hasEnoughCandidates && maxKnownPrice < currentBestBreakEven) {
       stopReason = 'Level 1 winner already has a clear economic lead; farther markets would need an unusually high break-even price.';

@@ -29,6 +29,9 @@ class MarketModel {
   final String? companyName;
   final double? latitude;
   final double? longitude;
+  final String? feasibility;
+  final String? transitWarning;
+  final double? spoilageLossPct;
 
   MarketModel({
     required this.id,
@@ -59,6 +62,9 @@ class MarketModel {
     this.companyName,
     this.latitude,
     this.longitude,
+    this.feasibility,
+    this.transitWarning,
+    this.spoilageLossPct,
   });
 
   String get displayName => companyName ?? name;
@@ -104,6 +110,9 @@ class MarketModel {
       companyName: json['companyName']?.toString(),
       latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
       longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
+      feasibility: json['feasibility']?.toString(),
+      transitWarning: json['transitWarning']?.toString(),
+      spoilageLossPct: (json['spoilageLossPct'] as num?)?.toDouble(),
     );
   }
 }

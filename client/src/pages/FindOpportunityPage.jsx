@@ -516,6 +516,7 @@ export default function FindOpportunityPage() {
                         </div>
                         <div className="banner-value">
                           <span>{isLoss ? 'Expected net loss' : 'Expected net'}</span>
+                          <strong>
                             {result.recommendation?.netRange || ((result.recommendation?.netRealization || 0) < 0
                               ? `−₹${Math.abs(Math.round(result.recommendation?.netRealization || 0)).toLocaleString('en-IN')}`
                               : `₹${Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}`)}

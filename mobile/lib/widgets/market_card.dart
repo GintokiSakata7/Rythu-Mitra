@@ -126,6 +126,41 @@ class MarketResultCard extends StatelessWidget {
                             ),
                           ],
                         ),
+                        if (market.feasibility == 'excessive_distance') ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade100,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '⚠️ High Transit Spoilage Risk',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red.shade900,
+                              ),
+                            ),
+                          ),
+                        ] else if (market.distanceKm <= 40) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isBest ? Colors.white24 : Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '🟢 Local & Fresh (<40 km)',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: isBest ? Colors.white : Colors.green.shade800,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -267,7 +302,36 @@ class MarketResultCard extends StatelessWidget {
                     AppStrings.get('expected_loss', lang),
                     -market.riskCost,
                     isPositive: false,
+                    sub: market.spoilageLossPct != null ? '${(market.spoilageLossPct! * 100).toInt()}% transit risk' : null,
                   ),
+                  if (market.transitWarning != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.shade300),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('⚠️', style: TextStyle(fontSize: 14)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              market.transitWarning!,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.amber.shade900,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const Divider(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

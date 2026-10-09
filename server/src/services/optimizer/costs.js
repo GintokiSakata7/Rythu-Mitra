@@ -78,6 +78,42 @@ export function selectVehicleTier(quantityKg) {
   return VEHICLE_TIERS[VEHICLE_TIERS.length - 1];
 }
 
+export function detectCropPerishability(cropName) {
+  const c = (cropName || '').toLowerCase().trim();
+  // High Perishability (Shelf life 1-3 days in uncooled conditions: soft vegetables, fresh fruits, green chillies)
+  if (
+    c.includes('tomato') || c.includes('tamata') ||
+    c.includes('chilli') || c.includes('mirchi') || c.includes('chillies') ||
+    c.includes('brinjal') || c.includes('vankaya') ||
+    c.includes('cabbage') || c.includes('cauliflower') ||
+    c.includes('gourd') || c.includes('kakara') || c.includes('sorakaya') ||
+    c.includes('beans') || c.includes('bhendi') || c.includes('ladies finger') ||
+    c.includes('banana') || c.includes('papaya') || c.includes('mango') || c.includes('guava') ||
+    c.includes('cucumber') || c.includes('kheera') || c.includes('donda')
+  ) {
+    return 'high';
+  }
+  // Medium Perishability (Shelf life 1-3 weeks: tubers, root vegetables, alliums)
+  if (
+    c.includes('onion') || c.includes('ulli') ||
+    c.includes('potato') || c.includes('aloo') || c.includes('bangaladumpa') ||
+    c.includes('garlic') || c.includes('vellulli') ||
+    c.includes('ginger') || c.includes('allam') ||
+    c.includes('sweet potato') || c.includes('yam') ||
+    c.includes('carrot') || c.includes('beet')
+  ) {
+    return 'medium';
+  }
+  // Low Perishability (Shelf life months: grains, pulses, commercial fiber crops)
+  return 'low';
+}
+
+export function getMaxSafeDistanceKm(perishability) {
+  if (perishability === 'high') return 65;
+  if (perishability === 'medium') return 120;
+  return 250;
+}
+
 export function calculateMarketEconomics({
   quantityKg,
   pricePerKg,
@@ -85,6 +121,7 @@ export function calculateMarketEconomics({
   hasTransport = false,
   isBuyerPickup = false,
   perishability = 'high',
+  crop = '',
   avgSpeedKmph = null
 }) {
   const qty = Math.max(Number(quantityKg) || 1, 1);
@@ -93,6 +130,9 @@ export function calculateMarketEconomics({
   const vehicle = selectVehicleTier(qty);
   const effectiveSpeed = avgSpeedKmph || vehicle.avgSpeedKmph;
   const travelHours = Number((dist / effectiveSpeed).toFixed(1));
+
+  const effectivePerishability = perishability || (crop ? detectCropPerishability(crop) : 'high');
+  const maxSafeDist = getMaxSafeDistanceKm(effectivePerishability);
 
   let transportCostMin = 0;
   let transportCostMax = 0;
@@ -122,15 +162,52 @@ export function calculateMarketEconomics({
   } else {
     // Commercial vehicle hire: base booking fee + round-trip distance rate
     transportCostMin = Math.round(vehicle.baseHireMin + (roundTripKm * vehicle.ratePerKmMin));
-    transportCostMax = Math.round(vehicle.baseHireMax + (roundTripKm * vehicle.ratePerKmMax));
+    transportCostMax = Math.round(vehicle.baseHireMax + (roundTripKm * vehicle.ratePerKmMin * 1.25));
     transportCost = Math.round((transportCostMin + transportCostMax) / 2);
     transportRange = `₹${transportCostMin.toLocaleString('en-IN')} – ₹${transportCostMax.toLocaleString('en-IN')}`;
   }
 
   const timeCost = Math.round(travelHours * env.timeValuePerHour * (hasTransport ? 0.8 : 1));
-  const spoilageMultiplier = perishability === 'high' ? 1 : perishability === 'medium' ? 0.45 : 0.15;
-  const riskCost = Math.round(dist * env.riskRatePerKm * spoilageMultiplier * Math.sqrt(qty));
+
+  // Realistic non-linear transit spoilage curve based on heat & road transit duration
+  let spoilageLossPct = 0;
+  let feasibility = 'safe';
+  let transitWarning = null;
+
+  if (effectivePerishability === 'high') {
+    if (dist <= 35) {
+      spoilageLossPct = 0.015; // 1.5% normal handling loss
+    } else if (dist <= 65) {
+      // 1.5% to 6.5% moderate road loss
+      spoilageLossPct = 0.015 + ((dist - 35) / 30) * 0.05;
+    } else if (dist <= 100) {
+      // 6.5% to 22% heavy degradation
+      spoilageLossPct = 0.065 + ((dist - 65) / 35) * 0.155;
+      feasibility = 'transit_risk';
+      transitWarning = `Transit distance (${dist.toFixed(0)} km / ~${travelHours} hrs) exceeds safe limits for fresh produce. Expect ~${Math.round(spoilageLossPct * 100)}% quality degradation.`;
+    } else {
+      // > 100 km for high perishability: severe damage / market rejection
+      spoilageLossPct = Math.min(0.22 + ((dist - 100) / 100) * 0.35, 0.60);
+      feasibility = 'excessive_distance';
+      transitWarning = `Excessive transit distance (${dist.toFixed(0)} km / ~${travelHours} hrs). Fresh produce will suffer severe heat spoilage and buyer rejection without cold storage.`;
+    }
+  } else if (effectivePerishability === 'medium') {
+    if (dist <= 60) {
+      spoilageLossPct = 0.01;
+    } else if (dist <= 120) {
+      spoilageLossPct = 0.01 + ((dist - 60) / 60) * 0.05;
+    } else {
+      spoilageLossPct = Math.min(0.06 + ((dist - 120) / 100) * 0.12, 0.25);
+      feasibility = 'transit_risk';
+      transitWarning = `Transit distance (${dist.toFixed(0)} km / ~${travelHours} hrs) may cause moisture loss and sprouting.`;
+    }
+  } else {
+    // Low perishability (grains, pulses, cotton, oilseeds): negligible transit risk
+    spoilageLossPct = Math.min(0.005 + (dist / 250) * 0.01, 0.02);
+  }
+
   const saleValue = Math.round(qty * pricePerKg);
+  const riskCost = Math.round(saleValue * spoilageLossPct);
 
   const netRealization = saleValue - transportCost - timeCost - riskCost;
   const netRealizationMin = saleValue - transportCostMax - timeCost - riskCost;
@@ -156,12 +233,16 @@ export function calculateMarketEconomics({
     vehicleNameHi,
     timeCost,
     riskCost,
+    spoilageLossPct: Number(spoilageLossPct.toFixed(3)),
     travelHours,
     netRealization,
     netRealizationMin,
     netRealizationMax,
     netRange,
-    transportRate: vehicle.ratePerKmMin
+    transportRate: vehicle.ratePerKmMin,
+    feasibility,
+    transitWarning,
+    maxSafeDistanceKm: maxSafeDist
   };
 }
 
