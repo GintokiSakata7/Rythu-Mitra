@@ -105,29 +105,27 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 _navItem(
                   icon: Icons.home_rounded,
-                  label: AppStrings.get('profile', lang) == 'Profile'
-                      ? 'Home'
-                      : 'హోమ్',
-                  label2: 'Home',
+                  label: AppStrings.get('nav_home', lang),
+                  label2: AppStrings.get('nav_home', lang),
                   index: 0,
                   lang: lang,
                   key: _homeKey,
-                  description: 'View your dashboard and daily market updates.',
+                  description: AppStrings.get('guide_home', lang),
                 ),
                 _navItem(
                   icon: Icons.search_rounded,
-                  label: 'Find Best',
-                  label2: 'Find Best',
+                  label: AppStrings.get('nav_find_best', lang),
+                  label2: AppStrings.get('nav_find_best', lang),
                   index: 1,
                   lang: lang,
                   key: _findBestKey,
-                  description: 'Find the most profitable market based on your location and transport costs.',
+                  description: AppStrings.get('guide_find_best', lang),
                 ),
                 // Center Voice Button
                 Expanded(
                   child: Showcase(
                     key: _voiceKey,
-                    description: 'Tap to speak! Ask for crop prices or best markets in your local language.',
+                    description: AppStrings.get('guide_voice', lang),
                     child: Semantics(
                       label: 'Voice Assistant, button',
                       button: true,
@@ -167,21 +165,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 _navItem(
                   icon: Icons.storefront_rounded,
-                  label: 'Buyers',
-                  label2: 'Buyers',
+                  label: AppStrings.get('nav_buyers', lang),
+                  label2: AppStrings.get('nav_buyers', lang),
                   index: 3,
                   lang: lang,
                   key: _buyersKey,
-                  description: 'Connect directly with verified buyers and traders.',
+                  description: AppStrings.get('guide_buyers', lang),
                 ),
                 _navItem(
                   icon: Icons.post_add_rounded,
-                  label: 'Demand',
-                  label2: 'Demand',
+                  label: AppStrings.get('nav_demand', lang),
+                  label2: AppStrings.get('nav_demand', lang),
                   index: 4,
                   lang: lang,
                   key: _demandKey,
-                  description: 'Post your available stock and let buyers contact you.',
+                  description: AppStrings.get('guide_demand', lang),
                 ),
               ],
             ),
@@ -225,6 +223,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ExcludeSemantics(
                   child: Text(
                     label2,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 10,
                       color: isSelected ? AppTheme.forestGreen : Colors.grey,
@@ -272,7 +273,7 @@ class _HomeTab extends StatelessWidget {
             actions: [
               Showcase(
                 key: notificationsKey,
-                description: 'See market updates and buyer responses.',
+                description: s('guide_notifications'),
                 child: IconButton(
                   icon: const Icon(Icons.notifications_outlined, color: Colors.white),
                   onPressed: () {
@@ -286,7 +287,7 @@ class _HomeTab extends StatelessWidget {
               const SizedBox(width: 8),
               Showcase(
                 key: profileKey,
-                description: 'Manage your profile and preferences.',
+                description: s('guide_profile'),
                 child: GestureDetector(
                   onTap: () => Navigator.push(
                     context,
@@ -474,7 +475,7 @@ class _HomeTab extends StatelessWidget {
                       _quickActionCard(
                         context,
                         icon: Icons.history_rounded,
-                        label: 'History',
+                        label: s('history'),
                         color: const Color(0xFFE65100),
                         bgColor: const Color(0xFFFFF3E0),
                         onTap: () => Navigator.push(context,

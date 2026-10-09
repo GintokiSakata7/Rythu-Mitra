@@ -200,8 +200,8 @@ class MarketResultCard extends StatelessWidget {
                     -market.transportCost,
                     isPositive: market.transportCost == 0,
                     sub: market.pickupProvided == true
-                        ? 'Free Farmgate Pickup'
-                        : (market.vehicleName != null ? 'Round-trip logistics' : null),
+                        ? AppStrings.get('free_pickup', lang)
+                        : (market.vehicleName != null ? AppStrings.get('round_trip', lang) : null),
                     customValue: market.transportRange != null
                         ? (market.transportCost == 0
                             ? market.transportRange
@@ -283,7 +283,7 @@ class MarketResultCard extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('View Details'),
+                        child: Text(AppStrings.get('view_details', lang)),
                       ),
                     ),
                   ],
