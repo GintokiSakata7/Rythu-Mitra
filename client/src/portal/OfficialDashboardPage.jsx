@@ -196,7 +196,6 @@ export default function OfficialDashboardPage() {
             Inspect past submissions, track review notes from the administrator, or edit requested corrections.
           </p>
         </div>
-        <Link
         <button
           onClick={() => setActiveView('history')}
           style={{
