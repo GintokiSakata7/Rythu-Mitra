@@ -12,11 +12,13 @@ class ApiException implements Exception {
 
 class ApiService {
   final List<String> _baseUrls = [
-    AppConfig.baseUrl,
     'http://127.0.0.1:4000/api',
+    'http://localhost:4000/api',
+    'http://172.19.191.129:4000/api',
     'http://10.0.2.2:4000/api',
+    AppConfig.baseUrl,
   ];
-  String _activeBaseUrl = AppConfig.baseUrl;
+  String _activeBaseUrl = 'http://127.0.0.1:4000/api';
   final Duration _timeout = const Duration(seconds: 10);
 
   Future<Map<String, dynamic>> get(String path, {Map<String, String>? query}) async {

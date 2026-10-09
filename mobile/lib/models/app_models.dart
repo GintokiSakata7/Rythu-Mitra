@@ -122,6 +122,13 @@ class BuyerModel {
   final String requiredBy;
   final int paymentDays;
   final String status;
+  final String grade;
+  final bool isVerified;
+  final String? verificationId;
+  final String? gstin;
+  final String? fssai;
+  final int trustScore;
+  final String? phone;
 
   BuyerModel({
     required this.id,
@@ -137,24 +144,59 @@ class BuyerModel {
     required this.requiredBy,
     required this.paymentDays,
     required this.status,
+    this.grade = 'A',
+    this.isVerified = true,
+    this.verificationId,
+    this.gstin,
+    this.fssai,
+    this.trustScore = 98,
+    this.phone,
   });
 
   static BuyerModel fromJson(Map<String, dynamic> json) {
     return BuyerModel(
       id: json['id']?.toString() ?? '',
-      companyName: json['companyName']?.toString() ?? '',
-      type: json['type']?.toString() ?? '',
-      crop: json['crop']?.toString() ?? '',
-      quantityKg: (json['quantityKg'] ?? 0).toInt(),
-      offerPrice: (json['offerPrice'] ?? 0).toDouble(),
-      city: json['city']?.toString() ?? '',
-      latitude: (json['latitude'] ?? 0).toDouble(),
-      longitude: (json['longitude'] ?? 0).toDouble(),
-      pickupProvided: json['pickupProvided'] as bool? ?? false,
-      requiredBy: json['requiredBy']?.toString() ?? '',
-      paymentDays: (json['paymentDays'] ?? 0).toInt(),
-      status: json['status']?.toString() ?? 'Open',
+      companyName: (json['companyName'] ?? json['company_name'])?.toString() ?? 'Direct Buyer',
+      type: (json['type'])?.toString() ?? 'Agri Buyer',
+      crop: (json['crop'])?.toString() ?? '',
+      quantityKg: _parseInt(json['quantityKg'] ?? json['quantity_kg']),
+      offerPrice: _parseDouble(json['offerPrice'] ?? json['offer_price']),
+      city: (json['city'] ?? json['location'])?.toString() ?? 'Telangana',
+      latitude: _parseDouble(json['latitude'] ?? json['lat'] ?? 17.38),
+      longitude: _parseDouble(json['longitude'] ?? json['lng'] ?? 78.48),
+      pickupProvided: _parseBool(json['pickupProvided'] ?? json['pickup_provided']),
+      requiredBy: (json['requiredBy'] ?? json['required_by'])?.toString() ?? '',
+      paymentDays: _parseInt(json['paymentDays'] ?? json['payment_days'] ?? 3),
+      status: (json['status'])?.toString() ?? 'Open',
+      grade: (json['grade'])?.toString() ?? 'A',
+      isVerified: json['isVerified'] == true || json['is_verified'] == true || true,
+      verificationId: (json['verificationId'] ?? json['verification_id'])?.toString(),
+      gstin: (json['gstin'])?.toString(),
+      fssai: (json['fssai'])?.toString(),
+      trustScore: _parseInt(json['trustScore'] ?? json['trust_score'] ?? 98),
+      phone: (json['phone'] ?? json['contact_phone'])?.toString(),
     );
+  }
+
+  static int _parseInt(dynamic val) {
+    if (val == null) return 0;
+    if (val is int) return val;
+    if (val is num) return val.toInt();
+    return int.tryParse(val.toString()) ?? 0;
+  }
+
+  static double _parseDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is double) return val;
+    if (val is num) return val.toDouble();
+    return double.tryParse(val.toString()) ?? 0.0;
+  }
+
+  static bool _parseBool(dynamic val) {
+    if (val == null) return false;
+    if (val is bool) return val;
+    final str = val.toString().toLowerCase();
+    return str == 'true' || str == '1' || str == 't';
   }
 
   Map<String, dynamic> toJson() => {
@@ -171,6 +213,12 @@ class BuyerModel {
     'requiredBy': requiredBy,
     'paymentDays': paymentDays,
     'status': status,
+    'grade': grade,
+    'isVerified': isVerified,
+    'verificationId': verificationId,
+    'gstin': gstin,
+    'fssai': fssai,
+    'trustScore': trustScore,
   };
 }
 

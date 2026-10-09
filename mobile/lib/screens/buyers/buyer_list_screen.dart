@@ -109,9 +109,54 @@ class _BuyerListScreenState extends State<BuyerListScreen> {
             child: prov.loading
                 ? const Center(child: CircularProgressIndicator())
                 : prov.error.isNotEmpty
-                    ? Center(child: Text(prov.error))
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.cloud_off, size: 44, color: Colors.orange),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Could not fetch live buyers from DB:\n${prov.error}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 13, color: Colors.black87),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () => prov.loadBuyers(),
+                                icon: const Icon(Icons.refresh, size: 18),
+                                label: const Text('Retry Database Query'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
                     : prov.buyers.isEmpty
-                        ? const Center(child: Text('No buyers found'))
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.search_off, size: 44, color: Colors.grey),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    prov.selectedCrop.isNotEmpty
+                                        ? 'No verified buyers for ${prov.selectedCrop} in database.'
+                                        : 'No verified buyers found in database.',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  OutlinedButton(
+                                    onPressed: () => prov.loadBuyers(crop: ''),
+                                    child: const Text('View All Buyers'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
                         : RefreshIndicator(
                             onRefresh: () => prov.loadBuyers(),
                             child: ListView.builder(

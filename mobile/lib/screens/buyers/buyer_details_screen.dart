@@ -94,14 +94,26 @@ class BuyerDetailsScreen extends StatelessWidget {
                 children: [
                   _ReqRow('Crop', buyer.crop),
                   const Divider(),
+                  _ReqRow('Grade', 'Grade ${buyer.grade}'),
+                  const Divider(),
                   _ReqRow('Quantity', '${buyer.quantityKg} kg'),
                   const Divider(),
                   _ReqRow('Offer Price', '₹${buyer.offerPrice}/kg',
                       isHighlight: true),
                   const Divider(),
-                  _ReqRow('Required By', buyer.requiredBy.split('T')[0]),
+                  _ReqRow('Required By', buyer.requiredBy.isNotEmpty ? buyer.requiredBy.split('T')[0] : 'Immediate'),
                   const Divider(),
-                  _ReqRow('Payment Terms', '${buyer.paymentDays} days'),
+                  _ReqRow('Payment Terms', '${buyer.paymentDays} days (Bank Transfer)'),
+                  if (buyer.gstin != null && buyer.gstin!.isNotEmpty) ...[
+                    const Divider(),
+                    _ReqRow('Govt GSTIN', buyer.gstin!),
+                  ],
+                  if (buyer.fssai != null && buyer.fssai!.isNotEmpty) ...[
+                    const Divider(),
+                    _ReqRow('FSSAI License', buyer.fssai!),
+                  ],
+                  const Divider(),
+                  _ReqRow('Trust Score', '${buyer.trustScore}/100 (Govt Verified)'),
                 ],
               ),
             ),
@@ -134,14 +146,14 @@ class BuyerDetailsScreen extends StatelessWidget {
                       children: [
                         Text(
                           buyer.pickupProvided
-                              ? 'Buyer provides pickup'
-                              : 'Farmer must arrange transport',
+                              ? 'Buyer provides farmgate pickup'
+                              : 'Farmer arranges transport to facility',
                           style: const TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                         if (buyer.pickupProvided)
                           const Text(
-                            'Transport costs are covered by the buyer.',
+                            'Transport costs are covered directly by the buyer.',
                             style: TextStyle(fontSize: 13, color: Colors.grey),
                           ),
                       ],
@@ -157,14 +169,15 @@ class BuyerDetailsScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
-                  final uri = Uri.parse(
-                      'tel:1800123456'); // Mock contact
+                  final phone = buyer.phone ?? '+919876543210';
+                  final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+                  final uri = Uri.parse('tel:$cleanPhone');
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri);
                   }
                 },
                 icon: const Icon(Icons.phone),
-                label: const Text('Contact Buyer'),
+                label: const Text('Contact Buyer Desk'),
               ),
             ),
           ],
