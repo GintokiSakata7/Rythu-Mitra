@@ -226,7 +226,8 @@ export async function createBuyerRequirement(payload) {
       pickup_provided: payload.pickupProvided,
       required_by: payload.requiredBy,
       payment_days: payload.paymentDays ?? 3,
-      status: 'Open'
+      status: 'Open',
+      user_id: payload.userId || null
     }).select('*').single();
 
     if (error) throw error;
@@ -251,6 +252,49 @@ export async function createBuyerRequirement(payload) {
     demoBuyerRequirements.unshift(newReq);
     return newReq;
   }
+}
+
+export async function getBuyerRequirementsByUserId(userId) {
+  if (supabaseEnabled && userId) {
+    try {
+      const { data, error } = await supabase.from('buyer_requirements').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+      if (!error && data) {
+        return data.map(row => ({
+          id: row.id,
+          companyName: row.company_name,
+          type: row.type,
+          crop: row.crop,
+          quantityKg: Number(row.quantity_kg),
+          grade: row.grade,
+          offerPrice: Number(row.offer_price),
+          latitude: Number(row.latitude),
+          longitude: Number(row.longitude),
+          city: row.city,
+          pickupProvided: Boolean(row.pickup_provided),
+          requiredBy: row.required_by,
+          paymentDays: row.payment_days,
+          status: row.status,
+          userId: row.user_id,
+          createdAt: row.created_at
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching user buyer requirements:', err);
+    }
+  }
+  return [];
+}
+
+export async function deleteBuyerRequirement(id, userId) {
+  if (supabaseEnabled && userId) {
+    try {
+      const { error } = await supabase.from('buyer_requirements').delete().eq('id', id).eq('user_id', userId);
+      if (!error) return true;
+    } catch (err) {
+      console.error('Error deleting buyer requirement:', err);
+    }
+  }
+  return false;
 }
 
 /**

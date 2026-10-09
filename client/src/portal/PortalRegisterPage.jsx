@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShieldCheck, UserCheck, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { api } from '../lib/api.js';
+import { useEffect } from 'react';
 
 export default function PortalRegisterPage() {
   const [formData, setFormData] = useState({
@@ -11,15 +13,38 @@ export default function PortalRegisterPage() {
     password: '',
     organizationName: '',
     officialIdReference: '',
-    assignedMarketName: 'Bowenpally Market',
-    assignedMarketId: 'TS-Bowenpally Market',
+    assignedMarketId: '',
     declarationAccepted: false
   });
+  const [marketsList, setMarketsList] = useState([]);
+  const [loadingMarkets, setLoadingMarkets] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function loadMarkets() {
+      try {
+        const res = await api.markets();
+        const availableMarkets = res.markets || [];
+        setMarketsList(availableMarkets);
+        if (availableMarkets.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            assignedMarketId: availableMarkets[0].id,
+            assignedMarketName: availableMarkets[0].name
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to load markets:', err);
+      } finally {
+        setLoadingMarkets(false);
+      }
+    }
+    loadMarkets();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -191,14 +216,17 @@ export default function PortalRegisterPage() {
                 }));
               }}
               style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', backgroundColor: '#f8fafc' }}
+              disabled={loadingMarkets}
             >
-              <option value="TS-Bowenpally Market">Bowenpally Market (Hyderabad)</option>
-              <option value="TS-Warangal Market">Warangal Market (Hanamkonda)</option>
-              <option value="TS-Gudimalkapur Market">Gudimalkapur Market (Hyderabad)</option>
-              <option value="TS-Nalgonda Market">Nalgonda Market (Nalgonda)</option>
-              <option value="TS-Khammam Market">Khammam Market (Khammam)</option>
-              <option value="TS-Nizamabad Market">Nizamabad Market (Nizamabad)</option>
-              <option value="TS-Suryapet Market">Suryapet Market (Suryapet)</option>
+              {loadingMarkets ? (
+                <option value="">Loading markets...</option>
+              ) : (
+                marketsList.map(market => (
+                  <option key={market.id} value={market.id}>
+                    {market.name} ({market.district || market.state})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 

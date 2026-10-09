@@ -473,8 +473,9 @@ export const db = {
             createdAt: data.created_at
           };
         }
+        return null;
       } catch (err) {
-        // fallback
+        return null;
       }
     }
     return localStore.findUserByEmail(email);
@@ -498,8 +499,9 @@ export const db = {
             createdAt: data.created_at
           };
         }
+        return null;
       } catch (err) {
-        // fallback
+        return null;
       }
     }
     return localStore.findUserById(id);
@@ -594,8 +596,9 @@ export const db = {
             createdAt: data.created_at
           };
         }
+        return null;
       } catch (err) {
-        // fallback
+        return null;
       }
     }
     return localStore.getOfficialProfileById(id);
@@ -643,6 +646,84 @@ export const db = {
       }
     }
     return localStore.createOfficialProfile({ ...profileData, id: profileId });
+  },
+
+  async getBuyerProfileByUserId(userId) {
+    if (supabaseEnabled) {
+      try {
+        const { data, error } = await supabase.from('buyer_profiles').select('*').eq('user_id', userId).single();
+        if (!error && data) {
+          return {
+            id: data.id,
+            userId: data.user_id,
+            companyName: data.company_name,
+            type: data.type,
+            gstin: data.gstin,
+            fssai: data.fssai,
+            cin: data.cin,
+            officerName: data.officer_name,
+            phone: data.phone,
+            verificationStatus: data.verification_status,
+            createdAt: data.created_at
+          };
+        }
+        return null;
+      } catch (err) {
+        return null;
+      }
+    }
+    return localStore.buyerProfiles?.find(p => p.userId === userId) || null;
+  },
+
+  async createBuyerProfile(profileData) {
+    const profileId = profileData.id || randomUUID();
+    if (supabaseEnabled) {
+      try {
+        const { data: inserted, error } = await supabase
+          .from('buyer_profiles')
+          .insert({
+            id: profileId,
+            user_id: profileData.userId,
+            company_name: profileData.companyName,
+            type: profileData.type,
+            gstin: profileData.gstin,
+            fssai: profileData.fssai,
+            cin: profileData.cin,
+            officer_name: profileData.officerName,
+            phone: profileData.phone,
+            verification_status: 'VERIFIED'
+          })
+          .select('*')
+          .single();
+
+        if (!error && inserted) {
+          const profile = {
+            id: inserted.id,
+            userId: inserted.user_id,
+            companyName: inserted.company_name,
+            type: inserted.type,
+            gstin: inserted.gstin,
+            fssai: inserted.fssai,
+            cin: inserted.cin,
+            officerName: inserted.officer_name,
+            phone: inserted.phone,
+            verificationStatus: inserted.verification_status,
+            createdAt: inserted.created_at
+          };
+          if (!localStore.buyerProfiles) localStore.buyerProfiles = [];
+          localStore.buyerProfiles.push(profile);
+          return profile;
+        } else if (error) {
+          console.error('Supabase createBuyerProfile error:', error.message || error);
+        }
+      } catch (err) {
+        console.error('Supabase createBuyerProfile exception:', err.message || err);
+      }
+    }
+    const profile = { ...profileData, id: profileId, verificationStatus: 'VERIFIED', createdAt: new Date().toISOString() };
+    if (!localStore.buyerProfiles) localStore.buyerProfiles = [];
+    localStore.buyerProfiles.push(profile);
+    return profile;
   },
 
   async updateOfficialProfile(profileId, updates) {

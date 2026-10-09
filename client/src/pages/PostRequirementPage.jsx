@@ -1,43 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Building2, CheckCircle2, Factory, MapPinned, Truck, ShieldCheck,
   ShieldAlert, Lock, Unlock, BadgeCheck, FileText, ArrowRight,
-  ArrowLeft, Sparkles, AlertTriangle, Check, RefreshCw, Scale
+  ArrowLeft, Sparkles, AlertTriangle, Check, RefreshCw, Scale,
+  Trash2, Plus
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SectionHeader from '../components/SectionHeader.jsx';
 import { api } from '../lib/api.js';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 export default function PostRequirementPage() {
   const { t } = useLanguage();
-  const [step, setStep] = useState(1); // 1: Govt Verification, 2: Farmer Agreement, 3: Publish Requirement, 4: Done
-
-  // Step 1: Verification Form
+  const { user, isBuyer, login, register, buyerProfile } = useAuth();
+  
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+  
+  // Login form
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  
+  // Register form
   const [verificationForm, setVerificationForm] = useState({
-    companyName: 'Deccan Fresh Foods Pvt Ltd',
-    type: 'Food Processor',
-    gstin: '36AABCB1234M1Z5',
-    fssai: '13621014000189',
-    cin: 'U15139TG2020PTC145678',
-    officerName: 'Suresh Reddy',
-    phone: '+91 98490 12345',
-    email: 'procurement@deccanfoods.in'
+    companyName: '',
+    buyerType: 'Food Processor',
+    gstin: '',
+    fssai: '',
+    cin: '',
+    officerName: '',
+    phone: '',
+    email: '',
+    password: ''
   });
-  const [verifying, setVerifying] = useState(false);
-  const [verificationError, setVerificationError] = useState('');
-  const [verifiedData, setVerifiedData] = useState(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
 
-  // Step 2: Agreement State
-  const [agreedGovtId, setAgreedGovtId] = useState(false);
-  const [agreedFairTrade, setAgreedFairTrade] = useState(false);
-  const [agreedGuaranteedPay, setAgreedGuaranteedPay] = useState(false);
-  const [signatoryName, setSignatoryName] = useState('Suresh Reddy');
-  const [signatoryDesignation, setSignatoryDesignation] = useState('Head of Agricultural Procurement');
-  const [agreementError, setAgreementError] = useState('');
-  const [agreementSigned, setAgreementSigned] = useState(false);
+  // Dashboard state
+  const [requirements, setRequirements] = useState([]);
+  const [loadingReqs, setLoadingReqs] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // Step 3: Requirement Form
+  // New Requirement form
   const [reqForm, setReqForm] = useState({
     crop: 'Tomato',
     quantityKg: 5000,
@@ -48,80 +52,111 @@ export default function PostRequirementPage() {
     longitude: 78.48,
     pickupProvided: true,
     requiredBy: '2026-10-15',
-    paymentDays: 3
+    paymentDays: 3,
+    agreedToTerms: false
   });
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
-  const [publishedRecord, setPublishedRecord] = useState(null);
 
   // Auto-fill sample enterprise
   const loadSampleCredentials = (type = 'processor') => {
     if (type === 'processor') {
       setVerificationForm({
         companyName: 'Deccan Fresh Foods Pvt Ltd',
-        type: 'Food Processor',
+        buyerType: 'Food Processor',
         gstin: '36AABCB1234M1Z5',
         fssai: '13621014000189',
         cin: 'U15139TG2020PTC145678',
         officerName: 'Suresh Reddy',
         phone: '+91 98490 12345',
-        email: 'procurement@deccanfoods.in'
+        email: 'procurement@deccanfoods.in',
+        password: 'password123'
       });
     } else {
       setVerificationForm({
         companyName: 'Urban Bowl Kitchens Ltd',
-        type: 'Restaurant Group',
+        buyerType: 'Restaurant Group',
         gstin: '36AAACU5678K1Z2',
         fssai: '13622015000451',
         cin: 'U55101TG2019PLC098234',
         officerName: 'Vikram Joshi',
         phone: '+91 94401 56789',
-        email: 'supplies@urbanbowl.com'
+        email: 'supplies@urbanbowl.com',
+        password: 'password123'
       });
     }
   };
 
-  // Handle Step 1 Verification
-  const handleVerify = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setVerifying(true);
-    setVerificationError('');
+    setAuthLoading(true);
+    setAuthError('');
     try {
-      const res = await api.verifyBuyer(verificationForm);
-      setVerifiedData(res);
-      setSignatoryName(res.officerName || verificationForm.officerName);
+      await login(loginEmail, loginPassword);
     } catch (err) {
-      setVerificationError(err.message || 'Verification failed. Please check Government ID formats.');
+      setAuthError(err.message || 'Login failed.');
     } finally {
-      setVerifying(false);
+      setAuthLoading(false);
     }
   };
 
-  // Handle Step 2 Sign-off
-  const handleSignAgreement = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    if (!agreedGovtId || !agreedFairTrade || !agreedGuaranteedPay) {
-      setAgreementError('You must check and agree to all farmer protection covenants before proceeding.');
-      return;
+    setAuthLoading(true);
+    setAuthError('');
+    try {
+      await register({
+        fullName: verificationForm.officerName,
+        email: verificationForm.email,
+        phone: verificationForm.phone,
+        password: verificationForm.password,
+        role: 'buyer',
+        companyName: verificationForm.companyName,
+        buyerType: verificationForm.buyerType,
+        gstin: verificationForm.gstin,
+        fssai: verificationForm.fssai,
+        cin: verificationForm.cin,
+        officerName: verificationForm.officerName
+      });
+    } catch (err) {
+      setAuthError(err.message || 'Registration failed.');
+    } finally {
+      setAuthLoading(false);
     }
-    if (!signatoryName.trim()) {
-      setAgreementError('Authorized signatory name is required.');
-      return;
-    }
-    setAgreementError('');
-    setAgreementSigned(true);
-    setStep(3); // unlock requirement posting
   };
 
-  // Handle Step 3 Publishing
+  const loadRequirements = async () => {
+    if (!isBuyer) return;
+    setLoadingReqs(true);
+    try {
+      const res = await api.getMyRequirements();
+      setRequirements(res.requirements || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingReqs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isBuyer) {
+      loadRequirements();
+      setShowCreateForm(false);
+    }
+  }, [isBuyer]);
+
   const handlePublish = async (e) => {
     e.preventDefault();
+    if (!reqForm.agreedToTerms) {
+      setPublishError('You must agree to the Farmer Protection terms.');
+      return;
+    }
     setPublishing(true);
     setPublishError('');
     try {
       const payload = {
-        companyName: verificationForm.companyName,
-        type: verificationForm.type,
+        companyName: buyerProfile?.companyName || user.fullName,
+        type: buyerProfile?.type || 'Buyer',
         crop: reqForm.crop,
         quantityKg: Number(reqForm.quantityKg),
         grade: reqForm.grade,
@@ -132,18 +167,17 @@ export default function PostRequirementPage() {
         pickupProvided: Boolean(reqForm.pickupProvided),
         requiredBy: reqForm.requiredBy,
         paymentDays: Number(reqForm.paymentDays),
-        // Verification & Anti-fraud metadata
         isVerified: true,
-        verificationId: verifiedData?.verificationId || `MM-GOV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        gstin: verifiedData?.gstin || verificationForm.gstin,
-        fssai: verifiedData?.fssai || verificationForm.fssai,
-        trustScore: verifiedData?.trustScore || 98,
-        officerName: signatoryName,
+        verificationId: `MM-GOV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        gstin: buyerProfile?.gstin,
+        fssai: buyerProfile?.fssai,
+        trustScore: 98,
+        officerName: buyerProfile?.officerName || user.fullName,
         agreedToTerms: true
       };
-      const res = await api.postBuyer(payload);
-      setPublishedRecord(res.requirement);
-      setStep(4);
+      await api.postBuyer(payload);
+      setShowCreateForm(false);
+      loadRequirements();
     } catch (err) {
       setPublishError(err.message || 'Failed to publish requirement.');
     } finally {
@@ -151,398 +185,219 @@ export default function PostRequirementPage() {
     }
   };
 
-  const isVerified = Boolean(verifiedData?.success);
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this requirement?')) {
+      try {
+        await api.deleteRequirement(id);
+        loadRequirements();
+      } catch (err) {
+        alert(err.message || 'Failed to delete');
+      }
+    }
+  };
 
-  return (
-    <div className="post-requirement-page">
-      <SectionHeader
-        eyebrow={t('post_eyebrow')}
-        title={t('post_title')}
-        description={t('post_desc')}
-      />
+  // Auth View (Login / Register)
+  if (!user || !isBuyer) {
+    return (
+      <div className="post-requirement-page">
+        <SectionHeader
+          eyebrow="VERIFIED BUYER PORTAL"
+          title="Direct Buyer Verification"
+          description="Login or register with Government IDs to publish crop requirements."
+        />
 
-      {/* Progress Stepper */}
-      <div className="verification-stepper">
-        <div className={`step-node ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
-          <div className="step-circle">{step > 1 ? <Check size={16} /> : '1'}</div>
-          <div className="step-text">
-            <strong>{t('post_step1')}</strong>
-            <small>{t('post_step1_sub')}</small>
-          </div>
-        </div>
-
-        <div className="step-connector" />
-
-        <div className={`step-node ${step >= 2 ? 'active' : ''} ${step > 2 ? 'completed' : ''}`}>
-          <div className="step-circle">{step > 2 ? <Check size={16} /> : '2'}</div>
-          <div className="step-text">
-            <strong>{t('post_step2')}</strong>
-            <small>{t('post_step2_sub')}</small>
-          </div>
-        </div>
-
-        <div className="step-connector" />
-
-        <div className={`step-node ${step >= 3 ? 'active' : ''} ${step > 3 ? 'completed' : ''}`}>
-          <div className="step-circle">{step > 3 ? <Check size={16} /> : '3'}</div>
-          <div className="step-text">
-            <strong>{t('post_step3')}</strong>
-            <small>{t('post_step3_sub')}</small>
-          </div>
-        </div>
-      </div>
-
-      {/* ================= STEP 1: GOVT VERIFICATION ================= */}
-      {step === 1 && (
-        <div className="verification-card panel">
+        <div className="verification-card panel" style={{ maxWidth: '600px', margin: '0 auto' }}>
           <div className="verification-header">
             <div className="header-icon-box shield-glow">
               <ShieldCheck size={28} />
             </div>
             <div>
-              <div className="eyebrow-chip">{t('post_protocol')}</div>
-              <h2>{t('post_step1_title')}</h2>
-              <p>{t('post_step1_desc')}</p>
-            </div>
-          </div>
-
-          <div className="demo-quickfill-bar">
-            <span>{t('post_test_sample')}</span>
-            <button
-              type="button"
-              className="quickfill-btn"
-              onClick={() => loadSampleCredentials('processor')}
-            >
-              <Sparkles size={13} /> {t('post_deccan')}
-            </button>
-            <button
-              type="button"
-              className="quickfill-btn"
-              onClick={() => loadSampleCredentials('kitchen')}
-            >
-              <Sparkles size={13} /> {t('post_urban')}
-            </button>
-          </div>
-
-          <form onSubmit={handleVerify} className="verification-form">
-            <div className="form-grid two">
-              <Field label="Legal Entity / Factory Name" required>
-                <input
-                  type="text"
-                  value={verificationForm.companyName}
-                  onChange={(e) => setVerificationForm({ ...verificationForm, companyName: e.target.value })}
-                  placeholder="e.g. Deccan Fresh Foods Pvt Ltd"
-                  required
-                />
-              </Field>
-
-              <Field label="Business Category" required>
-                <select
-                  value={verificationForm.type}
-                  onChange={(e) => setVerificationForm({ ...verificationForm, type: e.target.value })}
-                >
-                  <option value="Food Processor">Food Processor / Factory</option>
-                  <option value="Restaurant Group">Restaurant Group / Commercial Kitchen</option>
-                  <option value="Processing Unit">Agri Processing Unit</option>
-                  <option value="Modern Retailer">Modern Retailer / Supermarket</option>
-                  <option value="Agri Exporter">Agricultural Exporter</option>
-                </select>
-              </Field>
-            </div>
-
-            <div className="form-grid two">
-              <Field
-                label="GSTIN (15-Digit Goods & Services Tax No.)"
-                caption="e.g. 36AABCB1234M1Z5 (Telangana State Code: 36)"
-                required
-              >
-                <input
-                  type="text"
-                  value={verificationForm.gstin}
-                  onChange={(e) => setVerificationForm({ ...verificationForm, gstin: e.target.value.toUpperCase() })}
-                  placeholder="36AABCB1234M1Z5"
-                  maxLength={15}
-                  required
-                />
-              </Field>
-
-              <Field
-                label="FSSAI Food License Number (14 Digits)"
-                caption="Food Safety & Standards Authority of India Registration"
-                required
-              >
-                <input
-                  type="text"
-                  value={verificationForm.fssai}
-                  onChange={(e) => setVerificationForm({ ...verificationForm, fssai: e.target.value })}
-                  placeholder="13621014000189"
-                  maxLength={14}
-                  required
-                />
-              </Field>
-            </div>
-
-            <div className="form-grid three">
-              <Field label="CIN / MSME Udyam Number (Optional)">
-                <input
-                  type="text"
-                  value={verificationForm.cin}
-                  onChange={(e) => setVerificationForm({ ...verificationForm, cin: e.target.value })}
-                  placeholder="U15139TG2020PTC145678"
-                />
-              </Field>
-
-              <Field label="Procurement Officer Name" required>
-                <input
-                  type="text"
-                  value={verificationForm.officerName}
-                  onChange={(e) => setVerificationForm({ ...verificationForm, officerName: e.target.value })}
-                  placeholder="Official Representative"
-                  required
-                />
-              </Field>
-
-              <Field label="Official Contact Phone" required>
-                <input
-                  type="text"
-                  value={verificationForm.phone}
-                  onChange={(e) => setVerificationForm({ ...verificationForm, phone: e.target.value })}
-                  placeholder="+91 98490 12345"
-                  required
-                />
-              </Field>
-            </div>
-
-            {verificationError && (
-              <div className="error-box">
-                <AlertTriangle size={18} />
-                <span>{verificationError}</span>
-              </div>
-            )}
-
-            {/* Verified Certificate Display if Verified */}
-            {isVerified && (
-              <div className="verified-certificate-card">
-                <div className="cert-top">
-                  <div className="cert-badge">
-                    <BadgeCheck size={22} />
-                    <div>
-                      <strong>GOVERNMENT CREDENTIALS VERIFIED</strong>
-                      <span>RythuMitra KYB Level 1 Verified</span>
-                    </div>
-                  </div>
-                  <span className="trust-pill">Trust Score: {verifiedData.trustScore}/100</span>
-                </div>
-
-                <div className="cert-grid">
-                  <div>
-                    <small>Entity Legal Name</small>
-                    <strong>{verifiedData.companyName}</strong>
-                  </div>
-                  <div>
-                    <small>Verification ID</small>
-                    <strong>{verifiedData.verificationId}</strong>
-                  </div>
-                  <div>
-                    <small>GSTIN Registry Status</small>
-                    <span className="status-badge success">
-                      <Check size={12} /> {verifiedData.gstinStatus} ({verifiedData.state})
-                    </span>
-                  </div>
-                  <div>
-                    <small>FSSAI Food License</small>
-                    <span className="status-badge success">
-                      <Check size={12} /> {verifiedData.fssaiStatus}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="form-action-row">
-              <button
-                type="submit"
-                className="button button-primary"
-                disabled={verifying}
-              >
-                {verifying ? (
-                  <>Verifying against Govt Registry...</>
-                ) : isVerified ? (
-                  <>
-                    <RefreshCw size={16} /> Re-verify Credentials
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck size={17} /> Verify Govt Credentials
-                  </>
-                )}
-              </button>
-
-              {isVerified && (
-                <button
-                  type="button"
-                  className="button button-accent"
-                  onClick={() => setStep(2)}
-                >
-                  <span>Proceed to Farmer Protection Agreement</span>
-                  <ArrowRight size={16} />
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* ================= STEP 2: FARMER PROTECTION AGREEMENT ================= */}
-      {step === 2 && (
-        <div className="agreement-card panel">
-          <div className="verification-header">
-            <div className="header-icon-box scale-glow">
-              <Scale size={28} />
-            </div>
-            <div>
-              <div className="eyebrow-chip">LEGAL COMMITMENT</div>
-              <h2>Step 2: Execute Farmer Protection & Fair Trade Agreement</h2>
+              <div className="eyebrow-chip">SECURE ACCESS</div>
+              <h2>{authMode === 'login' ? 'Buyer Login' : 'New Buyer Registration'}</h2>
               <p>
-                To eliminate distress sales and prevent exploitative practices, all registered buyers must
-                legally bind themselves to transparent settlement and anti-default covenants.
+                {authMode === 'login' 
+                  ? 'Access your buyer dashboard to manage requirements.'
+                  : 'Verify your Government registration (GSTIN & FSSAI) to join.'}
               </p>
             </div>
           </div>
 
-          <div className="legal-covenants-box">
-            <div className="covenant-item">
-              <div className="covenant-num">1</div>
-              <div>
-                <strong>Guaranteed Payment Window (చెల్లింపు హామీ / भुगतान गारंटी)</strong>
-                <p>
-                  The buyer guarantees 100% full disbursement of the agreed produce value within the stated
-                  settlement window (maximum 72 hours) directly to the farmer’s bank account or UPI upon delivery.
-                  Deferred or arbitrary delays are strictly prohibited.
-                </p>
-              </div>
-            </div>
-
-            <div className="covenant-item">
-              <div className="covenant-num">2</div>
-              <div>
-                <strong>Farmgate / Delivery Assay Transparency (పారదర్శక నాణ్యత పరీక్ష)</strong>
-                <p>
-                  Quality grading (Grade A, B+, B) must adhere strictly to objective agreed parameters upon
-                  arrival. Arbitrary post-transit price reductions or opportunistic rejections after the farmer
-                  has traveled are contractually forbidden.
-                </p>
-              </div>
-            </div>
-
-            <div className="covenant-item">
-              <div className="covenant-num">3</div>
-              <div>
-                <strong>Anti-Fraud Legal Declaration (మోసపూరిత చర్యల నిరోధక చట్టం)</strong>
-                <p>
-                  Submitting fraudulent requirements, intentional default on crop payments, or impersonating
-                  commercial entities invokes immediate platform blacklisting, forfeiture of deposit, and legal
-                  referral under the APMC Agricultural Produce Contract Act and Section 318 of BNS (Bharatiya Nyaya Sanhita).
-                </p>
-              </div>
-            </div>
+          <div className="auth-toggle-bar" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <button 
+              type="button"
+              className={`button ${authMode === 'login' ? 'button-primary' : 'button-ghost'}`} 
+              onClick={() => setAuthMode('login')}
+            >
+              Login
+            </button>
+            <button 
+              type="button"
+              className={`button ${authMode === 'register' ? 'button-primary' : 'button-ghost'}`} 
+              onClick={() => setAuthMode('register')}
+            >
+              Sign Up (KYB)
+            </button>
           </div>
 
-          <form onSubmit={handleSignAgreement} className="agreement-form">
-            <div className="affirmations-group">
-              <label className="checkbox-row">
-                <input
-                  type="checkbox"
-                  checked={agreedGovtId}
-                  onChange={(e) => setAgreedGovtId(e.target.checked)}
-                />
-                <span>
-                  I affirm under penalty of law that the Government Registration IDs (GSTIN: {verificationForm.gstin} / FSSAI: {verificationForm.fssai}) legally belong to our registered entity and are in active standing.
-                </span>
-              </label>
-
-              <label className="checkbox-row">
-                <input
-                  type="checkbox"
-                  checked={agreedFairTrade}
-                  onChange={(e) => setAgreedFairTrade(e.target.checked)}
-                />
-                <span>
-                  I agree to the RythuMitra Fair Trade Standards and warrant that grading will follow objective standards with zero post-transit predatory cuts.
-                </span>
-              </label>
-
-              <label className="checkbox-row">
-                <input
-                  type="checkbox"
-                  checked={agreedGuaranteedPay}
-                  onChange={(e) => setAgreedGuaranteedPay(e.target.checked)}
-                />
-                <span>
-                  I guarantee prompt financial settlement within {reqForm.paymentDays} days directly to the supplying farmer.
-                </span>
-              </label>
+          {authError && (
+            <div className="error-box" style={{ marginBottom: '20px' }}>
+              <AlertTriangle size={18} />
+              <span>{authError}</span>
             </div>
+          )}
 
-            <div className="digital-signature-grid">
-              <Field label="Authorized Signatory Full Name" required>
-                <input
-                  type="text"
-                  value={signatoryName}
-                  onChange={(e) => setSignatoryName(e.target.value)}
-                  placeholder="e.g. Suresh Reddy"
-                  required
-                />
-              </Field>
-
-              <Field label="Designation in Entity" required>
-                <input
-                  type="text"
-                  value={signatoryDesignation}
-                  onChange={(e) => setSignatoryDesignation(e.target.value)}
-                  placeholder="e.g. Head of Agricultural Procurement"
-                  required
-                />
-              </Field>
-
-              <Field label="Execution Date & Timestamp">
-                <input
-                  type="text"
-                  value={new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  disabled
-                />
-              </Field>
-            </div>
-
-            {agreementError && (
-              <div className="error-box">
-                <AlertTriangle size={18} />
-                <span>{agreementError}</span>
+          {authMode === 'login' ? (
+            <form onSubmit={handleLogin} className="verification-form">
+              <div className="form-grid">
+                <Field label="Email Address" required>
+                  <input
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                  />
+                </Field>
+                <Field label="Password" required>
+                  <input
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                  />
+                </Field>
               </div>
-            )}
+              <div className="form-action-row" style={{ marginTop: '20px' }}>
+                <button type="submit" className="button button-primary" disabled={authLoading} style={{ width: '100%' }}>
+                  {authLoading ? <RefreshCw size={16} className="spin" /> : <Lock size={16} />}
+                  <span>Sign In</span>
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <div className="demo-quickfill-bar" style={{ marginBottom: '20px' }}>
+                <span>Test with Sample Credentials:</span>
+                <button type="button" className="quickfill-btn" onClick={() => loadSampleCredentials('processor')}>
+                  <Sparkles size={13} /> Deccan Fresh
+                </button>
+                <button type="button" className="quickfill-btn" onClick={() => loadSampleCredentials('kitchen')}>
+                  <Sparkles size={13} /> Urban Bowl
+                </button>
+              </div>
 
-            <div className="form-action-row">
-              <button
-                type="button"
-                className="button button-ghost"
-                onClick={() => setStep(1)}
-              >
-                <ArrowLeft size={16} /> Back to Step 1
-              </button>
+              <form onSubmit={handleRegister} className="verification-form">
+                <div className="form-grid two">
+                  <Field label="Legal Entity / Factory Name" required>
+                    <input
+                      type="text"
+                      value={verificationForm.companyName}
+                      onChange={(e) => setVerificationForm({ ...verificationForm, companyName: e.target.value })}
+                      placeholder="e.g. Deccan Fresh Foods Pvt Ltd"
+                      required
+                    />
+                  </Field>
+                  <Field label="Business Category" required>
+                    <select
+                      value={verificationForm.buyerType}
+                      onChange={(e) => setVerificationForm({ ...verificationForm, buyerType: e.target.value })}
+                    >
+                      <option value="Food Processor">Food Processor / Factory</option>
+                      <option value="Restaurant Group">Restaurant Group / Commercial Kitchen</option>
+                      <option value="Modern Retailer">Modern Retailer / Supermarket</option>
+                    </select>
+                  </Field>
+                </div>
 
-              <button
-                type="submit"
-                className="button button-primary"
-              >
-                <Unlock size={17} /> Accept Covenants & Unlock Listing
-              </button>
-            </div>
-          </form>
+                <div className="form-grid two">
+                  <Field label="GSTIN" caption="15-Digit Goods & Services Tax No." required>
+                    <input
+                      type="text"
+                      value={verificationForm.gstin}
+                      onChange={(e) => setVerificationForm({ ...verificationForm, gstin: e.target.value.toUpperCase() })}
+                      required
+                    />
+                  </Field>
+                  <Field label="FSSAI" caption="Food Safety License Number" required>
+                    <input
+                      type="text"
+                      value={verificationForm.fssai}
+                      onChange={(e) => setVerificationForm({ ...verificationForm, fssai: e.target.value })}
+                      required
+                    />
+                  </Field>
+                </div>
+
+                <div className="form-grid two">
+                  <Field label="Procurement Officer Name" required>
+                    <input
+                      type="text"
+                      value={verificationForm.officerName}
+                      onChange={(e) => setVerificationForm({ ...verificationForm, officerName: e.target.value })}
+                      required
+                    />
+                  </Field>
+                  <Field label="Contact Phone" required>
+                    <input
+                      type="text"
+                      value={verificationForm.phone}
+                      onChange={(e) => setVerificationForm({ ...verificationForm, phone: e.target.value })}
+                      required
+                    />
+                  </Field>
+                </div>
+
+                <div className="form-grid two">
+                  <Field label="Email Account" required>
+                    <input
+                      type="email"
+                      value={verificationForm.email}
+                      onChange={(e) => setVerificationForm({ ...verificationForm, email: e.target.value })}
+                      required
+                    />
+                  </Field>
+                  <Field label="Account Password" required>
+                    <input
+                      type="password"
+                      value={verificationForm.password}
+                      onChange={(e) => setVerificationForm({ ...verificationForm, password: e.target.value })}
+                      required
+                      minLength={6}
+                    />
+                  </Field>
+                </div>
+
+                <div className="form-action-row" style={{ marginTop: '20px' }}>
+                  <button type="submit" className="button button-primary" disabled={authLoading} style={{ width: '100%' }}>
+                    {authLoading ? <RefreshCw size={16} className="spin" /> : <ShieldCheck size={16} />}
+                    <span>Verify & Register Account</span>
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* ================= STEP 3: PUBLISH REQUIREMENT ================= */}
-      {step === 3 && (
+  // Dashboard View
+  return (
+    <div className="post-requirement-page">
+      <SectionHeader
+        eyebrow="VERIFIED BUYER DASHBOARD"
+        title={`Welcome, ${buyerProfile?.companyName || user.fullName}`}
+        description="Manage your active crop procurement requirements."
+        action={
+          !showCreateForm && (
+            <button className="button button-primary" onClick={() => setShowCreateForm(true)}>
+              <Plus size={16} />
+              <span>Post New Requirement</span>
+            </button>
+          )
+        }
+      />
+
+      {showCreateForm ? (
         <div className="post-form-card panel">
           <div className="verification-header">
             <div className="header-icon-box unlock-glow">
@@ -550,10 +405,9 @@ export default function PostRequirementPage() {
             </div>
             <div>
               <div className="eyebrow-chip success">LISTING UNLOCKED & VERIFIED</div>
-              <h2>Step 3: Publish Crop Procurement Requirement</h2>
+              <h2>Publish Crop Procurement Requirement</h2>
               <p>
-                Publishing as: <strong>{verificationForm.companyName}</strong> (GSTIN: {verificationForm.gstin} · Trust: 98%).
-                Your listing will feature the <strong>Govt Verified Buyer</strong> trust seal.
+                Publishing as: <strong>{buyerProfile?.companyName}</strong> (GSTIN: {buyerProfile?.gstin}).
               </p>
             </div>
           </div>
@@ -637,7 +491,7 @@ export default function PostRequirementPage() {
               </Field>
             </div>
 
-            <div className="form-section">
+            <div className="form-section" style={{ marginTop: '20px' }}>
               <div className="section-icon">
                 <Truck size={19} />
               </div>
@@ -653,11 +507,9 @@ export default function PostRequirementPage() {
                   type="text"
                   value={reqForm.city}
                   onChange={(e) => setReqForm({ ...reqForm, city: e.target.value })}
-                  placeholder="e.g. Hyderabad, Bhongir"
                   required
                 />
               </Field>
-
               <Field label="Latitude" required>
                 <input
                   type="number"
@@ -667,7 +519,6 @@ export default function PostRequirementPage() {
                   required
                 />
               </Field>
-
               <Field label="Longitude" required>
                 <input
                   type="number"
@@ -679,8 +530,7 @@ export default function PostRequirementPage() {
               </Field>
             </div>
 
-            {/* Farmgate pickup incentive */}
-            <label className="check-row wide pickup-incentive-box">
+            <label className="check-row wide pickup-incentive-box" style={{ marginTop: '20px' }}>
               <input
                 type="checkbox"
                 checked={reqForm.pickupProvided}
@@ -689,101 +539,88 @@ export default function PostRequirementPage() {
               <span>
                 <strong>🚚 We Provide Pickup Directly at Farmer's Farmgate</strong>
                 <small>
-                  Offering pickup eliminates the farmer's transport deduction completely, making your requirement
-                  rank at the top of RythuMitra’s optimization engine!
+                  Offering pickup eliminates the farmer's transport deduction completely.
                 </small>
               </span>
             </label>
 
+            <div className="legal-covenants-box" style={{ marginTop: '20px' }}>
+              <label className="checkbox-row" style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <input
+                  type="checkbox"
+                  checked={reqForm.agreedToTerms}
+                  onChange={(e) => setReqForm({ ...reqForm, agreedToTerms: e.target.checked })}
+                />
+                <span>
+                  <strong>Farmer Protection Agreement:</strong> I guarantee prompt financial settlement within {reqForm.paymentDays} days directly to the supplying farmer. I agree to the RythuMitra Fair Trade Standards.
+                </span>
+              </label>
+            </div>
+
             {publishError && (
-              <div className="error-box">
+              <div className="error-box" style={{ marginTop: '20px' }}>
                 <AlertTriangle size={18} />
                 <span>{publishError}</span>
               </div>
             )}
 
-            <div className="form-action-row">
+            <div className="form-action-row" style={{ marginTop: '20px' }}>
               <button
                 type="button"
                 className="button button-ghost"
-                onClick={() => setStep(2)}
+                onClick={() => setShowCreateForm(false)}
               >
-                <ArrowLeft size={16} /> Back to Agreement
+                Cancel
               </button>
-
               <button
                 type="submit"
                 className="button button-primary"
                 disabled={publishing}
               >
-                {publishing ? (
-                  <>Publishing with Trust Seal...</>
-                ) : (
-                  <>
-                    <ShieldCheck size={17} /> Publish Verified Requirement
-                  </>
-                )}
+                {publishing ? 'Publishing...' : 'Publish Verified Requirement'}
               </button>
             </div>
           </form>
         </div>
-      )}
-
-      {/* ================= STEP 4: SUCCESS CERTIFICATE ================= */}
-      {step === 4 && (
-        <div className="success-card panel">
-          <div className="success-icon-orbit">
-            <CheckCircle2 size={44} />
-          </div>
-          <div className="eyebrow-chip success">ACTIVATED ON NETWORK</div>
-          <h2>Requirement Verified & Successfully Published!</h2>
-          <p>
-            Your procurement requirement is live on the RythuMitra Direct Buyer Network with the{' '}
-            <strong>Govt Verified Buyer Trust Seal</strong>.
-          </p>
-
-          <div className="published-summary-box">
-            <div className="summary-row">
-              <span>Company:</span>
-              <strong>{verificationForm.companyName}</strong>
+      ) : (
+        <div className="requirements-dashboard">
+          {loadingReqs ? (
+            <div className="buyer-loading-state" style={{ textAlign: 'center', padding: '40px' }}>
+              <RefreshCw size={24} className="spin" />
+              <p>Loading your requirements...</p>
             </div>
-            <div className="summary-row">
-              <span>Verification ID:</span>
-              <code>{publishedRecord?.verificationId || verifiedData?.verificationId}</code>
+          ) : requirements.length === 0 ? (
+            <div className="buyer-empty-state panel" style={{ textAlign: 'center', padding: '40px' }}>
+              <FileText size={36} color="#94a3b8" />
+              <h3>No Active Requirements</h3>
+              <p>You haven't posted any crop requirements yet.</p>
+              <button className="button button-primary" style={{ marginTop: '20px' }} onClick={() => setShowCreateForm(true)}>
+                Post Your First Requirement
+              </button>
             </div>
-            <div className="summary-row">
-              <span>GSTIN / FSSAI:</span>
-              <span>{verificationForm.gstin} / {verificationForm.fssai}</span>
+          ) : (
+            <div className="dashboard-grid" style={{ display: 'grid', gap: '20px' }}>
+              {requirements.map((req) => (
+                <div key={req.id} className="panel flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 5px 0' }}>{req.quantityKg} kg {req.crop} @ ₹{req.offerPrice}/kg</h3>
+                    <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                      <span className="status-badge success" style={{ marginRight: '10px' }}>{req.status}</span>
+                      Required By: {req.requiredBy} • {req.city} {req.pickupProvided ? '(Pickup Provided)' : ''}
+                    </div>
+                  </div>
+                  <button 
+                    className="button button-ghost" 
+                    onClick={() => handleDelete(req.id)}
+                    style={{ color: '#ef4444' }}
+                    title="Delete Requirement"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="summary-row">
-              <span>Crop Demand:</span>
-              <strong>{reqForm.quantityKg?.toLocaleString('en-IN')} kg {reqForm.crop} @ ₹{reqForm.offerPrice}/kg</strong>
-            </div>
-            <div className="summary-row">
-              <span>Logistics:</span>
-              <span>{reqForm.pickupProvided ? '🚚 Buyer Farmgate Pickup Included' : 'Farmer Delivery'}</span>
-            </div>
-            <div className="summary-row">
-              <span>Payment Commitment:</span>
-              <strong>Guaranteed within {reqForm.paymentDays} days</strong>
-            </div>
-          </div>
-
-          <div className="success-actions">
-            <Link to="/buyers" className="button button-primary">
-              <EyeIcon size={16} /> View in Live Buyer Directory
-            </Link>
-            <button
-              type="button"
-              className="button button-ghost"
-              onClick={() => {
-                setStep(3);
-                setPublishedRecord(null);
-              }}
-            >
-              Post Another Crop Requirement
-            </button>
-          </div>
+          )}
         </div>
       )}
     </div>
@@ -792,21 +629,12 @@ export default function PostRequirementPage() {
 
 function Field({ label, caption, required = false, children }) {
   return (
-    <label className="field">
-      <span className="field-label">
-        {label} {required && <span className="req-star">*</span>}
+    <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+      <span className="field-label" style={{ fontWeight: 600 }}>
+        {label} {required && <span className="req-star" style={{ color: '#ef4444' }}>*</span>}
       </span>
-      {caption && <small className="field-caption">{caption}</small>}
+      {caption && <small className="field-caption" style={{ color: '#64748b' }}>{caption}</small>}
       {children}
     </label>
-  );
-}
-
-function EyeIcon({ size = 16 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
   );
 }

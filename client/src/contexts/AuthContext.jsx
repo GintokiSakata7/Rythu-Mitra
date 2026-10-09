@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [officialProfile, setOfficialProfile] = useState(null);
+  const [buyerProfile, setBuyerProfile] = useState(null);
   const [token, setToken] = useState(() => {
     return typeof localStorage !== 'undefined' ? localStorage.getItem('mm_token') : null;
   });
@@ -25,12 +26,14 @@ export function AuthProvider({ children }) {
         const data = await api.me();
         setUser(data.user);
         setOfficialProfile(data.officialProfile || null);
+        setBuyerProfile(data.buyerProfile || null);
         setToken(storedToken);
       } catch (err) {
         console.warn('Session expired or invalid, logging out:', err.message);
         localStorage.removeItem('mm_token');
         setUser(null);
         setOfficialProfile(null);
+        setBuyerProfile(null);
         setToken(null);
       } finally {
         setLoading(false);
@@ -48,6 +51,7 @@ export function AuthProvider({ children }) {
       setToken(data.token);
       setUser(data.user);
       setOfficialProfile(data.officialProfile || null);
+      setBuyerProfile(data.buyerProfile || null);
       return data;
     } catch (err) {
       setAuthError(err.message);
@@ -63,6 +67,7 @@ export function AuthProvider({ children }) {
       setToken(data.token);
       setUser(data.user);
       setOfficialProfile(data.officialProfile || null);
+      setBuyerProfile(data.buyerProfile || null);
       return data;
     } catch (err) {
       setAuthError(err.message);
@@ -76,6 +81,7 @@ export function AuthProvider({ children }) {
       const data = await api.me();
       setUser(data.user);
       setOfficialProfile(data.officialProfile || null);
+      setBuyerProfile(data.buyerProfile || null);
     } catch (err) {
       console.error('Refresh profile error:', err);
     }
@@ -85,6 +91,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('mm_token');
     setUser(null);
     setOfficialProfile(null);
+    setBuyerProfile(null);
     setToken(null);
     setAuthError(null);
     try {
@@ -99,6 +106,7 @@ export function AuthProvider({ children }) {
       value={{
         user,
         officialProfile,
+        buyerProfile,
         token,
         loading,
         authError,
@@ -106,6 +114,7 @@ export function AuthProvider({ children }) {
         isAdmin: user?.role === 'admin',
         isOfficial: user?.role === 'official',
         isVerifiedOfficial: user?.role === 'official' && officialProfile?.verificationStatus === 'APPROVED',
+        isBuyer: user?.role === 'buyer',
         login,
         register,
         refreshProfile,

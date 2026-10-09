@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Factory, Home, Mic2, Search, Store, Globe, TrendingUp } from 'lucide-react';
+import { Factory, Home, Mic2, Search, Store, Globe, TrendingUp, User } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
 
 export default function Navbar() {
@@ -89,6 +89,26 @@ export default function Navbar() {
                 <option value="hi">हिंदी</option>
               </select>
             </div>
+            
+            <NavLink
+              to="/portal/login"
+              className="nav-profile-btn"
+              title="Login / Profile"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: '#f1f5f9',
+                color: '#334155',
+                textDecoration: 'none',
+                marginLeft: '8px'
+              }}
+            >
+              <User size={18} />
+            </NavLink>
           </div>
         </div>
       </header>

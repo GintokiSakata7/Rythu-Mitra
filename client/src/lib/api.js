@@ -37,9 +37,13 @@ export const api = {
   markets: () => request('/markets'),
   commodities: () => request('/markets/commodities'),
   recommend: (payload) => request('/recommendations', { method: 'POST', body: JSON.stringify(payload) }),
+  // Buyer endpoints
   buyers: (crop = '') => request(`/buyers/requirements${crop ? `?crop=${encodeURIComponent(crop)}` : ''}`),
   verifyBuyer: (payload) => request('/buyers/verify', { method: 'POST', body: JSON.stringify(payload) }),
   postBuyer: (payload) => request('/buyers/requirements', { method: 'POST', body: JSON.stringify(payload) }),
+  getMyRequirements: () => request('/buyers/my-requirements'),
+  deleteRequirement: (id) => request(`/buyers/requirements/${id}`, { method: 'DELETE' }),
+  
   parseHarvest: (text) => request('/ai/parse-harvest', { method: 'POST', body: JSON.stringify({ text }) }),
   health: () => request('/health'),
   ttsUrl: (text, lang = 'te') => `${BASE}/ai/tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}`,

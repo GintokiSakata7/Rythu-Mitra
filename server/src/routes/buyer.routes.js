@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { createBuyerRequirement, getBuyerRequirements } from '../services/data/marketRepository.js';
+import { createBuyerRequirement, getBuyerRequirements, getBuyerRequirementsByUserId, deleteBuyerRequirement } from '../services/data/marketRepository.js';
+import { authenticateToken } from '../lib/auth.js';
 
 export const buyerRouter = Router();
 
@@ -73,7 +74,7 @@ buyerRouter.post('/verify', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-buyerRouter.post('/requirements', async (req, res, next) => {
+buyerRouter.post('/requirements', authenticateToken, async (req, res, next) => {
   try {
     const body = req.body || {};
     if (!body.companyName || !body.crop || !body.quantityKg || !body.offerPrice) {
@@ -89,7 +90,26 @@ buyerRouter.post('/requirements', async (req, res, next) => {
         error: 'Farmer Protection Agreement required: You must accept the legally binding terms and payment guarantee before listing.'
       });
     }
-    const row = await createBuyerRequirement(body);
+    const payload = { ...body, userId: req.user.id };
+    const row = await createBuyerRequirement(payload);
     res.status(201).json({ requirement: row });
+  } catch (error) { next(error); }
+});
+
+buyerRouter.get('/my-requirements', authenticateToken, async (req, res, next) => {
+  try {
+    const requirements = await getBuyerRequirementsByUserId(req.user.id);
+    res.json({ requirements });
+  } catch (error) { next(error); }
+});
+
+buyerRouter.delete('/requirements/:id', authenticateToken, async (req, res, next) => {
+  try {
+    const success = await deleteBuyerRequirement(req.params.id, req.user.id);
+    if (success) {
+      res.json({ message: 'Requirement deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Requirement not found or unauthorized' });
+    }
   } catch (error) { next(error); }
 });

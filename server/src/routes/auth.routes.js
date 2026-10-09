@@ -28,7 +28,7 @@ authRouter.post('/register', async (req, res) => {
     }
 
     // Safety: Protect admin role creation
-    const requestedRole = (role === 'admin') ? 'farmer' : (role === 'official' ? 'official' : 'farmer');
+    const requestedRole = (role === 'admin') ? 'farmer' : (role === 'official' ? 'official' : (role === 'buyer' ? 'buyer' : 'farmer'));
 
     const passwordHash = hashPassword(password);
     const user = await db.createUser({
@@ -41,6 +41,7 @@ authRouter.post('/register', async (req, res) => {
     });
 
     let officialProfile = null;
+    let buyerProfile = null;
     if (requestedRole === 'official') {
       officialProfile = await db.createOfficialProfile({
         userId: user.id,
@@ -50,6 +51,18 @@ authRouter.post('/register', async (req, res) => {
         assignedMarketNames: assignedMarketName ? [assignedMarketName] : [],
         verificationStatus: 'PENDING_VERIFICATION',
         verificationNotes: 'Pending administrative verification review.'
+      });
+    } else if (requestedRole === 'buyer') {
+      const { companyName, buyerType, gstin, fssai, cin, officerName } = req.body;
+      buyerProfile = await db.createBuyerProfile({
+        userId: user.id,
+        companyName,
+        type: buyerType || 'Food Processor',
+        gstin,
+        fssai,
+        cin,
+        officerName,
+        phone: phone || ''
       });
     }
 
@@ -71,7 +84,8 @@ authRouter.post('/register', async (req, res) => {
         role: user.role,
         accountStatus: user.accountStatus
       },
-      officialProfile
+      officialProfile,
+      buyerProfile
     });
   } catch (err) {
     console.error('Registration error:', err);
@@ -106,8 +120,11 @@ authRouter.post('/login', async (req, res) => {
     }
 
     let officialProfile = null;
+    let buyerProfile = null;
     if (user.role === 'official') {
       officialProfile = await db.getOfficialProfileByUserId(user.id);
+    } else if (user.role === 'buyer') {
+      buyerProfile = await db.getBuyerProfileByUserId(user.id);
     }
 
     const token = signToken({
@@ -128,7 +145,8 @@ authRouter.post('/login', async (req, res) => {
         role: user.role,
         accountStatus: user.accountStatus
       },
-      officialProfile
+      officialProfile,
+      buyerProfile
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -148,8 +166,11 @@ authRouter.get('/me', authenticateToken, async (req, res) => {
     }
 
     let officialProfile = null;
+    let buyerProfile = null;
     if (user.role === 'official') {
       officialProfile = await db.getOfficialProfileByUserId(user.id);
+    } else if (user.role === 'buyer') {
+      buyerProfile = await db.getBuyerProfileByUserId(user.id);
     }
 
     res.json({
@@ -161,7 +182,8 @@ authRouter.get('/me', authenticateToken, async (req, res) => {
         role: user.role,
         accountStatus: user.accountStatus
       },
-      officialProfile
+      officialProfile,
+      buyerProfile
     });
   } catch (err) {
     console.error('Me endpoint error:', err);

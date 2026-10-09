@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Route, Routes, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import HomePage from './pages/HomePage.jsx';
 import DailyPricesPage from './pages/DailyPricesPage.jsx';
@@ -13,7 +13,6 @@ import AboutPage from './pages/AboutPage.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import ProtectedRoute from './portal/ProtectedRoute.jsx';
 import PortalLayout from './portal/PortalLayout.jsx';
-import PortalLandingPage from './portal/PortalLandingPage.jsx';
 import PortalLoginPage from './portal/PortalLoginPage.jsx';
 import PortalRegisterPage from './portal/PortalRegisterPage.jsx';
 import OfficialDashboardPage from './portal/OfficialDashboardPage.jsx';
@@ -51,7 +50,7 @@ function MainAppShell() {
 
             {/* Root 2: Secure Management & Administrative Safe System */}
             <Route path="/portal" element={<PortalLayout />}>
-              <Route index element={<PortalLandingPage />} />
+              <Route index element={<Navigate to="login" replace />} />
               <Route path="login" element={<PortalLoginPage />} />
               <Route path="register" element={<PortalRegisterPage />} />
               

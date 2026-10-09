@@ -28,7 +28,7 @@ create table if not exists public.users (
   email text unique not null,
   phone text,
   password_hash text not null,
-  role text not null check (role in ('farmer', 'official', 'admin')),
+  role text not null check (role in ('farmer', 'official', 'admin', 'buyer')),
   account_status text not null default 'active' check (account_status in ('active', 'pending', 'suspended')),
   email_verified boolean default false,
   phone_verified boolean default false,
@@ -47,6 +47,22 @@ create table if not exists public.official_profiles (
   reviewed_by uuid references public.users(id),
   reviewed_at timestamptz,
   verification_notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- 3.5. BUYER PROFILES
+create table if not exists public.buyer_profiles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  company_name text not null,
+  type text not null,
+  gstin text not null,
+  fssai text not null,
+  cin text,
+  officer_name text not null,
+  phone text not null,
+  verification_status text default 'VERIFIED',
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -142,6 +158,7 @@ create table if not exists public.buyer_requirements (
   required_by date,
   payment_days integer default 3,
   status text default 'Open',
+  user_id uuid references public.users(id),
   created_at timestamptz default now()
 );
 
@@ -176,6 +193,7 @@ create index if not exists idx_price_audit_logs_record on public.price_audit_log
 alter table public.markets enable row level security;
 alter table public.users enable row level security;
 alter table public.official_profiles enable row level security;
+alter table public.buyer_profiles enable row level security;
 alter table public.commodities enable row level security;
 alter table public.commodity_prices enable row level security;
 alter table public.price_audit_logs enable row level security;
@@ -206,6 +224,9 @@ create policy users_all on public.users for all to anon, authenticated using (tr
 
 drop policy if exists official_profiles_all on public.official_profiles;
 create policy official_profiles_all on public.official_profiles for all to anon, authenticated using (true) with check (true);
+
+drop policy if exists buyer_profiles_all on public.buyer_profiles;
+create policy buyer_profiles_all on public.buyer_profiles for all to anon, authenticated using (true) with check (true);
 
 drop policy if exists price_audit_logs_all on public.price_audit_logs;
 create policy price_audit_logs_all on public.price_audit_logs for all to anon, authenticated using (true) with check (true);
