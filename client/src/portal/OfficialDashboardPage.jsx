@@ -42,16 +42,7 @@ export default function OfficialDashboardPage() {
     );
   }
 
-  if (activeView === 'history') {
-    return (
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <button onClick={() => setActiveView('overview')} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', marginBottom: '15px' }}>
-          ← Back to Dashboard
-        </button>
-        <OfficialSubmissionsPage />
-      </div>
-    );
-  }
+
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
@@ -185,36 +176,8 @@ export default function OfficialDashboardPage() {
         </div>
       </div>
 
-      {/* Quick Action Navigation */}
-      <div style={{ background: '#ffffff', borderRadius: '14px', border: '1px solid #e2e8f0', padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h3 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>
-            Price Submissions & History
-          </h3>
-          <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
-            Inspect past submissions, track review notes from the administrator, or edit requested corrections.
-          </p>
-        </div>
-        <button
-          onClick={() => setActiveView('history')}
-          style={{
-            padding: '9px 16px',
-            borderRadius: '8px',
-            background: '#f1f5f9',
-            color: '#334155',
-            fontWeight: 700,
-            fontSize: '0.86rem',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          <span>View My Submissions</span>
-          <ArrowRight size={15} />
-        </button>
-      </div>
+      {/* Embedded Submissions History */}
+      <OfficialSubmissionsPage embedded={true} limit={10} />
     </div>
   );
 }

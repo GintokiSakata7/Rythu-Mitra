@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { FileText, Send, CheckCircle2, Clock, AlertCircle, XCircle, ArrowLeft, Edit3, X } from 'lucide-react';
 import { api } from '../lib/api.js';
 
-export default function OfficialSubmissionsPage() {
+export default function OfficialSubmissionsPage({ embedded = false, limit = 10 }) {
   const [submissions, setSubmissions] = useState([]);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Correction Modal State
   const [editingItem, setEditingItem] = useState(null);
@@ -37,6 +38,13 @@ export default function OfficialSubmissionsPage() {
     if (statusFilter === 'ALL') return true;
     return s.status === statusFilter;
   });
+
+  const totalPages = Math.ceil(filtered.length / limit);
+  const paginatedSubmissions = filtered.slice((currentPage - 1) * limit, currentPage * limit);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter]);
 
   const openEditModal = (item) => {
     setEditingItem(item);
@@ -93,23 +101,34 @@ export default function OfficialSubmissionsPage() {
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <Link to="/portal/official" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '6px' }}>
-            <ArrowLeft size={14} /> Back to Official Desk
-          </Link>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-            My Daily Price Submissions
-          </h1>
-        </div>
+      {!embedded ? (
+        <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <Link to="/portal/official" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '6px' }}>
+              <ArrowLeft size={14} /> Back to Official Desk
+            </Link>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              My Daily Price Submissions
+            </h1>
+          </div>
 
-        <Link
-          to="/portal/official/submit"
-          style={{ padding: '8px 16px', background: '#059669', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-        >
-          <Send size={14} /> Submit New Price
-        </Link>
-      </div>
+          <Link
+            to="/portal/official/submit"
+            style={{ padding: '8px 16px', background: '#059669', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Send size={14} /> Submit New Price
+          </Link>
+        </div>
+      ) : (
+        <div style={{ marginBottom: '1rem' }}>
+          <h3 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>
+            Recent Price Submissions
+          </h3>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+            Inspect past submissions, track review notes, or edit requested corrections.
+          </p>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', overflowX: 'auto', paddingBottom: '4px' }}>
@@ -142,7 +161,7 @@ export default function OfficialSubmissionsPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {filtered.map(item => (
+          {paginatedSubmissions.map(item => (
             <div
               key={item.id}
               style={{
@@ -211,6 +230,29 @@ export default function OfficialSubmissionsPage() {
               )}
             </div>
           ))}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                style={{ padding: '6px 12px', borderRadius: '6px', background: '#fff', border: '1px solid #cbd5e1', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.5 : 1, fontWeight: 600, fontSize: '0.8rem', color: '#334155' }}
+              >
+                Previous
+              </button>
+              <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 600 }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                style={{ padding: '6px 12px', borderRadius: '6px', background: '#fff', border: '1px solid #cbd5e1', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.5 : 1, fontWeight: 600, fontSize: '0.8rem', color: '#334155' }}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
 

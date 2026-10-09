@@ -14,17 +14,17 @@ export default function PortalLayout() {
   return (
     <div className="portal-system-wrapper" style={{ minHeight: '100vh', backgroundColor: '#f8fafc', color: '#0f172a' }}>
       {/* Top Security Operational Header */}
-      <header style={{ backgroundColor: '#0f172a', borderBottom: '1px solid #1e293b', color: '#ffffff', padding: '0.75rem 1.25rem' }}>
+      <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', color: '#0f172a', padding: '0.75rem 1.25rem', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ background: '#3b82f6', borderRadius: '8px', padding: '6px', display: 'flex' }}>
+            <div style={{ background: '#2563eb', borderRadius: '8px', padding: '6px', display: 'flex', boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)' }}>
               <ShieldCheck size={20} color="#ffffff" />
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                RythuMitra <span style={{ color: '#38bdf8', fontWeight: 600, fontSize: '0.85rem' }}>APMC Operations & Admin Portal</span>
+              <div style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                RythuMitra <span style={{ color: '#2563eb', fontWeight: 600, fontSize: '0.85rem' }}>APMC Operations & Admin</span>
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                 Secured Administrative & Mandi Official Entry Point
               </div>
             </div>
@@ -33,10 +33,10 @@ export default function PortalLayout() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {isAuthenticated ? (
               <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1e293b', padding: '4px 10px', borderRadius: '8px', fontSize: '0.8rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '8px', fontSize: '0.8rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <span style={{ fontWeight: 700, color: '#f1f5f9' }}>{user?.fullName}</span>
-                    <span style={{ fontSize: '0.7rem', color: isAdmin ? '#f59e0b' : '#38bdf8', textTransform: 'uppercase', fontWeight: 600 }}>
+                    <span style={{ fontWeight: 700, color: '#0f172a' }}>{user?.fullName}</span>
+                    <span style={{ fontSize: '0.7rem', color: isAdmin ? '#d97706' : '#0284c7', textTransform: 'uppercase', fontWeight: 700 }}>
                       {isAdmin ? 'System Administrator' : 'APMC Mandi Official'}
                     </span>
                   </div>
@@ -63,14 +63,15 @@ export default function PortalLayout() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '5px',
-                    background: '#334155',
-                    color: '#ffffff',
-                    border: 'none',
+                    background: '#ffffff',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
                     padding: '6px 12px',
                     borderRadius: '6px',
                     fontSize: '0.8rem',
                     fontWeight: 600,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                   }}
                 >
                   <LogOut size={14} />
@@ -87,7 +88,7 @@ export default function PortalLayout() {
                 </Link>
                 <Link
                   to="/portal/register"
-                  style={{ background: '#334155', color: '#fff', padding: '5px 12px', borderRadius: '6px', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600 }}
+                  style={{ background: '#f8fafc', color: '#334155', border: '1px solid #cbd5e1', padding: '5px 12px', borderRadius: '6px', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 600, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
                 >
                   Register Official
                 </Link>
@@ -100,10 +101,11 @@ export default function PortalLayout() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '5px',
-                color: '#94a3b8',
+                color: '#64748b',
                 textDecoration: 'none',
                 fontSize: '0.8rem',
-                borderLeft: '1px solid #334155',
+                fontWeight: 600,
+                borderLeft: '1px solid #cbd5e1',
                 paddingLeft: '12px'
               }}
             >

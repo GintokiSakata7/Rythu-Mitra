@@ -14,7 +14,7 @@ const POPULAR_CROPS = [
   'Carrot', 'Coriander', 'Mustard', 'Brinjal', 'Bitter Gourd'
 ];
 
-export default function OfficialPriceSubmitPage() {
+export default function OfficialPriceSubmitPage({ embedded = false }) {
   const { officialProfile, isVerifiedOfficial } = useAuth();
 
   const minPriceInputRef = useRef(null);
@@ -259,9 +259,11 @@ export default function OfficialPriceSubmitPage() {
     <div style={{ maxWidth: '780px', margin: '0 auto' }}>
       <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <Link to="/portal/official" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '6px' }}>
-            <ArrowLeft size={14} /> Back to Official Desk
-          </Link>
+          {!embedded && (
+            <Link to="/portal/official" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '6px' }}>
+              <ArrowLeft size={14} /> Back to Official Desk
+            </Link>
+          )}
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
             Daily Mandi Price Update
           </h1>
@@ -293,12 +295,14 @@ export default function OfficialPriceSubmitPage() {
                 Reference ID: <strong>{successInfo.submissionId}</strong>
               </p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <Link
-                  to="/portal/official/submissions"
-                  style={{ padding: '6px 12px', background: '#166534', color: '#fff', borderRadius: '6px', fontSize: '0.82rem', textDecoration: 'none', fontWeight: 600 }}
-                >
-                  View My Submissions
-                </Link>
+                {!embedded && (
+                  <Link
+                    to="/portal/official/submissions"
+                    style={{ padding: '6px 12px', background: '#166534', color: '#fff', borderRadius: '6px', fontSize: '0.82rem', textDecoration: 'none', fontWeight: 600 }}
+                  >
+                    View My Submissions
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => {
