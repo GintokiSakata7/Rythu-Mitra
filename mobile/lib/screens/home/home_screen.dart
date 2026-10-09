@@ -6,8 +6,7 @@ import '../../localization/app_strings.dart';
 import '../../providers/language_provider.dart';
 import '../search/find_best_screen.dart';
 import '../buyers/buyer_list_screen.dart';
-import '../demand/post_demand_screen.dart';
-import '../demand/my_demands_screen.dart';
+import '../trends/trends_screen.dart';
 import '../assistant/assistant_screen.dart';
 import '../profile/profile_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -32,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey _findBestKey = GlobalKey();
   final GlobalKey _voiceKey = GlobalKey();
   final GlobalKey _buyersKey = GlobalKey();
-  final GlobalKey _demandKey = GlobalKey();
+  final GlobalKey _trendsKey = GlobalKey();
   final GlobalKey _profileKey = GlobalKey();
   final GlobalKey _notificationsKey = GlobalKey();
 
@@ -51,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const FindBestScreen(),
       const AssistantScreen(),
       const BuyerListScreen(),
-      const PostDemandScreen(),
+      const TrendsScreen(),
     ];
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -67,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _findBestKey,
         _voiceKey,
         _buyersKey,
-        _demandKey,
+        _trendsKey,
         _notificationsKey,
         _profileKey,
       ]);
@@ -78,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().langCode;
+    final s = (String k) => AppStrings.get(k, lang);
 
     return Scaffold(
       body: IndexedStack(
@@ -177,13 +177,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   description: 'Connect directly with verified buyers and traders.',
                 ),
                 _navItem(
-                  icon: Icons.post_add_rounded,
-                  label: 'Demand',
-                  label2: 'Demand',
+                  icon: Icons.trending_up_rounded,
+                  label: 'Trends',
+                  label2: s('trends'),
                   index: 4,
                   lang: lang,
-                  key: _demandKey,
-                  description: 'Post your available stock and let buyers contact you.',
+                  key: _trendsKey,
+                  description: 'Track real-time commodity prices and market trends.',
                 ),
               ],
             ),
@@ -565,10 +565,10 @@ class _HomeTab extends StatelessWidget {
                       const SizedBox(width: 10),
                       _quickActionCard(
                         context,
-                        icon: Icons.post_add_rounded,
-                        label: s('post_demand'),
-                        color: const Color(0xFF6A1B9A),
-                        bgColor: const Color(0xFFF3E5F5),
+                        icon: Icons.trending_up_rounded,
+                        label: s('market_trends'),
+                        color: const Color(0xFF00796B),
+                        bgColor: const Color(0xFFE0F2F1),
                         onTap: () {
                           final homeState = context
                               .findAncestorStateOfType<_HomeScreenState>();
@@ -578,12 +578,15 @@ class _HomeTab extends StatelessWidget {
                       const SizedBox(width: 10),
                       _quickActionCard(
                         context,
-                        icon: Icons.history_rounded,
-                        label: 'History',
+                        icon: Icons.calculate_rounded,
+                        label: s('find_best'),
                         color: const Color(0xFFE65100),
                         bgColor: const Color(0xFFFFF3E0),
-                        onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const MyDemandsScreen())),
+                        onTap: () {
+                          final homeState = context
+                              .findAncestorStateOfType<_HomeScreenState>();
+                          homeState?.setTab(1);
+                        },
                       ),
                     ],
                   ),

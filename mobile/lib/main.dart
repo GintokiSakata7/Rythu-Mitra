@@ -13,6 +13,7 @@ import 'providers/notification_provider.dart';
 import 'screens/splash/splash_screen.dart';
 
 import 'providers/location_provider.dart';
+import 'providers/trends_provider.dart';
 import 'services/demand_service.dart';
 import 'voice/conversation_manager.dart';
 
@@ -41,6 +42,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
+        ChangeNotifierProvider(create: (_) => TrendsProvider()),
         ChangeNotifierProvider(create: (_) => BuyerProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
