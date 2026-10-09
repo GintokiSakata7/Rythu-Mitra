@@ -1,5 +1,5 @@
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
-import { ShieldCheck, LogOut, LayoutDashboard, Send, FileText, Users, CheckSquare, Layers, History, Home, Lock } from 'lucide-react';
+import { ShieldCheck, LogOut, LayoutDashboard, Send, FileText, Users, CheckSquare, Layers, History, Home, Lock, PackagePlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
 export default function PortalLayout() {
@@ -191,7 +191,25 @@ export default function PortalLayout() {
                     color: isActive ? '#0f172a' : '#64748b'
                   })}
                 >
-                  <Layers size={15} /> Mandis & Commodities
+                  <Layers size={15} /> Mandis Compliance
+                </NavLink>
+                <NavLink
+                  to="/portal/admin/commodities"
+                  className={({ isActive }) => `portal-nav-tab ${isActive ? 'active' : ''}`}
+                  style={({ isActive }) => ({
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: isActive ? '#f1f5f9' : 'transparent',
+                    color: isActive ? '#0f172a' : '#64748b'
+                  })}
+                >
+                  <PackagePlus size={15} /> Commodities & Items
                 </NavLink>
                 <NavLink
                   to="/portal/admin/audit"

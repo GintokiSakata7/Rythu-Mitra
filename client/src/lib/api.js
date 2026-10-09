@@ -83,7 +83,9 @@ export const api = {
   reviewPriceSubmission: (id, payload) => request(`/admin/prices/${id}/review`, { method: 'POST', body: JSON.stringify(payload) }),
   getAdminAuditLogs: (limit = 50) => request(`/admin/audit-logs?limit=${limit}`),
   getAdminCommodities: () => request('/admin/commodities'),
-  createCommodity: (payload) => request('/admin/commodities', { method: 'POST', body: JSON.stringify(payload) }),
+  createCommodity: (payload) =>
+    request('/admin/commodities', { method: 'POST', body: JSON.stringify(payload) })
+      .catch(() => request('/markets/commodities', { method: 'POST', body: JSON.stringify(payload) })),
   toggleCommodity: (id, active) => request(`/admin/commodities/${id}/toggle`, { method: 'PATCH', body: JSON.stringify({ active }) }),
   getAdminMarkets: () => request('/admin/markets')
 };

@@ -110,7 +110,15 @@ function MainAppShell() {
                 path="admin/markets"
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminMarketsPage />
+                    <AdminMarketsPage initialTab="MARKETS" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/commodities"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminMarketsPage initialTab="COMMODITIES" />
                   </ProtectedRoute>
                 }
               />

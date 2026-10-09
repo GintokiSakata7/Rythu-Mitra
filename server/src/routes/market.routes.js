@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getNearbyMarkets, getMarkets, getPriceHistory } from '../services/data/marketRepository.js';
 import { getTelanganaCommmodities, getTelanganaMarketHistory } from '../services/data/telanganaData.js';
+import { db } from '../services/data/supabaseStore.js';
 
 export const marketRouter = Router();
 
@@ -27,11 +28,51 @@ marketRouter.get('/candidates', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-// GET /api/markets/commodities — list all available commodities from CSV
+// GET /api/markets/commodities — list all available commodities from cloud DB and state catalog
 marketRouter.get('/commodities', async (req, res, next) => {
   try {
-    const commodities = await getTelanganaCommmodities();
-    res.json({ commodities, count: commodities.length });
+    const dbCommodities = await db.getCommodities();
+    const csvCommodities = await getTelanganaCommmodities();
+
+    const set = new Set();
+    const result = [];
+
+    // Prioritize Supabase cloud items
+    for (const c of dbCommodities) {
+      const name = c.commodityName || c;
+      if (name && !set.has(name.toLowerCase())) {
+        set.add(name.toLowerCase());
+        result.push(name);
+      }
+    }
+
+    // Add state catalog items
+    for (const c of csvCommodities) {
+      const name = typeof c === 'string' ? c : c.commodityName || c.name;
+      if (name && !set.has(name.toLowerCase())) {
+        set.add(name.toLowerCase());
+        result.push(name);
+      }
+    }
+
+    res.json({ commodities: result, count: result.length });
+  } catch (error) { next(error); }
+});
+
+// POST /api/markets/commodities — add new commodity item to database
+marketRouter.post('/commodities', async (req, res, next) => {
+  try {
+    const { commodityName, variety, grade, canonicalUnit } = req.body;
+    if (!commodityName || !commodityName.trim()) {
+      return res.status(400).json({ error: 'Commodity name is required.' });
+    }
+    const item = await db.createCommodity({
+      commodityName: commodityName.trim(),
+      variety: variety?.trim() || 'Common',
+      grade: grade?.trim() || 'Grade A',
+      canonicalUnit: canonicalUnit?.trim() || '₹/Quintal'
+    });
+    res.status(201).json({ message: 'Commodity added successfully.', commodity: item });
   } catch (error) { next(error); }
 });
 

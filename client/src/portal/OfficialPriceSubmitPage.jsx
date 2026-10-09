@@ -1,11 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Send, Save, AlertCircle, CheckCircle, ArrowLeft, Building2, Calendar, FileText } from 'lucide-react';
+import { 
+  Send, Save, AlertCircle, CheckCircle, ArrowLeft, Building2, 
+  Calendar, FileText, Plus, X, Sparkles, CheckCircle2, PackagePlus, ArrowRight 
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { api } from '../lib/api.js';
 
+const POPULAR_CROPS = [
+  'Garlic', 'Ginger', 'Wheat', 'Groundnut', 'Cotton', 'Turmeric',
+  'Cabbage', 'Cauliflower', 'Capsicum', 'Maize', 'Soybean',
+  'Green Gram', 'Black Gram', 'Red Chilli', 'Paddy', 'Potato',
+  'Carrot', 'Coriander', 'Mustard', 'Brinjal', 'Bitter Gourd'
+];
+
 export default function OfficialPriceSubmitPage() {
-  const { officialProfile, isVerifiedOfficial } = useAuth();
+  const { officialProfile, isVerifiedOfficial, user } = useAuth();
   const navigate = useNavigate();
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -36,6 +46,16 @@ export default function OfficialPriceSubmitPage() {
   const [successInfo, setSuccessInfo] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Add Item Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemVariety, setNewItemVariety] = useState('Hybrid');
+  const [newItemGrade, setNewItemGrade] = useState('Grade A');
+  const [newItemUnit, setNewItemUnit] = useState('₹/Quintal');
+  const [addingItem, setAddingItem] = useState(false);
+  const [itemModalError, setItemModalError] = useState('');
+  const [itemToast, setItemToast] = useState(null);
+
   useEffect(() => {
     async function loadCommodities() {
       try {
@@ -51,7 +71,55 @@ export default function OfficialPriceSubmitPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'commodityName' && value === '__ADD_NEW__') {
+      setItemModalError('');
+      setShowAddModal(true);
+      return;
+    }
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddNewCommodity = async (e) => {
+    if (e) e.preventDefault();
+    const trimmed = newItemName.trim();
+    if (!trimmed) {
+      setItemModalError('Please enter a commodity name.');
+      return;
+    }
+    setAddingItem(true);
+    setItemModalError('');
+    try {
+      await api.createCommodity({
+        commodityName: trimmed,
+        variety: newItemVariety.trim() || 'Hybrid',
+        grade: newItemGrade || 'Grade A',
+        canonicalUnit: newItemUnit || '₹/Quintal'
+      });
+
+      // Update local commodities list if not already present
+      setCommodities(prev => {
+        const exists = prev.some(c => c.toLowerCase() === trimmed.toLowerCase());
+        return exists ? prev : [trimmed, ...prev];
+      });
+
+      // Select newly added commodity in the form immediately
+      setFormData(prev => ({
+        ...prev,
+        commodityName: trimmed,
+        variety: newItemVariety.trim() || prev.variety,
+        grade: newItemGrade || prev.grade,
+        unit: newItemUnit || prev.unit
+      }));
+
+      setItemToast(`"${trimmed}" added successfully to mandi catalog and selected for today's price report!`);
+      setTimeout(() => setItemToast(null), 6000);
+      setShowAddModal(false);
+      setNewItemName('');
+    } catch (err) {
+      setItemModalError(err.message || 'Failed to add commodity item.');
+    } finally {
+      setAddingItem(false);
+    }
   };
 
   const validate = () => {
@@ -74,7 +142,7 @@ export default function OfficialPriceSubmitPage() {
     return null;
   };
 
-  const handleAction = async (isDraft = false) => {
+  const handleAction = async (isDraft = false, andAddNext = false) => {
     const validationError = validate();
     if (validationError) {
       setErrorMessage(validationError);
@@ -96,11 +164,26 @@ export default function OfficialPriceSubmitPage() {
       };
 
       const res = await api.submitPrice(payload);
-      setSuccessInfo({
-        message: res.message,
-        submissionId: res.submissionId,
-        isDraft
-      });
+
+      if (andAddNext) {
+        setItemToast(`✓ Submitted price for ${formData.commodityName} successfully (Lot #${res.submissionId.slice(-6)})! Ready to enter next item.`);
+        setTimeout(() => setItemToast(null), 6000);
+        // Clear price fields for next commodity, keep date and yard
+        setFormData(prev => ({
+          ...prev,
+          minPrice: '',
+          maxPrice: '',
+          modalPrice: '',
+          arrivalQuantity: '',
+          remarks: ''
+        }));
+      } else {
+        setSuccessInfo({
+          message: res.message,
+          submissionId: res.submissionId,
+          isDraft
+        });
+      }
     } catch (err) {
       setErrorMessage(err.message || 'Price submission failed.');
     } finally {
@@ -127,6 +210,13 @@ export default function OfficialPriceSubmitPage() {
         </div>
       )}
 
+      {itemToast && (
+        <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', padding: '10px 14px', borderRadius: '10px', fontSize: '0.88rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <CheckCircle2 size={18} color="#059669" />
+          <span style={{ fontWeight: 600 }}>{itemToast}</span>
+        </div>
+      )}
+
       {successInfo && (
         <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
@@ -138,7 +228,7 @@ export default function OfficialPriceSubmitPage() {
               <p style={{ margin: '0 0 10px 0', fontSize: '0.86rem', color: '#166534' }}>
                 Reference ID: <strong>{successInfo.submissionId}</strong>
               </p>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <Link
                   to="/portal/official/submissions"
                   style={{ padding: '6px 12px', background: '#166534', color: '#fff', borderRadius: '6px', fontSize: '0.82rem', textDecoration: 'none', fontWeight: 600 }}
@@ -169,7 +259,7 @@ export default function OfficialPriceSubmitPage() {
       )}
 
       <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '1.75rem', boxShadow: '0 2px 4px rgba(0,0,0,0.03)' }}>
-        <form onSubmit={(e) => { e.preventDefault(); handleAction(false); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleAction(false, false); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Market & Date Header Info */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
             <div>
@@ -202,9 +292,35 @@ export default function OfficialPriceSubmitPage() {
           {/* Commodity & Grade */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                Commodity *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
+                  Commodity *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setItemModalError('');
+                    setShowAddModal(true);
+                  }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    color: '#047857',
+                    background: '#ecfdf5',
+                    border: '1px solid #a7f3d0',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Add a new crop or commodity to catalog"
+                >
+                  <Plus size={13} /> Add More Items
+                </button>
+              </div>
               <select
                 name="commodityName"
                 value={formData.commodityName}
@@ -214,6 +330,9 @@ export default function OfficialPriceSubmitPage() {
                 {commodities.map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
+                <option value="__ADD_NEW__" style={{ fontWeight: 'bold', color: '#059669' }}>
+                  ➕ Add New Commodity / Crop...
+                </option>
               </select>
             </div>
 
@@ -258,7 +377,7 @@ export default function OfficialPriceSubmitPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
-                  Min Price (₹/Quintal) *
+                  Min Price ({formData.unit}) *
                 </label>
                 <input
                   type="number"
@@ -292,7 +411,7 @@ export default function OfficialPriceSubmitPage() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
-                  Max Price (₹/Quintal) *
+                  Max Price ({formData.unit}) *
                 </label>
                 <input
                   type="number"
@@ -361,13 +480,13 @@ export default function OfficialPriceSubmitPage() {
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', marginTop: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
             <button
               type="button"
               disabled={submitting}
-              onClick={() => handleAction(true)}
+              onClick={() => handleAction(true, false)}
               style={{
-                padding: '10px 18px',
+                padding: '10px 16px',
                 borderRadius: '8px',
                 border: '1px solid #cbd5e1',
                 background: '#ffffff',
@@ -382,6 +501,29 @@ export default function OfficialPriceSubmitPage() {
             >
               <Save size={15} />
               <span>Save as Draft</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => handleAction(false, true)}
+              style={{
+                padding: '10px 18px',
+                borderRadius: '8px',
+                border: '1px solid #059669',
+                background: '#ecfdf5',
+                color: '#065f46',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              title="Submit this item price and immediately continue entering next crop"
+            >
+              <Plus size={15} />
+              <span>Save & Add Next Item</span>
             </button>
 
             <button
@@ -408,6 +550,173 @@ export default function OfficialPriceSubmitPage() {
           </div>
         </form>
       </div>
+
+      {/* Add New Commodity Modal */}
+      {showAddModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            maxWidth: '520px',
+            width: '100%',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2), 0 8px 10px -6px rgba(0,0,0,0.1)',
+            overflow: 'hidden',
+            border: '1px solid #e2e8f0'
+          }}>
+            <div style={{ padding: '1.25rem 1.5rem', background: '#0f172a', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <PackagePlus size={20} color="#34d399" />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#f8fafc' }}>Add New Mandi Commodity / Item</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>Register to Mandi catalog & immediately submit rates</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddNewCommodity} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {itemModalError && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '8px 12px', borderRadius: '8px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertCircle size={15} /> {itemModalError}
+                </div>
+              )}
+
+              {/* Quick suggestion chips */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Quick Add Popular Crops (Click to Fill)
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '110px', overflowY: 'auto', padding: '4px 0' }}>
+                  {POPULAR_CROPS.map(crop => (
+                    <button
+                      key={crop}
+                      type="button"
+                      onClick={() => setNewItemName(crop)}
+                      style={{
+                        padding: '4px 9px',
+                        borderRadius: '6px',
+                        border: newItemName.toLowerCase() === crop.toLowerCase() ? '1.5px solid #059669' : '1px solid #cbd5e1',
+                        background: newItemName.toLowerCase() === crop.toLowerCase() ? '#ecfdf5' : '#f8fafc',
+                        color: newItemName.toLowerCase() === crop.toLowerCase() ? '#047857' : '#334155',
+                        fontSize: '0.78rem',
+                        fontWeight: newItemName.toLowerCase() === crop.toLowerCase() ? 700 : 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.12s'
+                      }}
+                    >
+                      {crop}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  Commodity Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  placeholder="e.g. Garlic, Ginger, Wheat..."
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                    Default Variety
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Hybrid, Desi"
+                    value={newItemVariety}
+                    onChange={(e) => setNewItemVariety(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                    Quality Grade
+                  </label>
+                  <select
+                    value={newItemGrade}
+                    onChange={(e) => setNewItemGrade(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem', background: '#fff' }}
+                  >
+                    <option value="Grade A">Grade A (Premium)</option>
+                    <option value="Grade B">Grade B (Standard)</option>
+                    <option value="FAQ">FAQ</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                  Canonical Unit
+                </label>
+                <select
+                  value={newItemUnit}
+                  onChange={(e) => setNewItemUnit(e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.88rem', background: '#fff' }}
+                >
+                  <option value="₹/Quintal">₹/Quintal (Standard 100 kg)</option>
+                  <option value="₹/Kg">₹/Kg (Per Kilogram)</option>
+                  <option value="₹/Bag">₹/Bag (50 kg Bag)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', color: '#64748b', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingItem}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: '#059669',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: addingItem ? 'not-allowed' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Plus size={15} /> {addingItem ? 'Adding...' : 'Add & Select Crop'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
