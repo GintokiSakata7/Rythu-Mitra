@@ -1,0 +1,153 @@
+import 'package:flutter/foundation.dart';
+import '../models/app_models.dart';
+import 'intent_engine.dart';
+
+enum ConvStep {
+  idle,
+  needCrop,
+  needQuantity,
+  needLocation,
+  needTransport,
+  running,
+}
+
+class ConversationManager extends ChangeNotifier {
+  ConvStep _step = ConvStep.idle;
+  String? _crop;
+  double? _quantityQuintals;
+  bool? _hasTransport;
+  double? _lat;
+  double? _lng;
+  String? _locationText;
+  bool _usingGps = false;
+
+  ConvStep get step => _step;
+  String? get crop => _crop;
+  double? get quantityQuintals => _quantityQuintals;
+  bool? get hasTransport => _hasTransport;
+  double? get lat => _lat;
+  double? get lng => _lng;
+  String? get locationText => _locationText;
+  bool get usingGps => _usingGps;
+
+  bool get isReadyToSearch =>
+      _crop != null && _quantityQuintals != null && _hasTransport != null &&
+      (_usingGps || _locationText != null);
+
+  void reset() {
+    _step = ConvStep.idle;
+    _crop = null;
+    _quantityQuintals = null;
+    _hasTransport = null;
+    _lat = null;
+    _lng = null;
+    _locationText = null;
+    _usingGps = false;
+    notifyListeners();
+  }
+
+  void setGpsLocation(double lat, double lng, String displayName) {
+    _lat = lat;
+    _lng = lng;
+    _locationText = displayName;
+    _usingGps = true;
+    notifyListeners();
+  }
+
+  /// Process an extracted intent and return the next question to ask (localized).
+  /// Returns null if enough data is collected (caller should fire search).
+  String? processIntent(AssistantIntent intent, String lang) {
+    // Apply any extracted entities
+    if (intent.crop != null) _crop = intent.crop;
+
+    if (intent.quantity != null) {
+      double qInQuintals = intent.quantity!;
+      if (intent.unit == 'kg') qInQuintals = intent.quantity! / 100.0;
+      if (intent.unit == 'ton') qInQuintals = intent.quantity! * 10.0;
+      _quantityQuintals = qInQuintals;
+    }
+
+    if (intent.hasTransport != null) _hasTransport = intent.hasTransport;
+    
+    if (intent.useGps == true) {
+      _usingGps = true;
+    } else if (intent.locationText != null) {
+      _locationText = intent.locationText;
+    } else if (_step == ConvStep.needLocation && intent.rawText.trim().isNotEmpty) {
+      // If we asked for location and they just said a town name, use it!
+      _locationText = intent.rawText.trim();
+    }
+
+    // Handle explicit yes/no (for transport question)
+    if (_step == ConvStep.needTransport) {
+      if (intent.type == IntentType.confirmYes) _hasTransport = true;
+      if (intent.type == IntentType.confirmNo) _hasTransport = false;
+    }
+
+    // Determine next step
+    notifyListeners();
+    return _nextQuestion(lang);
+  }
+
+  String? _nextQuestion(String lang) {
+    if (_crop == null) {
+      _step = ConvStep.needCrop;
+      return _l(lang,
+        en: 'Which crop do you want to sell?',
+        te: 'మీరు ఏ పంట అమ్ముతున్నారు?',
+        hi: 'आप कौन सी फसल बेचना चाहते हैं?',
+      );
+    }
+    if (_quantityQuintals == null) {
+      _step = ConvStep.needQuantity;
+      return _l(lang,
+        en: 'How many quintals of $_crop do you have?',
+        te: '$_crop ఎంత పరిమాణం ఉంది? (క్వింటాళ్లలో చెప్పండి)',
+        hi: 'आपके पास कितने क्विंटल $_crop है?',
+      );
+    }
+    if (!_usingGps && _locationText == null) {
+      _step = ConvStep.needLocation;
+      return _l(lang,
+        en: "Where is your farm? Say 'use my location' or a town name.",
+        te: "మీ పొలం ఎక్కడుంది? 'నా లొకేషన్ ఉపయోగించు' అని చెప్పండి లేదా పట్టణం పేరు చెప్పండి.",
+        hi: "आपका खेत कहाँ है? 'मेरी लोकेशन इस्तेमाल करो' बोलें या गाँव/शहर का नाम बताएं।",
+      );
+    }
+    if (_hasTransport == null) {
+      _step = ConvStep.needTransport;
+      return _l(lang,
+        en: 'Do you have your own vehicle? (Say Yes or No)',
+        te: 'మీకు స్వంత రవాణా వాహనం ఉందా? (అవును లేదా లేదు చెప్పండి)',
+        hi: 'क्या आपके पास अपना वाहन है? (हाँ या नहीं बोलें)',
+      );
+    }
+    // All data collected
+    _step = ConvStep.running;
+    return null; // Caller launches search
+  }
+
+  String _l(String lang, {required String en, required String te, required String hi}) {
+    if (lang == 'te') return te;
+    if (lang == 'hi') return hi;
+    return en;
+  }
+
+  RecommendationRequest buildRequest(String lang) {
+    return RecommendationRequest(
+      crop: _crop ?? 'Tomato',
+      quantityKg: ((_quantityQuintals ?? 10) * 100).toInt(),
+      latitude: _lat ?? 17.05,
+      longitude: _lng ?? 79.27,
+      locationText: _locationText ?? 'Current Location',
+      hasTransport: _hasTransport ?? false,
+      language: lang,
+    );
+  }
+
+  String confirmationMessage(String lang) => _l(lang,
+    en: "Got it! Searching for the best market for ${_quantityQuintals?.toStringAsFixed(1)} quintals of $_crop near ${_locationText ?? 'your location'}...",
+    te: "${_quantityQuintals?.toStringAsFixed(1)} క్వింటాళ్ళ $_crop కి ఉత్తమ మార్కెట్ వెతుకుతున్నాను...",
+    hi: "${_quantityQuintals?.toStringAsFixed(1)} क्विंटल $_crop के लिए सबसे अच्छा बाज़ार खोज रहा हूँ...",
+  );
+}

@@ -1,11 +1,29 @@
 class AppConstants {
-  // Crops
   static const List<Map<String, String>> crops = [
     {'id': 'Tomato', 'emoji': '🍅', 'en': 'Tomato', 'te': 'టమాట', 'hi': 'टमाटर'},
-    {'id': 'Onion', 'emoji': '🧅', 'en': 'Onion', 'te': 'ఉల్లిపాయ', 'hi': 'प्याज'},
-    {'id': 'Potato', 'emoji': '🥔', 'en': 'Potato', 'te': 'బంగాళాదుంప', 'hi': 'आलू'},
+    {'id': 'Paddy', 'emoji': '🌾', 'en': 'Paddy', 'te': 'వరి', 'hi': 'धान'},
     {'id': 'Chilli', 'emoji': '🌶️', 'en': 'Chilli', 'te': 'మిరప', 'hi': 'मिर्च'},
-    {'id': 'Cotton', 'emoji': '🌾', 'en': 'Cotton', 'te': 'పత్తి', 'hi': 'कपास'},
+    {'id': 'Onion', 'emoji': '🧅', 'en': 'Onion', 'te': 'ఉల్లిపాయ', 'hi': 'प्याज'},
+    {'id': 'Maize', 'emoji': '🌽', 'en': 'Maize', 'te': 'మొక్కజొన్న', 'hi': 'मक्का'},
+    {'id': 'Cotton', 'emoji': '☁️', 'en': 'Cotton', 'te': 'పత్తి', 'hi': 'कपास'},
+    {'id': 'Groundnut', 'emoji': '🥜', 'en': 'Groundnut', 'te': 'వేరుశనగ', 'hi': 'मूंगफली'},
+    {'id': 'Turmeric', 'emoji': '🌿', 'en': 'Turmeric', 'te': 'పసుపు', 'hi': 'हल्दी'},
+    {'id': 'Soybean', 'emoji': '🌱', 'en': 'Soybean', 'te': 'సోయాబీన్', 'hi': 'सोयाबीन'},
+    {'id': 'Potato', 'emoji': '🥔', 'en': 'Potato', 'te': 'బంగాళాదుంప', 'hi': 'आलू'},
+    {'id': 'Brinjal', 'emoji': '🍆', 'en': 'Brinjal', 'te': 'వంకాయ', 'hi': 'बैंगन'},
+    {'id': 'Cabbage', 'emoji': '🥬', 'en': 'Cabbage', 'te': 'క్యాబేజీ', 'hi': 'पत्ता गोभी'},
+    {'id': 'Cauliflower', 'emoji': '🥦', 'en': 'Cauliflower', 'te': 'కాలీఫ్లవర్', 'hi': 'फूल गोभी'},
+    {'id': 'Carrot', 'emoji': '🥕', 'en': 'Carrot', 'te': 'క్యారెట్', 'hi': 'गाजर'},
+    {'id': 'Mango', 'emoji': '🥭', 'en': 'Mango', 'te': 'మామిడి', 'hi': 'आम'},
+    {'id': 'Banana', 'emoji': '🍌', 'en': 'Banana', 'te': 'అరటి', 'hi': 'केला'},
+    {'id': 'Grapes', 'emoji': '🍇', 'en': 'Grapes', 'te': 'ద్రాక్ష', 'hi': 'अंगूर'},
+    {'id': 'Wheat', 'emoji': '🌾', 'en': 'Wheat', 'te': 'గోధుమ', 'hi': 'गेहूं'},
+    {'id': 'Red Gram', 'emoji': '🥣', 'en': 'Red Gram', 'te': 'కందిపప్పు', 'hi': 'अरहर'},
+    {'id': 'Green Gram', 'emoji': '🥣', 'en': 'Green Gram', 'te': 'పెసరపప్పు', 'hi': 'मूंग'},
+    {'id': 'Black Gram', 'emoji': '🥣', 'en': 'Black Gram', 'te': 'మినపప్పు', 'hi': 'उड़द'},
+    {'id': 'Sugarcane', 'emoji': '🎋', 'en': 'Sugarcane', 'te': 'చెరకు', 'hi': 'गन्ना'},
+    {'id': 'Sunflower', 'emoji': '🌻', 'en': 'Sunflower', 'te': 'పొద్దుతిరుగుడు', 'hi': 'सूरजमुखी'},
+    {'id': 'Sesame', 'emoji': '🌰', 'en': 'Sesame', 'te': 'నువ్వులు', 'hi': 'तिल'},
   ];
 
   // Preset locations (matching backend demo data)

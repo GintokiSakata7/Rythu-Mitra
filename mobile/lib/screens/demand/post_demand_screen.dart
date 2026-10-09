@@ -4,7 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../localization/app_strings.dart';
 import '../../providers/language_provider.dart';
-import '../../services/buyer_service.dart';
+import '../../services/demand_service.dart';
 
 class PostDemandScreen extends StatefulWidget {
   const PostDemandScreen({super.key});
@@ -20,6 +20,8 @@ class _PostDemandScreenState extends State<PostDemandScreen> {
   String _quantity = '';
   String _price = '';
   String _grade = 'A';
+  String _harvestDate = '';
+  String _notes = '';
   bool _canDeliver = true;
   bool _isSubmitting = false;
   bool _isDone = false;
@@ -30,22 +32,21 @@ class _PostDemandScreenState extends State<PostDemandScreen> {
     setState(() => _isSubmitting = true);
     
     try {
-      await buyerService.postBuyer({
-        'companyName': 'Farmer Direct',
-        'type': 'Farmer',
-        'crop': _crop,
-        'quantityKg': int.parse(_quantity),
-        'offerPrice': double.parse(_price),
-        'grade': _grade,
-        'city': 'Nalgonda',
-        'latitude': 17.05,
-        'longitude': 79.27,
-        'pickupProvided': !_canDeliver,
-        'requiredBy': DateTime.now().add(const Duration(days: 7)).toIso8601String(),
-        'paymentDays': 0,
-      });
+      // Small delay to simulate network
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      if (!mounted) return;
+      context.read<DemandService>().addDemand(
+        crop: _crop,
+        quantityKg: int.parse(_quantity),
+        expectedPrice: double.parse(_price),
+        grade: _grade,
+        harvestDate: _harvestDate.isNotEmpty ? _harvestDate : DateTime.now().toIso8601String().split('T')[0],
+        notes: _notes,
+        canDeliver: _canDeliver,
+      );
       
-      if (mounted) setState(() => _isDone = true);
+      setState(() => _isDone = true);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -147,6 +148,17 @@ class _PostDemandScreenState extends State<PostDemandScreen> {
               const SizedBox(height: 16),
               
               _buildDropdown(s('grade_label'), AppConstants.gradeOptions, _grade, (v) => setState(() => _grade = v!)),
+              const SizedBox(height: 16),
+              
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInput('Harvest Date (YYYY-MM-DD)', TextInputType.datetime, (v) => _harvestDate = v, _harvestDate, required: false),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildInput('Additional Notes', TextInputType.text, (v) => _notes = v, _notes, required: false),
               const SizedBox(height: 24),
 
               // Switch
@@ -201,7 +213,7 @@ class _PostDemandScreenState extends State<PostDemandScreen> {
     );
   }
 
-  Widget _buildInput(String label, TextInputType type, void Function(String) onChanged, String initial) {
+  Widget _buildInput(String label, TextInputType type, void Function(String) onChanged, String initial, {bool required = true}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -211,7 +223,7 @@ class _PostDemandScreenState extends State<PostDemandScreen> {
           initialValue: initial,
           keyboardType: type,
           onChanged: onChanged,
-          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+          validator: required ? ((v) => v == null || v.isEmpty ? 'Required' : null) : null,
         ),
       ],
     );

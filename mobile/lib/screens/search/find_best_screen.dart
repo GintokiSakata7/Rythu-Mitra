@@ -5,7 +5,9 @@ import '../../core/constants/app_constants.dart';
 import '../../localization/app_strings.dart';
 import '../../providers/language_provider.dart';
 import '../../models/app_models.dart';
+import '../../location/location_service.dart';
 import 'search_animation_screen.dart';
+import 'crop_search_bottom_sheet.dart';
 
 class FindBestScreen extends StatefulWidget {
   const FindBestScreen({super.key});
@@ -20,7 +22,9 @@ class _FindBestScreenState extends State<FindBestScreen> {
 
   // Form state
   String? _selectedCrop;
-  int _quantity = 2500;
+  double _quantity = 15; // default 15
+  String _quantityUnit = 'Quintal'; // 'Quintal', 'Ton', 'kg'
+  final TextEditingController _quantityController = TextEditingController(text: '15');
   String _locationName = 'Nalgonda';
   double _lat = 17.05;
   double _lng = 79.27;
@@ -45,10 +49,25 @@ class _FindBestScreenState extends State<FindBestScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _quantityController.dispose();
+    super.dispose();
+  }
+
   Future<void> _submitSearch() async {
+    // Convert to kg based on unit
+    double quantityInKg = _quantity;
+    if (_quantityUnit == 'Quintal') {
+      quantityInKg = _quantity * 100;
+    } else if (_quantityUnit == 'Ton') {
+      quantityInKg = _quantity * 1000;
+    }
+
     final request = RecommendationRequest(
       crop: _selectedCrop!,
-      quantityKg: _quantity,
+      quantityKg: quantityInKg.toInt(),
       latitude: _lat,
       longitude: _lng,
       locationText: _locationName,
@@ -73,6 +92,44 @@ class _FindBestScreenState extends State<FindBestScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(s('find_best')),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.transparent,
+                builder: (_) => Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.info_outline, size: 48, color: AppTheme.forestGreen),
+                      const SizedBox(height: 16),
+                      const Text('How does this work?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Enter your crop, quantity, and location. We calculate the net realization (revenue minus transport and other costs) to find the most profitable market for you, not just the one with the highest price.',
+                        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.forestGreen, foregroundColor: Colors.white),
+                        child: const Text('Got it'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
         leading: _currentStep > 0
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -136,52 +193,96 @@ class _FindBestScreenState extends State<FindBestScreen> {
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
-        itemCount: AppConstants.crops.length,
+        itemCount: 6, // Show first 5 crops + 1 View All button
         itemBuilder: (context, i) {
+          if (i == 5) {
+            return Semantics(
+              button: true,
+              label: 'View All Crops',
+              child: GestureDetector(
+                onTap: () async {
+                  final result = await showModalBottomSheet<String>(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => CropSearchBottomSheet(
+                        langCode: context.read<LanguageProvider>().langCode),
+                  );
+                  if (result != null) {
+                    setState(() => _selectedCrop = result);
+                    Future.delayed(const Duration(milliseconds: 300), _nextStep);
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.harvestGold.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.harvestGold),
+                  ),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search, color: AppTheme.harvestGold, size: 32),
+                      SizedBox(height: 8),
+                      Text('View All',
+                          style: TextStyle(
+                              color: AppTheme.harvestGold,
+                              fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
           final crop = AppConstants.crops[i];
           final isSelected = _selectedCrop == crop['id'];
           final lang = context.watch<LanguageProvider>().langCode;
           final title = crop[lang] ?? crop['en']!;
 
-          return GestureDetector(
-            onTap: () {
-              setState(() => _selectedCrop = crop['id']);
-              Future.delayed(const Duration(milliseconds: 300), _nextStep);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              decoration: BoxDecoration(
-                color: isSelected ? AppTheme.forestGreen : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected
-                      ? AppTheme.forestGreen
-                      : const Color(0xFFE0E0E0),
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppTheme.forestGreen.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        )
-                      ]
-                    : null,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(crop['emoji']!, style: const TextStyle(fontSize: 32)),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : Colors.black87,
-                    ),
+          return Semantics(
+            button: true,
+            label: 'Select $title',
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _selectedCrop = crop['id']);
+                Future.delayed(const Duration(milliseconds: 300), _nextStep);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.forestGreen : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.forestGreen
+                        : const Color(0xFFE0E0E0),
                   ),
-                ],
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppTheme.forestGreen.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          )
+                        ]
+                      : null,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(crop['emoji']!, style: const TextStyle(fontSize: 32)),
+                    const SizedBox(height: 8),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -197,38 +298,67 @@ class _FindBestScreenState extends State<FindBestScreen> {
       subtitle: s('quantity_sub'),
       child: Column(
         children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 32),
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0xFFE8F5E9)),
             ),
-            child: Column(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      _quantity.toString(),
-                      style: const TextStyle(
+                SizedBox(
+                  width: 120,
+                  child: TextFormField(
+                    controller: _quantityController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.forestGreen,
+                    ),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      hintText: '0',
+                      hintStyle: TextStyle(
                         fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.forestGreen,
+                        color: Colors.grey.withValues(alpha: 0.5),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'kg',
-                      style: TextStyle(fontSize: 20, color: Colors.grey),
-                    ),
-                  ],
+                    onChanged: (val) {
+                      final parsed = double.tryParse(val);
+                      if (parsed != null && parsed >= 0) {
+                        setState(() => _quantity = parsed);
+                      }
+                    },
+                  ),
                 ),
-                Text(
-                  '${(_quantity / 1000).toStringAsFixed(1)} tons',
-                  style: const TextStyle(color: Colors.grey),
+                const SizedBox(width: 16),
+                DropdownButton<String>(
+                  value: _quantityUnit,
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.forestGreen),
+                  style: const TextStyle(fontSize: 24, color: Colors.grey, fontWeight: FontWeight.w500),
+                  items: ['Quintal', 'Ton', 'kg']
+                      .map((unit) => DropdownMenuItem(
+                            value: unit,
+                            child: Text(unit),
+                          ))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _quantityUnit = val);
+                    }
+                  },
                 ),
               ],
             ),
@@ -243,35 +373,72 @@ class _FindBestScreenState extends State<FindBestScreen> {
               trackHeight: 8,
             ),
             child: Slider(
-              value: _quantity.toDouble(),
-              min: 500,
-              max: 20000,
-              divisions: 39, // 500kg steps
-              onChanged: (v) => setState(() => _quantity = v.toInt()),
+              value: _quantity.clamp(0.0, 500.0),
+              min: 0,
+              max: 500,
+              divisions: 100,
+              onChanged: (v) {
+                setState(() {
+                  _quantity = v;
+                  _quantityController.text = v.toStringAsFixed(v.truncateToDouble() == v ? 0 : 1);
+                });
+              },
             ),
           ),
           const SizedBox(height: 24),
           Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: AppConstants.quantityPresets.map((q) {
+            children: [5, 10, 15, 25, 50, 100].map((q) {
+              final isSelected = _quantity == q.toDouble();
               return ChoiceChip(
                 label: Text(
-                  q >= 1000 ? '${q ~/ 1000} ton' : '$q kg',
+                  '$q $_quantityUnit',
                   style: TextStyle(
-                    color: _quantity == q ? Colors.white : Colors.black87,
+                    color: isSelected ? Colors.white : Colors.black87,
                   ),
                 ),
-                selected: _quantity == q,
-                onSelected: (_) => setState(() => _quantity = q),
+                selected: isSelected,
+                onSelected: (_) {
+                  setState(() {
+                    _quantity = q.toDouble();
+                    _quantityController.text = _quantity.toStringAsFixed(0);
+                  });
+                },
                 selectedColor: AppTheme.forestGreen,
               );
             }).toList(),
           ),
-          const Spacer(),
-          ElevatedButton(
-            onPressed: _nextStep,
-            child: Text(s('next')),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _prevStep,
+                  child: Text(s('back') ?? 'Back'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    final parsed = double.tryParse(_quantityController.text);
+                    if (parsed == null || parsed <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a valid quantity greater than 0.')),
+                      );
+                      return;
+                    }
+                    _nextStep();
+                  },
+                  child: Text(s('next')),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -288,14 +455,19 @@ class _FindBestScreenState extends State<FindBestScreen> {
           ElevatedButton.icon(
             onPressed: () async {
               setState(() => _isDetectingLocation = true);
-              // Mock GPS delay
-              await Future.delayed(const Duration(seconds: 1));
-              setState(() {
-                _locationName = 'Current Location';
-                _lat = 17.38; // Mock GPS coords
-                _lng = 78.48;
-                _isDetectingLocation = false;
-              });
+              final loc = await locationService.getCurrentLocation();
+              if (mounted) {
+                setState(() => _isDetectingLocation = false);
+                if (loc.result != null) {
+                  _locationName = loc.result!.displayName ?? 'Current Location';
+                  _lat = loc.result!.lat;
+                  _lng = loc.result!.lng;
+                } else if (loc.error != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(loc.error!.message)),
+                  );
+                }
+              }
             },
             icon: _isDetectingLocation
                 ? const SizedBox(
@@ -329,38 +501,63 @@ class _FindBestScreenState extends State<FindBestScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          ...AppConstants.presetLocations.map((loc) {
-            final isSelected = _locationName == loc['name'];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: isSelected ? AppTheme.forestGreen : Colors.white,
-                    width: isSelected ? 2 : 0,
+          Expanded(
+            child: ListView(
+              children: AppConstants.presetLocations.map((loc) {
+                final isSelected = _locationName == loc['name'];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: isSelected ? AppTheme.forestGreen : Colors.white,
+                        width: isSelected ? 2 : 0,
+                      ),
+                    ),
+                    tileColor: Colors.white,
+                    leading: const Icon(Icons.location_city, color: Colors.grey),
+                    title: Text(loc['name']!),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle, color: AppTheme.forestGreen)
+                        : null,
+                    onTap: () {
+                      setState(() {
+                        _locationName = loc['name'];
+                        _lat = loc['lat'];
+                        _lng = loc['lng'];
+                      });
+                    },
                   ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _prevStep,
+                  child: Text(s('back') ?? 'Back'),
                 ),
-                tileColor: Colors.white,
-                leading: const Icon(Icons.location_city, color: Colors.grey),
-                title: Text(loc['name']!),
-                trailing: isSelected
-                    ? const Icon(Icons.check_circle, color: AppTheme.forestGreen)
-                    : null,
-                onTap: () {
-                  setState(() {
-                    _locationName = loc['name'];
-                    _lat = loc['lat'];
-                    _lng = loc['lng'];
-                  });
-                },
               ),
-            );
-          }),
-          const Spacer(),
-          ElevatedButton(
-            onPressed: _nextStep,
-            child: Text(s('next')),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_lat == null || _lng == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please select a location first.')),
+                      );
+                      return;
+                    }
+                    _nextStep();
+                  },
+                  child: Text(s('next')),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -386,27 +583,22 @@ class _FindBestScreenState extends State<FindBestScreen> {
           ),
           const SizedBox(height: 16),
           _TransportCard(
-            title: s('rental_vehicle'),
-            subtitle: s('rental_vehicle_sub'),
-            icon: Icons.delivery_dining,
-            isSelected: _hasTransport == false, // Treats rental as normal cost
+            title: s('no_vehicle'),
+            subtitle: s('no_vehicle_sub'),
+            icon: Icons.not_listed_location,
+            isSelected: _hasTransport == false, // False means no transport
             onTap: () {
               setState(() => _hasTransport = false);
               _submitSearch();
             },
           ),
-          const SizedBox(height: 16),
-          _TransportCard(
-            title: s('no_vehicle'),
-            subtitle: s('no_vehicle_sub'),
-            icon: Icons.not_listed_location,
-            isSelected: _hasTransport == null, // Wait for buyer pickup
-            onTap: () {
-              setState(() => _hasTransport = null); // Handled differently in a full impl
-              // For now, map to false to let optimizer run
-              setState(() => _hasTransport = false);
-              _submitSearch();
-            },
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: _prevStep,
+              child: Text(s('back') ?? 'Back'),
+            ),
           ),
         ],
       ),

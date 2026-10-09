@@ -121,6 +121,7 @@ class _BuyerListScreenState extends State<BuyerListScreen> {
                                 final buyer = prov.buyers[i];
                                 return BuyerCard(
                                   buyer: buyer,
+                                  distanceKm: prov.getDistance(buyer.id),
                                   onTap: () {
                                     Navigator.push(
                                       context,

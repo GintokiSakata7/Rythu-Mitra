@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/language_provider.dart';
 import '../../localization/app_strings.dart';
+import '../../providers/settings_provider.dart';
 import '../home/home_screen.dart';
+
 
 class LanguageScreen extends StatefulWidget {
   const LanguageScreen({super.key});
@@ -163,6 +165,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                               .read<LanguageProvider>()
                               .setLanguage(_selected!);
                           if (!context.mounted) return;
+                          
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(

@@ -214,3 +214,47 @@ class RecommendationRequest {
     'language': language,
   };
 }
+
+class DemandModel {
+  final String id;
+  final String crop;
+  final int quantityKg;
+  final double expectedPrice;
+  final String grade;
+  final String harvestDate;
+  final String notes;
+  final bool canDeliver;
+  final String status;
+
+  DemandModel({
+    required this.id,
+    required this.crop,
+    required this.quantityKg,
+    required this.expectedPrice,
+    required this.grade,
+    required this.harvestDate,
+    required this.notes,
+    required this.canDeliver,
+    required this.status,
+  });
+}
+
+class AppNotification {
+  final String id;
+  final String title;
+  final String message;
+  final String time;
+  final String iconName;
+  final String colorHex;
+  bool isRead;
+
+  AppNotification({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.time,
+    required this.iconName,
+    required this.colorHex,
+    this.isRead = false,
+  });
+}

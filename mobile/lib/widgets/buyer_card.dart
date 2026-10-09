@@ -5,8 +5,9 @@ import '../../models/app_models.dart';
 class BuyerCard extends StatelessWidget {
   final BuyerModel buyer;
   final VoidCallback? onTap;
+  final double? distanceKm;
 
-  const BuyerCard({super.key, required this.buyer, this.onTap});
+  const BuyerCard({super.key, required this.buyer, this.onTap, this.distanceKm});
 
   @override
   Widget build(BuildContext context) {
@@ -92,15 +93,16 @@ class BuyerCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 _infoChip(Icons.location_on, buyer.city),
-                const SizedBox(width: 8),
+                if (distanceKm != null && distanceKm! > 0)
+                  _infoChip(Icons.map, '${distanceKm!.toStringAsFixed(1)} km'),
                 _infoChip(Icons.eco, buyer.crop),
-                if (buyer.pickupProvided) ...[
-                  const SizedBox(width: 8),
+                if (buyer.pickupProvided)
                   _infoChip(Icons.local_shipping, 'Pickup'),
-                ],
               ],
             ),
           ],

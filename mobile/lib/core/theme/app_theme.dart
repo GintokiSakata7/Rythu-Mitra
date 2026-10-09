@@ -52,7 +52,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: forestGreen,
           foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 56),
+          minimumSize: const Size(64, 56), // Removed double.infinity to fix unbounded row crash
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           elevation: 2,

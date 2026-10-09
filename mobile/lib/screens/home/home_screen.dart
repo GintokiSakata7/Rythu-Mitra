@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../localization/app_strings.dart';
@@ -9,6 +11,8 @@ import '../demand/post_demand_screen.dart';
 import '../demand/my_demands_screen.dart';
 import '../assistant/assistant_screen.dart';
 import '../profile/profile_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../../providers/settings_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +25,14 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   late final List<Widget> _screens;
+  
+  final GlobalKey _homeKey = GlobalKey();
+  final GlobalKey _findBestKey = GlobalKey();
+  final GlobalKey _voiceKey = GlobalKey();
+  final GlobalKey _buyersKey = GlobalKey();
+  final GlobalKey _demandKey = GlobalKey();
+  final GlobalKey _profileKey = GlobalKey();
+  final GlobalKey _notificationsKey = GlobalKey();
 
   void setTab(int index) {
     if (mounted) setState(() => _currentIndex = index);
@@ -30,12 +42,35 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _screens = [
-      const _HomeTab(),
+      _HomeTab(
+        profileKey: _profileKey,
+        notificationsKey: _notificationsKey,
+      ),
       const FindBestScreen(),
       const AssistantScreen(),
       const BuyerListScreen(),
       const PostDemandScreen(),
     ];
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkShowcase();
+    });
+  }
+  
+  Future<void> _checkShowcase() async {
+    final settingsProvider = context.read<SettingsProvider>();
+    if (!settingsProvider.isOnboardingComplete && mounted) {
+      ShowCaseWidget.of(context).startShowCase([
+        _homeKey,
+        _findBestKey,
+        _voiceKey,
+        _buyersKey,
+        _demandKey,
+        _notificationsKey,
+        _profileKey,
+      ]);
+      await settingsProvider.completeOnboarding();
+    }
   }
 
   @override
@@ -45,7 +80,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: _screens.asMap().entries.map((entry) {
+          return ExcludeSemantics(
+            excluding: _currentIndex != entry.key,
+            child: entry.value,
+          );
+        }).toList(),
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -71,6 +111,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   label2: 'Home',
                   index: 0,
                   lang: lang,
+                  key: _homeKey,
+                  description: 'View your dashboard and daily market updates.',
                 ),
                 _navItem(
                   icon: Icons.search_rounded,
@@ -78,37 +120,48 @@ class _HomeScreenState extends State<HomeScreen> {
                   label2: 'Find Best',
                   index: 1,
                   lang: lang,
+                  key: _findBestKey,
+                  description: 'Find the most profitable market based on your location and transport costs.',
                 ),
                 // Center Voice Button
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _currentIndex = 2),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            color: _currentIndex == 2
-                                ? AppTheme.forestGreen
-                                : AppTheme.harvestGold,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: (_currentIndex == 2
-                                        ? AppTheme.forestGreen
-                                        : AppTheme.harvestGold)
-                                    .withValues(alpha: 0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
+                  child: Showcase(
+                    key: _voiceKey,
+                    description: 'Tap to speak! Ask for crop prices or best markets in your local language.',
+                    child: Semantics(
+                      label: 'Voice Assistant, button',
+                      button: true,
+                      selected: _currentIndex == 2,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _currentIndex = 2),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 54,
+                              height: 54,
+                              decoration: BoxDecoration(
+                                color: _currentIndex == 2
+                                    ? AppTheme.forestGreen
+                                    : AppTheme.harvestGold,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (_currentIndex == 2
+                                            ? AppTheme.forestGreen
+                                            : AppTheme.harvestGold)
+                                        .withValues(alpha: 0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: const Icon(Icons.mic_rounded,
-                              color: Colors.white, size: 28),
+                              child: const Icon(Icons.mic_rounded,
+                                  color: Colors.white, size: 28),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -118,6 +171,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   label2: 'Buyers',
                   index: 3,
                   lang: lang,
+                  key: _buyersKey,
+                  description: 'Connect directly with verified buyers and traders.',
                 ),
                 _navItem(
                   icon: Icons.post_add_rounded,
@@ -125,6 +180,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   label2: 'Demand',
                   index: 4,
                   lang: lang,
+                  key: _demandKey,
+                  description: 'Post your available stock and let buyers contact you.',
                 ),
               ],
             ),
@@ -140,30 +197,45 @@ class _HomeScreenState extends State<HomeScreen> {
     required String label2,
     required int index,
     required String lang,
+    required GlobalKey key,
+    required String description,
   }) {
     final isSelected = _currentIndex == index;
     return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _currentIndex = index),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppTheme.forestGreen : Colors.grey,
-              size: 24,
+      child: Showcase(
+        key: key,
+        description: description,
+        child: Semantics(
+          label: '$label2, tab',
+          button: true,
+          selected: isSelected,
+          child: GestureDetector(
+            onTap: () => setState(() => _currentIndex = index),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ExcludeSemantics(
+                  child: Icon(
+                    icon,
+                    color: isSelected ? AppTheme.forestGreen : Colors.grey,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                ExcludeSemantics(
+                  child: Text(
+                    label2,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isSelected ? AppTheme.forestGreen : Colors.grey,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 2),
-            Text(
-              label2,
-              style: TextStyle(
-                fontSize: 10,
-                color: isSelected ? AppTheme.forestGreen : Colors.grey,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -173,7 +245,13 @@ class _HomeScreenState extends State<HomeScreen> {
 // ─── Home Tab Content ─────────────────────────────────────────────────────────
 
 class _HomeTab extends StatelessWidget {
-  const _HomeTab();
+  final GlobalKey profileKey;
+  final GlobalKey notificationsKey;
+
+  const _HomeTab({
+    required this.profileKey,
+    required this.notificationsKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -191,6 +269,42 @@ class _HomeTab extends StatelessWidget {
             floating: false,
             pinned: true,
             backgroundColor: AppTheme.forestGreen,
+            actions: [
+              Showcase(
+                key: notificationsKey,
+                description: 'See market updates and buyer responses.',
+                child: IconButton(
+                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Showcase(
+                key: profileKey,
+                description: 'Manage your profile and preferences.',
+                child: GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  ),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
@@ -207,43 +321,28 @@ class _HomeTab extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${s('welcome')}, ${s('farmer')} 🌾',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${s('welcome')}, ${s('farmer')} 🌾',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
                                   ),
-                                ),
-                                const Text(
-                                  'RythuMitra',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
+                                  const Text(
+                                    'RythuMitra',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            GestureDetector(
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const ProfileScreen()),
-                              ),
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: Colors.white24,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.person_rounded,
-                                    color: Colors.white, size: 26),
+                                ],
                               ),
                             ),
                           ],
@@ -267,13 +366,6 @@ class _HomeTab extends StatelessWidget {
                 ),
               ),
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined,
-                    color: Colors.white),
-                onPressed: () {},
-              ),
-            ],
           ),
 
           SliverToBoxAdapter(
