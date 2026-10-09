@@ -21,8 +21,8 @@ const LANG_DATA = {
     q1_sub: 'టమాట, ఉల్లిపాయ, బంగాళాదుంప, మిరప లేదా పత్తి చెప్పండి...',
     q2_prefix: 'గుర్తించబడింది. మీ దగ్గర ఎంత పరిమాణం ఉంది?',
     q2_sub: 'కిలోలు లేదా టన్నుల్లో చెప్పండి (ఉదా: 5 టన్నులు లేదా 5000 కేజీలు)...',
-    q3: 'మీ పొలం ఎక్కడ ఉంది?',
-    q3_sub: 'నల్గొండ, సూర్యాపేట, మిర్యాలగూడ చెప్పండి లేదా GPS బటన్ నొక్కండి...',
+    q3: 'మీ పొలం ఎక్కడ ఉంది? కింద ఉన్న "నా GPS లొకేషన్" బటన్ నొక్కండి లేదా ఊరి పేరు చెప్పండి.',
+    q3_sub: 'కింద ఉన్న GPS బటన్ నొక్కండి లేదా బోయిన్‌పల్లి, నల్గొండ, సూర్యాపేట చెప్పండి...',
     q4: 'మీకు స్వంత రవాణా వాహనం ఉందా?',
     q4_sub: 'ఉంది లేదా లేదు అని చెప్పండి...',
     analyzing: 'అన్ని మార్కెట్లు మరియు కొనుగోలుదారులను లెక్కిస్తున్నాను...',
@@ -81,8 +81,8 @@ const LANG_DATA = {
     q1_sub: 'टमाटर, प्याज, आलू, मिर्च या कपास बोलें...',
     q2_prefix: 'दर्ज हो गया। आपके पास कितनी मात्रा है?',
     q2_sub: 'किलो या टन में बताएं (जैसे: 5 टन या 5000 किलो)...',
-    q3: 'आपका खेत या गाँव कहाँ है?',
-    q3_sub: 'नलगोंडा, सूर्यापेट, मिर्यालगुडा बोलें या GPS बटन दबाएं...',
+    q3: 'आपका खेत कहाँ है? नीचे दिए गए "GPS स्थान" बटन दबाएं या गाँव का नाम बताएं।',
+    q3_sub: 'नीचे दिए GPS बटन दबाएं या बोवेनपल्ली, नलगोंडा, सूर्यापेट बोलें...',
     q4: 'क्या आपके पास अपना वाहन या गाड़ी है?',
     q4_sub: 'हाँ या नहीं बोलें...',
     analyzing: 'आसपास की मंडियों और खरीदारों का विश्लेषण हो रहा है...',
@@ -141,8 +141,8 @@ const LANG_DATA = {
     q1_sub: 'Say Tomato, Onion, Potato, Chilli, or Cotton...',
     q2_prefix: 'noted. How much quantity do you have?',
     q2_sub: 'Say in kilograms or tons (e.g. 5 tons or 5000 kg)...',
-    q3: 'Where is your farm located?',
-    q3_sub: 'Speak Nalgonda, Suryapet, Hyderabad or tap GPS...',
+    q3: 'Where is your farm located? Tap the "Use Current GPS Location" button below or say your town name.',
+    q3_sub: 'Tap the GPS button below or say Bowenpally, Nalgonda, Suryapet...',
     q4: 'Do you have your own transport vehicle?',
     q4_sub: 'Say yes or no...',
     analyzing: 'Evaluating nearby mandis and direct buyers...',
@@ -1112,25 +1112,79 @@ export default function VoiceFlow({ onSwitchToManual }) {
       return;
     }
     setGpsStatus('📍 Detecting GPS coordinates...');
+
+    const safetyTimer = setTimeout(() => {
+      setGpsStatus('');
+    }, 7000);
+
+    const onPosSuccess = (pos) => {
+      clearTimeout(safetyTimer);
+      const { latitude, longitude } = pos.coords;
+
+      // Match closest mandi from live database markets
+      let closestName = 'Your Location';
+      let minD = Infinity;
+      if (dbMarkets && dbMarkets.length > 0) {
+        dbMarkets.forEach(m => {
+          const d = Math.hypot(m.latitude - latitude, m.longitude - longitude);
+          if (d < minD) {
+            minD = d;
+            closestName = m.name.replace(/ market/i, '').trim();
+          }
+        });
+      }
+
+      const locDisplayName = `${closestName} (GPS)`;
+
+      setAnswers(prev => ({
+        ...prev,
+        latitude,
+        longitude,
+        locationText: locDisplayName
+      }));
+      setGpsStatus(t.gps_success);
+      setStep(4);
+
+      // Confirm via voice
+      const confirmText = lang === 'te'
+        ? `లొకేషన్ గుర్తించబడింది: ${closestName}. ${t.q4}`
+        : (lang === 'hi'
+            ? `स्थान मिल गया: ${closestName}। ${t.q4}`
+            : `Location detected: ${closestName}. ${t.q4}`);
+
+      setTimeout(() => {
+        speakText(confirmText, { autoListen: true });
+      }, 120);
+    };
+
+    const onPosError = () => {
+      clearTimeout(safetyTimer);
+      // Fallback to first database market
+      const fallbackMarket = dbMarkets[0] || { name: 'Bowenpally', latitude: 17.47, longitude: 78.48 };
+      const fallbackName = fallbackMarket.name.replace(/ market/i, '').trim();
+      setAnswers(prev => ({
+        ...prev,
+        latitude: fallbackMarket.latitude,
+        longitude: fallbackMarket.longitude,
+        locationText: fallbackName
+      }));
+      setGpsStatus(t.gps_error);
+      setStep(4);
+      setTimeout(() => {
+        speakText(t.q4, { autoListen: true });
+      }, 120);
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setAnswers(prev => ({
-          ...prev,
-          latitude,
-          longitude,
-          locationText: `GPS (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`
-        }));
-        setGpsStatus(t.gps_success);
-        setStep(4);
-        setTimeout(() => {
-          speakText(t.q4, { autoListen: true });
-        }, 120);
-      },
+      onPosSuccess,
       () => {
-        setGpsStatus(t.gps_error);
+        navigator.geolocation.getCurrentPosition(
+          onPosSuccess,
+          onPosError,
+          { timeout: 4000, enableHighAccuracy: true, maximumAge: 60000 }
+        );
       },
-      { timeout: 7000, enableHighAccuracy: true }
+      { timeout: 3500, enableHighAccuracy: false, maximumAge: 300000 }
     );
   };
 

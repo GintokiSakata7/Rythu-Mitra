@@ -89,45 +89,130 @@ export default function FindOpportunityPage() {
   const [error, setError] = useState('');
   const [gpsLoading, setGpsLoading] = useState(false);
 
+  const resolveCoordinates = (name) => {
+    if (!name) return null;
+    if (locations[name]) return locations[name];
+    const clean = name.toLowerCase().replace(/ market/i, '').trim();
+    for (const [k, v] of Object.entries(locations)) {
+      const kClean = k.toLowerCase().replace(/ market/i, '').trim();
+      if (kClean === clean || kClean.includes(clean) || clean.includes(kClean)) {
+        return v;
+      }
+    }
+    return null;
+  };
+
   const coordinates = useMemo(() => {
     if (form.latitude && form.longitude) {
       return { latitude: form.latitude, longitude: form.longitude };
     }
-    return locations[form.locationText] || locations.Nalgonda;
-  }, [form.locationText, form.latitude, form.longitude]);
+    const resolved = resolveCoordinates(form.locationText);
+    if (resolved) return resolved;
+    const firstLoc = Object.values(locations)[0];
+    return firstLoc || { latitude: 17.385, longitude: 78.4867 };
+  }, [form.locationText, form.latitude, form.longitude, locations]);
 
   const handleUseGPS = () => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
+      setError('Geolocation is not supported by your browser. Please select your mandi or city.');
       return;
     }
     setGpsLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        let name = `GPS (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`;
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
-          const data = await res.json();
-          if (data && data.address) {
-            name = `📍 ${data.address.city || data.address.town || data.address.village || data.address.county || 'Your Location'}`;
-          }
-        } catch (e) {
-          console.error('Reverse geocode failed', e);
-        }
+    setError('');
 
-        setForm(prev => ({
-          ...prev,
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          locationText: name
-        }));
-        setGpsLoading(false);
-      },
+    // Safety timeout: Never stay stuck in loading state
+    const safetyTimer = setTimeout(() => {
+      setGpsLoading(false);
+    }, 7000);
+
+    const onPosSuccess = (pos) => {
+      clearTimeout(safetyTimer);
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      // 1. Instantly match against all loaded mandis by distance
+      let closestMandi = '';
+      let minDistance = Infinity;
+      Object.entries(locations).forEach(([locName, locCoords]) => {
+        if (locCoords && locCoords.latitude && locCoords.longitude) {
+          const d = Math.hypot(locCoords.latitude - lat, locCoords.longitude - lng);
+          if (d < minDistance) {
+            minDistance = d;
+            closestMandi = locName;
+          }
+        }
+      });
+
+      const label = closestMandi ? `${closestMandi} (GPS Detected)` : `GPS (${lat.toFixed(3)}, ${lng.toFixed(3)})`;
+
+      // 2. IMMEDIATELY update form with exact coordinates so user can search right away
+      setForm(prev => ({
+        ...prev,
+        latitude: lat,
+        longitude: lng,
+        locationText: label
+      }));
+      setGpsLoading(false);
+
+      // 3. Best-effort reverse geocoding with strict 2-second timeout (non-blocking)
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+          signal: controller.signal
+        })
+          .then(res => res.json())
+          .then(data => {
+            clearTimeout(timeoutId);
+            if (data && data.address) {
+              const locality = data.address.suburb || data.address.town || data.address.city || data.address.village || data.address.county;
+              if (locality) {
+                setForm(prev => ({
+                  ...prev,
+                  locationText: `${locality} (GPS)`
+                }));
+              }
+            }
+          })
+          .catch(() => {});
+      } catch (_) {}
+    };
+
+    const onPosError = (err) => {
+      clearTimeout(safetyTimer);
+      setGpsLoading(false);
+      console.warn('Geolocation error:', err);
+
+      // Fallback: use first available location in database or Bowenpally
+      const firstAvailable = Object.keys(locations)[0] || 'Bowenpally';
+      const c = locations[firstAvailable] || { latitude: 17.47, longitude: 78.48 };
+      
+      setForm(prev => ({
+        ...prev,
+        locationText: prev.locationText || firstAvailable,
+        latitude: prev.latitude || c.latitude,
+        longitude: prev.longitude || c.longitude
+      }));
+
+      setError(
+        err?.code === 1
+          ? 'Location access was denied in your browser settings. Using closest available market.'
+          : 'Could not access GPS signal directly. Please choose your town from the list below.'
+      );
+    };
+
+    // Try fast low-accuracy first (instant cached/wifi coordinates)
+    navigator.geolocation.getCurrentPosition(
+      onPosSuccess,
       () => {
-        alert('Could not access your location. Please select a city/town.');
-        setGpsLoading(false);
+        // Fallback: try high accuracy with 4s timeout
+        navigator.geolocation.getCurrentPosition(
+          onPosSuccess,
+          onPosError,
+          { timeout: 4000, enableHighAccuracy: true, maximumAge: 60000 }
+        );
       },
-      { timeout: 10000 }
+      { timeout: 3500, enableHighAccuracy: false, maximumAge: 300000 }
     );
   };
 
@@ -139,31 +224,16 @@ export default function FindOpportunityPage() {
     let finalLat = form.latitude;
     let finalLng = form.longitude;
 
-    if (!locations[form.locationText] && (!finalLat || !finalLng)) {
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(form.locationText + ', Telangana, India')}`);
-        const data = await res.json();
-        if (data && data.length > 0) {
-          finalLat = parseFloat(data[0].lat);
-          finalLng = parseFloat(data[0].lon);
-          setForm(prev => ({ ...prev, latitude: finalLat, longitude: finalLng }));
-        } else {
-          setError(`Could not find coordinates for "${form.locationText}". Please try a different nearby town.`);
-          setLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.error('Geocoding failed', err);
-        setError('Location search failed. Please try again or use the GPS button.');
-        setLoading(false);
-        return;
+    if (!finalLat || !finalLng) {
+      const resolved = resolveCoordinates(form.locationText);
+      if (resolved) {
+        finalLat = resolved.latitude;
+        finalLng = resolved.longitude;
+      } else {
+        const first = Object.values(locations)[0] || { latitude: 17.385, longitude: 78.4867 };
+        finalLat = first.latitude;
+        finalLng = first.longitude;
       }
-    } else if (locations[form.locationText]) {
-      finalLat = locations[form.locationText].latitude;
-      finalLng = locations[form.locationText].longitude;
-    } else if (!finalLat) {
-      finalLat = locations.Nalgonda.latitude;
-      finalLng = locations.Nalgonda.longitude;
     }
 
     try {
@@ -173,9 +243,12 @@ export default function FindOpportunityPage() {
         longitude: finalLng,
         quantityKg: Number(form.quantityKg)
       };
-      setResult(await api.recommend(payload));
+
+      const data = await api.recommend(payload);
+      setResult(data);
     } catch (err) {
-      setError(err.message);
+      console.error('Optimization request failed:', err);
+      setError(err?.message || 'Failed to calculate recommendations. Please check server connection.');
     } finally {
       setLoading(false);
     }
@@ -282,7 +355,7 @@ export default function FindOpportunityPage() {
                     value={form.locationText}
                     onChange={e => {
                       const sel = e.target.value;
-                      const c = locations[sel];
+                      const c = resolveCoordinates(sel);
                       setForm({
                         ...form,
                         locationText: sel,
@@ -304,9 +377,45 @@ export default function FindOpportunityPage() {
                     title="Detect GPS location"
                   >
                     {gpsLoading ? <Loader2 className="spin" size={16} /> : <Navigation size={16} />}
-                    <span>GPS</span>
+                    <span>{gpsLoading ? 'Locating...' : 'GPS'}</span>
                   </button>
                 </div>
+                <div className="location-quick-pills" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                  {Object.keys(locations).slice(0, 7).map(mName => (
+                    <button
+                      key={mName}
+                      type="button"
+                      className="pill-btn"
+                      style={{
+                        fontSize: '12px',
+                        padding: '3px 9px',
+                        borderRadius: '12px',
+                        border: form.locationText === mName ? '1.5px solid #137333' : '1px solid #d1d5db',
+                        background: form.locationText === mName ? '#e6f4ea' : '#fff',
+                        color: form.locationText === mName ? '#137333' : '#374151',
+                        fontWeight: form.locationText === mName ? 'bold' : 'normal',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        const coords = resolveCoordinates(mName);
+                        setForm(prev => ({
+                          ...prev,
+                          locationText: mName,
+                          latitude: coords ? coords.latitude : prev.latitude,
+                          longitude: coords ? coords.longitude : prev.longitude
+                        }));
+                      }}
+                    >
+                      📍 {mName}
+                    </button>
+                  ))}
+                </div>
+                {form.latitude && form.longitude ? (
+                  <div style={{ marginTop: '6px', fontSize: '11px', color: '#137333', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Check size={13} />
+                    <span>Coordinates: {form.latitude.toFixed(4)}, {form.longitude.toFixed(4)}</span>
+                  </div>
+                ) : null}
               </Field>
 
               <div className="transport-toggle">

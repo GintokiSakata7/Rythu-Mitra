@@ -1644,6 +1644,18 @@ button, input, select, textarea {
   font-weight: 800;
   color: var(--green);
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gps-quick-btn:hover:not(:disabled) {
+  background: #dcfce7;
+  border-color: #22c55e;
+  transform: translateY(-1px);
+}
+
+.gps-quick-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .transport-toggle {
