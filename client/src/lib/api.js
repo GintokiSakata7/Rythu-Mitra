@@ -99,5 +99,6 @@ export const api = {
   postBuyer: (payload) => request('/buyers/requirements', { method: 'POST', body: JSON.stringify(payload) }),
   parseHarvest: (text) => request('/ai/parse-harvest', { method: 'POST', body: JSON.stringify({ text }) }),
   health: () => request('/health'),
+  candidates: (lat, lng, crop = 'Tomato', count = 5) => request(`/markets/candidates?lat=${lat}&lng=${lng}&crop=${encodeURIComponent(crop)}&count=${count}`),
   ttsUrl: (text, lang = 'te') => `${activeBase}/ai/tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}`
 };

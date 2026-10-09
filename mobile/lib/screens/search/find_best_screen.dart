@@ -9,8 +9,19 @@ import '../../location/location_service.dart';
 import 'search_animation_screen.dart';
 import 'crop_search_bottom_sheet.dart';
 
+import '../../providers/location_provider.dart';
+
 class FindBestScreen extends StatefulWidget {
-  const FindBestScreen({super.key});
+  final String? initialCrop;
+  final double? initialQuantity;
+  final String? initialUnit;
+
+  const FindBestScreen({
+    super.key,
+    this.initialCrop,
+    this.initialQuantity,
+    this.initialUnit,
+  });
 
   @override
   State<FindBestScreen> createState() => _FindBestScreenState();
@@ -32,6 +43,40 @@ class _FindBestScreenState extends State<FindBestScreen> {
   bool _isDetectingLocation = false;
   bool _isGpsSelected = false;
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialCrop != null) {
+      _selectedCrop = widget.initialCrop;
+    }
+    if (widget.initialQuantity != null) {
+      _quantity = widget.initialQuantity!;
+      _quantityController.text = _quantity.toStringAsFixed(0);
+    }
+    if (widget.initialUnit != null) {
+      _quantityUnit = widget.initialUnit!;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final locProv = context.read<LocationProvider>();
+      if (locProv.currentLocation != null) {
+        setState(() {
+          _isGpsSelected = true;
+          _locationName = locProv.currentLocation!.displayName ?? locProv.displayName;
+          _lat = locProv.currentLocation!.lat;
+          _lng = locProv.currentLocation!.lng;
+        });
+      } else if (locProv.hasLocation) {
+        setState(() {
+          _locationName = locProv.displayName;
+          _lat = locProv.latitude;
+          _lng = locProv.longitude;
+        });
+      }
+    });
+  }
+
   Future<void> _detectGpsLocation() async {
     setState(() => _isDetectingLocation = true);
     final loc = await locationService.getCurrentLocation();
@@ -46,6 +91,8 @@ class _FindBestScreenState extends State<FindBestScreen> {
         _lng = res.lng;
         _isGpsSelected = true;
       });
+      // Also update global provider
+      context.read<LocationProvider>().setManualLocation(_locationName, _lat, _lng);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('📍 GPS Detected: $_locationName'),

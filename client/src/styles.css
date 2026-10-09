@@ -3740,4 +3740,335 @@ button, input, select, textarea {
   margin-top: 2px;
 }
 
+/* ==================== HOME LOCATION DASHBOARD ==================== */
+.dashboard-loc-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f3 100%);
+  border: 1.5px solid #c8e6c9;
+  border-radius: 16px;
+  padding: 12px 18px;
+  margin-bottom: 22px;
+  box-shadow: 0 2px 8px rgba(13, 93, 54, 0.06);
+}
+
+.dashboard-loc-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-loc-icon-bubble {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #0d5d36;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(13, 93, 54, 0.3);
+}
+
+.dashboard-loc-info h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0e2318;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-loc-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #c8e6c9;
+  color: #0d5d36;
+}
+
+.dashboard-loc-pill.detecting {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.dashboard-loc-info p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #4a6353;
+}
+
+.dashboard-loc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-refresh-gps {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #a5d6a7;
+  color: #0d5d36;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh-gps:hover {
+  background: #0d5d36;
+  color: #fff;
+  border-color: #0d5d36;
+}
+
+/* Quick Engine Runner Card */
+.dashboard-engine-card {
+  background: #ffffff;
+  border: 1.5px solid #d8e4da;
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 28px;
+  box-shadow: 0 8px 24px rgba(14, 35, 24, 0.05);
+}
+
+.dashboard-engine-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dashboard-engine-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0e2318;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-engine-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #0d5d36;
+  background: #e8f5e9;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.crop-pills-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.crop-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #d8e4da;
+  background: #f8faf8;
+  color: #2c3e34;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.crop-pill-btn:hover {
+  border-color: #0d5d36;
+  background: #e8f5e9;
+  color: #0d5d36;
+}
+
+.crop-pill-btn.active {
+  background: #0d5d36;
+  color: #ffffff;
+  border-color: #0d5d36;
+  box-shadow: 0 3px 10px rgba(13, 93, 54, 0.25);
+}
+
+.qty-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.qty-toggle-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #5e7065;
+}
+
+.qty-pill {
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  cursor: pointer;
+  color: #444;
+}
+
+.qty-pill.active {
+  background: #e8f5e9;
+  color: #0d5d36;
+  border-color: #81c784;
+}
+
+.btn-run-engine-hero {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #0d5d36 0%, #157345 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(13, 93, 54, 0.28);
+  transition: all 0.2s ease;
+}
+
+.btn-run-engine-hero:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(13, 93, 54, 0.38);
+}
+
+/* Nearby Mandis Section */
+.dashboard-nearby-section {
+  margin-bottom: 32px;
+}
+
+.dashboard-nearby-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+.dashboard-nearby-header h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0e2318;
+}
+
+.dashboard-nearby-header span {
+  font-size: 12px;
+  color: #5e7065;
+}
+
+.dashboard-nearby-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.nearby-market-card {
+  background: #ffffff;
+  border: 1.5px solid #e8f0e9;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.nearby-market-card:hover {
+  border-color: #81c784;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(13, 93, 54, 0.1);
+}
+
+.nearby-market-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.nearby-market-top h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0e2318;
+}
+
+.nearby-dist-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0d5d36;
+  background: #e8f5e9;
+  padding: 3px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.nearby-market-price {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0d5d36;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.nearby-market-price small {
+  font-size: 12px;
+  color: #5e7065;
+  font-weight: 500;
+}
+
+.btn-nearby-optimize {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f1f8f3;
+  color: #0d5d36;
+  border: 1px solid #c8e6c9;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-nearby-optimize:hover {
+  background: #0d5d36;
+  color: #ffffff;
+  border-color: #0d5d36;
+}
+
+
 

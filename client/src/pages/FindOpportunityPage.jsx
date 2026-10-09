@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   Check, Crosshair, Edit3, Loader2, MapPin, Mic, Mic2,
@@ -27,12 +27,19 @@ export default function FindOpportunityPage() {
   const [commodities, setCommodities] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
 
+  const incomingCrop = location.state?.crop || searchParams.get('crop');
+  const incomingQty = location.state?.quantityKg || searchParams.get('quantityKg');
+  const incomingLoc = location.state?.locationText || searchParams.get('locationText');
+  const incomingLat = location.state?.latitude || searchParams.get('lat');
+  const incomingLng = location.state?.longitude || searchParams.get('lng');
+  const autoRunRequested = useRef(Boolean(location.state?.autoRun || searchParams.get('autoRun') === 'true'));
+
   const [form, setForm] = useState({
-    crop: '',
-    quantityKg: 5000,
-    locationText: '',
-    latitude: 0,
-    longitude: 0,
+    crop: incomingCrop || '',
+    quantityKg: incomingQty ? Number(incomingQty) : 5000,
+    locationText: incomingLoc || '',
+    latitude: incomingLat ? Number(incomingLat) : 0,
+    longitude: incomingLng ? Number(incomingLng) : 0,
     quality: 'A',
     hasTransport: false,
     perishability: 'high',
@@ -69,10 +76,11 @@ export default function FindOpportunityPage() {
 
         setForm(prev => ({
           ...prev,
-          crop: prev.crop || commList[0]?.name || '',
-          locationText: prev.locationText || firstLoc?.name || '',
-          latitude: prev.latitude || firstLoc?.lat || 17.38,
-          longitude: prev.longitude || firstLoc?.lng || 78.48
+          crop: incomingCrop || prev.crop || commList[0]?.name || 'Tomato',
+          locationText: incomingLoc || prev.locationText || firstLoc?.name || 'Bowenpally',
+          latitude: incomingLat ? Number(incomingLat) : (prev.latitude || firstLoc?.lat || 17.47),
+          longitude: incomingLng ? Number(incomingLng) : (prev.longitude || firstLoc?.lng || 78.48),
+          quantityKg: incomingQty ? Number(incomingQty) : prev.quantityKg,
         }));
 
         setDataLoaded(true);
@@ -83,6 +91,13 @@ export default function FindOpportunityPage() {
 
     return () => { isMounted = false; };
   }, []);
+
+  useEffect(() => {
+    if (dataLoaded && autoRunRequested.current) {
+      autoRunRequested.current = false;
+      submit();
+    }
+  }, [dataLoaded]);
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
