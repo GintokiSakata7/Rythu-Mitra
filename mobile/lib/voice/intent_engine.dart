@@ -52,7 +52,7 @@ final _cropKeywords = <String, String>{
   'onion': 'Onion', 'onions': 'Onion',
   'maize': 'Maize', 'corn': 'Maize',
   'cotton': 'Cotton',
-  'groundnut': 'Groundnut', 'peanut': 'Groundnut',
+  'groundnut': 'Groundnut', 'peanut': 'Groundnut', 'peanuts': 'Groundnut',
   'turmeric': 'Turmeric',
   'soybean': 'Soybean', 'soya': 'Soybean',
   'potato': 'Potato', 'potatoes': 'Potato',
@@ -60,8 +60,8 @@ final _cropKeywords = <String, String>{
   'cabbage': 'Cabbage',
   'cauliflower': 'Cauliflower',
   'carrot': 'Carrot', 'carrots': 'Carrot',
-  'mango': 'Mango',
-  'banana': 'Banana',
+  'mango': 'Mango', 'mangoes': 'Mango',
+  'banana': 'Banana', 'bananas': 'Banana',
   'grapes': 'Grapes', 'grape': 'Grapes',
   'wheat': 'Wheat',
   'red gram': 'Red Gram', 'arhar': 'Red Gram', 'toor': 'Red Gram',
@@ -70,17 +70,18 @@ final _cropKeywords = <String, String>{
   'sugarcane': 'Sugarcane',
   'sunflower': 'Sunflower',
   'sesame': 'Sesame', 'gingelly': 'Sesame',
+
   // Telugu
-  'టమాట': 'Tomato', 'టమాటా': 'Tomato', 'టమాటాలు': 'Tomato',
-  'వరి': 'Paddy', 'ధాన్యం': 'Paddy',
-  'మిరప': 'Chilli', 'మిరపకాయలు': 'Chilli',
-  'ఉల్లిపాయ': 'Onion', 'ఉల్లిపాయలు': 'Onion',
+  'టమాట': 'Tomato', 'టమాటా': 'Tomato', 'టమాటాలు': 'Tomato', 'టమాటో': 'Tomato',
+  'వరి': 'Paddy', 'ధాన్యం': 'Paddy', 'బియ్యం': 'Paddy',
+  'మిరప': 'Chilli', 'మిరపకాయలు': 'Chilli', 'మిర్చి': 'Chilli',
+  'ఉల్లి': 'Onion', 'ఉల్లిపాయ': 'Onion', 'ఉల్లిపాయలు': 'Onion', 'ఉల్లిగడ్డ': 'Onion',
   'మొక్కజొన్న': 'Maize',
   'పత్తి': 'Cotton',
-  'వేరుశనగ': 'Groundnut',
+  'వేరుశనగ': 'Groundnut', 'పల్లీలు': 'Groundnut', 'వేరుశెనగ': 'Groundnut',
   'పసుపు': 'Turmeric',
-  'సోయాబీన్': 'Soybean',
-  'బంగాళాదుంప': 'Potato',
+  'సోయాబీన్': 'Soybean', 'సోయా': 'Soybean',
+  'బంగాళాదుంప': 'Potato', 'ఆలుగడ్డ': 'Potato', 'ఆలూ': 'Potato',
   'వంకాయ': 'Brinjal',
   'క్యాబేజీ': 'Cabbage',
   'కాలీఫ్లవర్': 'Cauliflower',
@@ -89,17 +90,18 @@ final _cropKeywords = <String, String>{
   'అరటి': 'Banana',
   'ద్రాక్ష': 'Grapes',
   'గోధుమ': 'Wheat',
-  'కందిపప్పు': 'Red Gram',
-  'పెసరపప్పు': 'Green Gram',
-  'మినపప్పు': 'Black Gram',
+  'కందిపప్పు': 'Red Gram', 'కందులు': 'Red Gram',
+  'పెసరపప్పు': 'Green Gram', 'పెసలు': 'Green Gram',
+  'మినపప్పు': 'Black Gram', 'మినుములు': 'Black Gram',
   'చెరకు': 'Sugarcane',
   'పొద్దుతిరుగుడు': 'Sunflower',
   'నువ్వులు': 'Sesame',
+
   // Hindi
   'टमाटर': 'Tomato', 'टमाटा': 'Tomato',
   'धान': 'Paddy', 'चावल': 'Paddy',
   'मिर्च': 'Chilli', 'मिर्ची': 'Chilli',
-  'प्याज': 'Onion', 'प्याजा': 'Onion',
+  'प्याज': 'Onion', 'प्याज़': 'Onion', 'प्याजा': 'Onion',
   'मक्का': 'Maize', 'मकई': 'Maize',
   'कपास': 'Cotton',
   'मूंगफली': 'Groundnut',
@@ -122,25 +124,46 @@ final _cropKeywords = <String, String>{
   'तिल': 'Sesame',
 };
 
+/// Known APMC Mandi towns in Telangana for natural voice recognition
+final _knownLocations = <String, String>{
+  'warangal': 'Warangal', 'వరంగల్': 'Warangal', 'वारंगल': 'Warangal',
+  'bowenpally': 'Bowenpally (Hyderabad)', 'బోయిన్‌పల్లి': 'Bowenpally (Hyderabad)', 'బోయిన్ పల్లి': 'Bowenpally (Hyderabad)', 'बोवेनपल्ली': 'Bowenpally (Hyderabad)',
+  'hyderabad': 'Hyderabad', 'హైదరాబాద్': 'Hyderabad', 'हैदराबाद': 'Hyderabad',
+  'gudimalkapur': 'Gudimalkapur (Hyderabad)', 'గుడిమల్కాపూర్': 'Gudimalkapur (Hyderabad)', 'गुडीमल्कापुर': 'Gudimalkapur (Hyderabad)',
+  'nizamabad': 'Nizamabad', 'నిజామాబాద్': 'Nizamabad', 'निजामाबाद': 'Nizamabad',
+  'khammam': 'Khammam', 'ఖమ్మం': 'Khammam', 'खम्मम': 'Khammam',
+  'nalgonda': 'Nalgonda', 'నల్గొండ': 'Nalgonda', 'నల్లగొండ': 'Nalgonda', 'नलगोंडा': 'Nalgonda',
+  'suryapet': 'Suryapet', 'సూర్యాపేట': 'Suryapet', 'सूर्यापेट': 'Suryapet',
+  'miryalaguda': 'Miryalaguda', 'మిర్యాలగూడ': 'Miryalaguda', 'మిర్యాలగూడెం': 'Miryalaguda', 'मिर्यालगुडा': 'Miryalaguda',
+  'mahabubnagar': 'Mahabubnagar', 'మహబూబ్‌నగర్': 'Mahabubnagar', 'మహబూబ్ నగర్': 'Mahabubnagar', 'महबूबनगर': 'Mahabubnagar',
+  'karimnagar': 'Karimnagar', 'కరీంనగర్': 'Karimnagar', 'కరీం నగర్': 'Karimnagar', 'करीमनगर': 'Karimnagar',
+  'siddipet': 'Siddipet', 'సిద్దిపేట': 'Siddipet', 'सिद्दीपेट': 'Siddipet',
+  'adilabad': 'Adilabad', 'ఆదిలాబాద్': 'Adilabad', 'आदिलाबाद': 'Adilabad',
+  'badepally': 'Badepally', 'బాదేపల్లి': 'Badepally', 'बाडेपल्ली': 'Badepally',
+  'wanaparthy': 'Wanaparthy', 'వనపర్తి': 'Wanaparthy', 'वानपर्थी': 'Wanaparthy',
+  'bhainsa': 'Bhainsa', 'భైంసా': 'Bhainsa', 'भैंसा': 'Bhainsa',
+  'jangaon': 'Jangaon', 'జనగామ': 'Jangaon', 'జనగాం': 'Jangaon', 'जनगांव': 'Jangaon',
+};
+
 /// GPS trigger words in all three languages
 const _gpsKeywords = [
   'current location', 'my location', 'use location', 'gps', 'near me', 'location', 'here',
-  'నా లొకేషన్', 'నా స్థానం', 'ప్రస్తుత స్థానం', 'జిపిఎస్', 'లొకేషన్', 'లోకేషన్', 'స్థానం',
-  'मेरी लोकेशन', 'मेरा स्थान', 'वर्तमान स्थान', 'जीपीएस', 'लोकेशन', 'स्थान',
+  'నా లొకేషన్', 'నా స్థానం', 'ప్రస్తుత స్థానం', 'జిపిఎస్', 'లొకేషన్', 'లోకేషన్', 'స్థానం', 'ఇక్కడే',
+  'मेरी लोकेशन', 'मेरा स्थान', 'वर्तमान स्थान', 'जीपीएस', 'लोकेशन', 'स्थान', 'यहाँ',
 ];
 
 /// Market search trigger words
 const _marketKeywords = [
   'best market', 'find market', 'market', 'mandi', 'nearest market',
-  'best price', 'find best', 'search market', 'highest price',
-  'మార్కెట్', 'మంది', 'బెస్ట్ మార్కెట్', 'ఉత్తమ మార్కెట్', 'దగ్గర మార్కెట్',
-  'बाजार', 'मंडी', 'सबसे अच्छा', 'बेस्ट मार्केट', 'नजदीकी बाजार',
+  'best price', 'find best', 'search market', 'highest price', 'sell', 'selling',
+  'మార్కెట్', 'మండి', 'మంది', 'బెస్ట్ మార్కెట్', 'ఉత్తమ మార్కెట్', 'దగ్గర మార్కెట్', 'అమ్మాలి', 'అమ్ముతా', 'అమ్మడానికి',
+  'बाजार', 'मंडी', 'सबसे अच्छा', 'बेस्ट मार्केट', 'नजदीकी बाजार', 'बेचना', 'बेचूँ',
 ];
 
 /// Buyer search trigger words
 const _buyerKeywords = [
   'buyer', 'buyers', 'show buyers', 'nearby buyers', 'purchase', 'trader',
-  'కొనుగోలు', 'కొనుగోలుదారు', 'కొనుగోలుదారులు', 'సమీప కొనుగోలుదారులు',
+  'కొనుగోలు', 'కొనుగోలుదారు', 'కొనుగోలుదారులు', 'సమీప కొనుగోలుదారులు', 'బయ్యర్స్',
   'खरीदार', 'खरीददार', 'व्यापारी', 'पास के खरीदार',
 ];
 
@@ -154,21 +177,34 @@ const _demandKeywords = [
 /// Affirmative words
 const _yesWords = [
   'yes', 'yeah', 'yep', 'sure', 'ok', 'okay', 'have', 'own', 'mine',
-  'అవును', 'ఉంది', 'వుంది', 'నాది',
-  'हाँ', 'हां', 'जी', 'ठीक है',
+  'అవును', 'ఉంది', 'వుంది', 'నాది', 'ఉన్నాయి',
+  'हाँ', 'हां', 'जी', 'ठीक है', 'है',
 ];
 
 /// Negative words
 const _noWords = [
-  'no', 'nope', "don't", 'dont', 'not', 'none', 'need',
-  'లేదు', 'కాదు',
-  'नहीं', 'ना', 'मत',
+  'no', 'nope', "don't", 'dont', 'not', 'none', 'need', 'hire', 'rent',
+  'లేదు', 'కాదు', 'రాదు', 'అద్దె',
+  'नहीं', 'ना', 'मत', 'किराया',
+];
+
+/// Greetings and help keywords
+const _helpKeywords = [
+  'help', 'hi', 'hello', 'hey', 'start', 'how to use',
+  'సహాయం', 'హాయ్', 'హలో', 'నమస్కారం', 'నమస్తే', 'ఎలా వాడాలి',
+  'मदद', 'नमस्ते', 'नमस्कार', 'हाय', 'हैलो',
 ];
 
 class IntentEngine {
   /// Fast local extraction — works fully offline
   AssistantIntent extractLocal(String text, String lang) {
     final lower = text.toLowerCase().trim();
+
+    // --- Detect Greetings / Help ---
+    if (_helpKeywords.any((kw) => lower == kw || lower.startsWith('$kw ') || lower.contains(kw)) &&
+        lower.split(' ').length <= 3 && !lower.contains('tomato') && !lower.contains('టమాట')) {
+      return AssistantIntent(type: IntentType.help, rawText: text);
+    }
 
     // --- Detect crop ---
     String? detectedCrop;
@@ -190,13 +226,13 @@ class IntentEngine {
       const numberWords = <String, double>{
         'ఒకటి': 1, 'ఒక': 1, 'రెండు': 2, 'మూడు': 3, 'నాలుగు': 4, 'ఐదు': 5,
         'ఆరు': 6, 'ఏడు': 7, 'ఎనిమిది': 8, 'తొమ్మిది': 9, 'పది': 10,
-        'యాభై': 50, 'వంద': 100,
+        'ఇరవై': 20, 'ముప్పై': 30, 'యాభై': 50, 'వంద': 100,
         'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5, 'पाँच': 5,
         'छह': 6, 'सात': 7, 'आठ': 8, 'नौ': 9, 'दस': 10,
-        'पचास': 50, 'सौ': 100,
+        'बीस': 20, 'तीस': 30, 'पचास': 50, 'सौ': 100,
         'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 
         'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
-        'fifty': 50, 'hundred': 100,
+        'twenty': 20, 'thirty': 30, 'fifty': 50, 'hundred': 100,
       };
       for (final entry in numberWords.entries) {
         if (lower.contains(entry.key)) {
@@ -206,12 +242,21 @@ class IntentEngine {
       }
     }
     
-    if (lower.contains('kg') || lower.contains('kilo') || lower.contains('కిలో') || lower.contains('किलो')) {
+    if (lower.contains('kg') || lower.contains('kilo') || lower.contains('కిలో') || lower.contains('కేజీ') || lower.contains('किलो')) {
       unit = 'kg';
     } else if (lower.contains('ton') || lower.contains('tonne') || lower.contains('టన్ను') || lower.contains('टन')) {
       unit = 'ton';
-    } else if (lower.contains('quintal') || lower.contains('క్వింటాళ్') || lower.contains('క్వింటాల్') || lower.contains('क्विंटल') || lower.contains('quintal')) {
+    } else if (lower.contains('quintal') || lower.contains('క్వింటాళ్') || lower.contains('క్వింటాల్') || lower.contains('క్వింటాలు') || lower.contains('क्विंटल')) {
       unit = 'quintal';
+    }
+
+    // --- Detect Location / Town ---
+    String? detectedLocation;
+    for (final entry in _knownLocations.entries) {
+      if (lower.contains(entry.key.toLowerCase())) {
+        detectedLocation = entry.value;
+        break;
+      }
     }
 
     // --- Detect GPS intent ---
@@ -222,20 +267,20 @@ class IntentEngine {
     final isYes = _yesWords.any((w) => lower.contains(w));
     final isNo = _noWords.any((w) => lower.contains(w));
     if (lower.contains('vehicle') || lower.contains('transport') || lower.contains('truck') ||
-        lower.contains('వాహనం') || lower.contains('వాహన') || lower.contains('वाहन') || lower.contains('गाड़ी')) {
+        lower.contains('వాహనం') || lower.contains('వాహన') || lower.contains('బండి') || lower.contains('वाहन') || lower.contains('गाड़ी')) {
       if (isYes) hasTransport = true;
       if (isNo) hasTransport = false;
     }
     // Own/No vehicle explicit
-    if (lower.contains('own vehicle') || lower.contains('my vehicle') || lower.contains('స్వంత వాహన') || lower.contains('अपनी गाड़ी')) {
+    if (lower.contains('own vehicle') || lower.contains('my vehicle') || lower.contains('స్వంత వాహన') || lower.contains('నా వాహనం') || lower.contains('अपनी गाड़ी')) {
       hasTransport = true;
     }
-    if (lower.contains('no vehicle') || lower.contains("don't have vehicle") || lower.contains('వాహనం లేదు') || lower.contains('गाड़ी नहीं')) {
+    if (lower.contains('no vehicle') || lower.contains("don't have vehicle") || lower.contains('వాహనం లేదు') || lower.contains('గాడి లేదు') || lower.contains('गाड़ी नहीं')) {
       hasTransport = false;
     }
 
     // --- Detect YES/NO standalone (for transport question) ---
-    if (detectedCrop == null && quantity == null && !useGps && hasTransport == null) {
+    if (detectedCrop == null && quantity == null && !useGps && detectedLocation == null && hasTransport == null) {
       if (isYes && !isNo) {
         return AssistantIntent(type: IntentType.confirmYes, rawText: text);
       }
@@ -244,20 +289,25 @@ class IntentEngine {
       }
     }
 
-    // --- Detect primary intent ---
+    // --- Detect Buyer Network ---
     if (_buyerKeywords.any((kw) => lower.contains(kw.toLowerCase()))) {
-      return AssistantIntent(type: IntentType.searchBuyers, rawText: text, useGps: useGps);
+      return AssistantIntent(type: IntentType.searchBuyers, rawText: text, useGps: useGps, locationText: detectedLocation);
     }
+
+    // --- Detect Demands ---
     if (_demandKeywords.any((kw) => lower.contains(kw.toLowerCase()))) {
-      final isDemandPost = lower.contains('post') || lower.contains('పోస్ట్') || lower.contains('पोस्ट');
+      final isDemandPost = lower.contains('post') || lower.contains('పోస్ట్') || lower.contains('చేయి') || lower.contains('पोस्ट');
       return AssistantIntent(
         type: isDemandPost ? IntentType.postDemand : IntentType.showDemands,
         rawText: text,
       );
     }
-    if (lower.contains('price') || lower.contains('ధర') || lower.contains('भाव') || lower.contains('दाम')) {
-      return AssistantIntent(type: IntentType.showPrices, rawText: text, crop: detectedCrop);
+
+    // --- Detect Market Prices / Trends ---
+    if (lower.contains('price') || lower.contains('ధర') || lower.contains('రేటు') || lower.contains('రేట్లు') || lower.contains('भाव') || lower.contains('दाम') || lower.contains('trend')) {
+      return AssistantIntent(type: IntentType.showPrices, rawText: text, crop: detectedCrop, locationText: detectedLocation);
     }
+
     if (lower.contains('profile') || lower.contains('ప్రొఫైల్') || lower.contains('प्रोफाइल')) {
       return AssistantIntent(type: IntentType.showProfile, rawText: text);
     }
@@ -267,18 +317,15 @@ class IntentEngine {
     if (lower.contains('setting') || lower.contains('సెట్టింగ్') || lower.contains('सेटिंग')) {
       return AssistantIntent(type: IntentType.openSettings, rawText: text);
     }
-    if (lower.contains('help') || lower.contains('సహాయం') || lower.contains('मदद')) {
-      return AssistantIntent(type: IntentType.help, rawText: text);
-    }
 
     // --- GPS standalone ---
-    if (useGps) {
+    if (useGps && detectedCrop == null && quantity == null) {
       return AssistantIntent(type: IntentType.useCurrentLocation, rawText: text, useGps: true);
     }
 
-    // --- Market search (with or without crop/quantity) ---
+    // --- Market search (with crop, quantity, or location) ---
     if (_marketKeywords.any((kw) => lower.contains(kw.toLowerCase())) ||
-        (detectedCrop != null || quantity != null)) {
+        (detectedCrop != null || quantity != null || detectedLocation != null)) {
       return AssistantIntent(
         type: IntentType.findBestMarket,
         rawText: text,
@@ -287,6 +334,7 @@ class IntentEngine {
         unit: unit,
         hasTransport: hasTransport,
         useGps: useGps,
+        locationText: detectedLocation,
       );
     }
 

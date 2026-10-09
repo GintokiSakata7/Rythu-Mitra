@@ -63,14 +63,21 @@ class ConversationManager extends ChangeNotifier {
       _lng = lng;
     } else {
       final clean = town.trim().toLowerCase();
+      bool matched = false;
       for (final preset in AppConstants.presetLocations) {
         final pName = (preset['name'] as String).toLowerCase();
         if (pName.contains(clean) || clean.contains(pName)) {
           _lat = (preset['lat'] as num).toDouble();
           _lng = (preset['lng'] as num).toDouble();
           _locationText = preset['name'];
+          matched = true;
           break;
         }
+      }
+      if (!matched) {
+        // Fallback default coordinates (Telangana central)
+        _lat ??= 17.385;
+        _lng ??= 78.4867;
       }
     }
     notifyListeners();
@@ -80,24 +87,28 @@ class ConversationManager extends ChangeNotifier {
   /// Returns null if enough data is collected (caller should fire search).
   String? processIntent(AssistantIntent intent, String lang) {
     // Apply any extracted entities
-    if (intent.crop != null) _crop = intent.crop;
+    if (intent.crop != null && intent.crop!.isNotEmpty) {
+      _crop = intent.crop;
+    }
 
-    if (intent.quantity != null) {
+    if (intent.quantity != null && intent.quantity! > 0) {
       double qInQuintals = intent.quantity!;
       if (intent.unit == 'kg') qInQuintals = intent.quantity! / 100.0;
       if (intent.unit == 'ton') qInQuintals = intent.quantity! * 10.0;
       _quantityQuintals = qInQuintals;
     }
 
-    if (intent.hasTransport != null) _hasTransport = intent.hasTransport;
+    if (intent.hasTransport != null) {
+      _hasTransport = intent.hasTransport;
+    }
     
     if (intent.useGps == true) {
       _usingGps = true;
-    } else if (intent.locationText != null) {
-      _locationText = intent.locationText;
+    } else if (intent.locationText != null && intent.locationText!.isNotEmpty) {
+      setLocationFromText(intent.locationText!);
     } else if (_step == ConvStep.needLocation && intent.rawText.trim().isNotEmpty) {
-      // If we asked for location and they just said a town name, use it!
-      _locationText = intent.rawText.trim();
+      // If we asked for location and they answered with a location name, use it!
+      setLocationFromText(intent.rawText.trim());
     }
 
     // Handle explicit yes/no (for transport question)
@@ -116,16 +127,16 @@ class ConversationManager extends ChangeNotifier {
       _step = ConvStep.needCrop;
       return _l(lang,
         en: 'Which crop do you want to sell?',
-        te: 'మీరు ఏ పంట అమ్ముతున్నారు?',
-        hi: 'आप कौन सी फसल बेचना चाहते हैं?',
+        te: 'మీరు ఏ పంట అమ్ముతున్నారు? (ఉదా: టమాట, ఉల్లి, వరి)',
+        hi: 'आप कौन सी फसल बेचना चाहते हैं? (जैसे: टमाटर, प्याज, धान)',
       );
     }
     if (_quantityQuintals == null) {
       _step = ConvStep.needQuantity;
       return _l(lang,
         en: 'How many quintals of $_crop do you have?',
-        te: '$_crop ఎంత పరిమాణం ఉంది? (క్వింటాళ్లలో చెప్పండి)',
-        hi: 'आपके पास कितने क्विंटल $_crop है?',
+        te: 'మీ దగ్గర ఎంత పరిమాణం $_crop ఉంది? (ఉదా: 10 లేదా 20 క్వింటాళ్లు)',
+        hi: 'आपके पास कितने क्विंटल $_crop है? (जैसे: 10 या 20 क्विंटल)',
       );
     }
     if (!_usingGps && _locationText == null) {
@@ -169,7 +180,7 @@ class ConversationManager extends ChangeNotifier {
 
   String confirmationMessage(String lang) => _l(lang,
     en: "Got it! Searching for the best market for ${_quantityQuintals?.toStringAsFixed(1)} quintals of $_crop near ${_locationText ?? 'your location'}...",
-    te: "${_quantityQuintals?.toStringAsFixed(1)} క్వింటాళ్ళ $_crop కి ఉత్తమ మార్కెట్ వెతుకుతున్నాను...",
-    hi: "${_quantityQuintals?.toStringAsFixed(1)} क्विंटल $_crop के लिए सबसे अच्छा बाज़ार खोज रहा हूँ...",
+    te: "అర్థమైంది! ${_locationText ?? 'మీ ప్రాంతం'} సమీపంలో ${_quantityQuintals?.toStringAsFixed(1)} క్వింటాళ్ళ $_crop కి అత్యధిక లాభదాయక మార్కెట్ వెతుకుతున్నాను...",
+    hi: "समझ गया! ${_locationText ?? 'आपके स्थान'} के पास ${_quantityQuintals?.toStringAsFixed(1)} क्विंटल $_crop के लिए सबसे अच्छा बाज़ार खोज रहा हूँ...",
   );
 }
