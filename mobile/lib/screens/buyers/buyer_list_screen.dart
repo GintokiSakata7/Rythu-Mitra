@@ -34,6 +34,44 @@ class _BuyerListScreenState extends State<BuyerListScreen> {
       backgroundColor: AppTheme.warmCream,
       appBar: AppBar(
         title: Text(s('buyer_network')),
+        actions: [
+          IconButton(
+            icon: prov.loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.sync_rounded),
+            tooltip: 'Hot Refresh (Sync with DB)',
+            onPressed: prov.loading
+                ? null
+                : () async {
+                    await prov.refresh();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(Icons.check_circle_rounded,
+                                  color: Colors.white, size: 18),
+                              SizedBox(width: 8),
+                              Text('⚡ Synced fresh buyer data from DB!'),
+                            ],
+                          ),
+                          backgroundColor: AppTheme.forestGreen,
+                          duration: Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
@@ -149,16 +187,32 @@ class _BuyerListScreenState extends State<BuyerListScreen> {
                                     style: const TextStyle(fontSize: 14, color: Colors.black54),
                                   ),
                                   const SizedBox(height: 16),
-                                  OutlinedButton(
-                                    onPressed: () => prov.loadBuyers(crop: ''),
-                                    child: const Text('View All Buyers'),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      OutlinedButton(
+                                        onPressed: () => prov.loadBuyers(crop: ''),
+                                        child: const Text('View All'),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      ElevatedButton.icon(
+                                        onPressed: () => prov.refresh(),
+                                        icon: const Icon(Icons.sync_rounded, size: 16),
+                                        label: const Text('Hot Refresh DB'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.forestGreen,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
                           )
                         : RefreshIndicator(
-                            onRefresh: () => prov.loadBuyers(),
+                            color: AppTheme.forestGreen,
+                            onRefresh: () => prov.refresh(),
                             child: ListView.builder(
                               padding: const EdgeInsets.all(16),
                               itemCount: prov.buyers.length,

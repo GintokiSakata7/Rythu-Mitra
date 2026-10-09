@@ -17,7 +17,7 @@ class BuyerProvider extends ChangeNotifier {
   
   final Map<String, double> _distances = {};
 
-  Future<void> loadBuyers({String? crop}) async {
+  Future<void> loadBuyers({String? crop, bool forceRefresh = false}) async {
     final c = crop ?? _selectedCrop;
     _selectedCrop = c;
     _loading = true;
@@ -25,7 +25,7 @@ class BuyerProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _buyers = await buyerService.getBuyers(crop: c);
+      _buyers = await buyerService.getBuyers(crop: c, forceRefresh: forceRefresh);
       
       // Calculate distances
       final locResult = await locationService.getCurrentLocation();
@@ -46,6 +46,10 @@ class BuyerProvider extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> refresh() async {
+    await loadBuyers(forceRefresh: true);
   }
   
   double getDistance(String buyerId) => _distances[buyerId] ?? -1.0;

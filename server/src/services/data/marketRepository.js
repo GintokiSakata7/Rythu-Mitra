@@ -74,16 +74,28 @@ let buyerCache = {
   allAt: 0
 };
 
-export async function getBuyerRequirements({ crop = '' } = {}) {
+export async function getBuyerRequirements({ crop = '', refresh = false } = {}) {
   const cleanCrop = (crop || '').trim().toLowerCase();
 
-  if (cleanCrop && buyerCache.data.has(cleanCrop)) {
-    const cached = buyerCache.data.get(cleanCrop);
-    if (Date.now() - cached.timestamp < 300_000) {
-      return cached.data;
+  // If hot refresh requested, clear cache immediately
+  if (refresh) {
+    buyerCache.data.clear();
+    buyerCache.allBuyers = null;
+    buyerCache.allAt = 0;
+  }
+
+  // Short TTL (10s) so deletes in DB reflect in real-time
+  const CACHE_TTL = 10_000;
+
+  if (!refresh) {
+    if (cleanCrop && buyerCache.data.has(cleanCrop)) {
+      const cached = buyerCache.data.get(cleanCrop);
+      if (Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.data;
+      }
+    } else if (!cleanCrop && buyerCache.allBuyers && (Date.now() - buyerCache.allAt < CACHE_TTL)) {
+      return buyerCache.allBuyers;
     }
-  } else if (!cleanCrop && buyerCache.allBuyers && (Date.now() - buyerCache.allAt < 300_000)) {
-    return buyerCache.allBuyers;
   }
 
   if (supabaseEnabled) {
@@ -93,7 +105,7 @@ export async function getBuyerRequirements({ crop = '' } = {}) {
         query = query.ilike('crop', `%${cleanCrop}%`);
       }
       const { data, error } = await query;
-      if (!error && data && data.length > 0) {
+      if (!error && Array.isArray(data)) {
         const formatted = data.map(b => ({
           id: b.id,
           companyName: b.company_name,

@@ -12,13 +12,22 @@ class BuyerService {
 
   /// Fetches real buyer requirements strictly from the database.
   /// No mock data is used.
-  Future<List<BuyerModel>> getBuyers({String crop = ''}) async {
+  Future<List<BuyerModel>> getBuyers({String crop = '', bool forceRefresh = false}) async {
     final cleanCrop = crop.trim();
 
     // 1. Try backend API first (which queries Supabase via marketRepository)
     try {
-      final queryParam = cleanCrop.isNotEmpty ? {'crop': cleanCrop} : null;
-      final data = await apiService.get('/buyers/requirements', query: queryParam);
+      final queryParam = <String, String>{};
+      if (cleanCrop.isNotEmpty) queryParam['crop'] = cleanCrop;
+      if (forceRefresh) {
+        queryParam['refresh'] = 'true';
+        queryParam['force'] = 'true';
+        queryParam['t'] = DateTime.now().millisecondsSinceEpoch.toString();
+      }
+      final data = await apiService.get(
+        '/buyers/requirements',
+        query: queryParam.isNotEmpty ? queryParam : null,
+      );
       final list = data['requirements'] as List<dynamic>?;
       if (list != null) {
         return list
@@ -30,14 +39,20 @@ class BuyerService {
     }
 
     // 2. Direct Supabase Query (Direct connection to PostgreSQL DB)
-    return await _fetchDirectFromSupabase(crop: cleanCrop);
+    return await _fetchDirectFromSupabase(crop: cleanCrop, forceRefresh: forceRefresh);
   }
 
-  Future<List<BuyerModel>> _fetchDirectFromSupabase({String crop = ''}) async {
+  Future<List<BuyerModel>> _fetchDirectFromSupabase({
+    String crop = '',
+    bool forceRefresh = false,
+  }) async {
     try {
       var urlStr = '$_supabaseUrl?select=*&order=created_at.desc';
       if (crop.isNotEmpty) {
         urlStr += '&crop=ilike.*${Uri.encodeComponent(crop)}*';
+      }
+      if (forceRefresh) {
+        urlStr += '&_ts=${DateTime.now().millisecondsSinceEpoch}';
       }
 
       final uri = Uri.parse(urlStr);
@@ -47,6 +62,8 @@ class BuyerService {
           'apikey': _supabaseKey,
           'Authorization': 'Bearer $_supabaseKey',
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
         },
       ).timeout(const Duration(seconds: 8));
 

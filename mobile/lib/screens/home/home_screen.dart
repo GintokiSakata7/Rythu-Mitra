@@ -14,6 +14,8 @@ import '../../providers/settings_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../models/app_models.dart';
 import '../search/search_animation_screen.dart';
+import '../../location/location_service.dart';
+import '../../core/constants/app_constants.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -55,7 +57,34 @@ class _HomeScreenState extends State<HomeScreen> {
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkShowcase();
+      _checkInitialLocation();
     });
+  }
+
+  Future<void> _checkInitialLocation() async {
+    final locProv = context.read<LocationProvider>();
+    if (!locProv.hasLocation) {
+      final success = await locProv.fetchCurrentLocation(force: true);
+      if (!success && mounted && !locProv.hasLocation) {
+        _showLocationPromptSheet(isAutoStartup: true);
+      }
+    }
+  }
+
+  void _showLocationPromptSheet({bool isAutoStartup = false}) {
+    final lang = context.read<LanguageProvider>().langCode;
+    final s = (String k) => AppStrings.get(k, lang);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _LocationPromptBottomSheet(
+        lang: lang,
+        s: s,
+        isAutoStartup: isAutoStartup,
+      ),
+    );
   }
   
   Future<void> _checkShowcase() async {
@@ -379,21 +408,24 @@ class _HomeTab extends StatelessWidget {
                         // Live GPS Location Selector Badge
                         InkWell(
                           onTap: () {
-                            locProv.fetchCurrentLocation(force: true);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('🔄 Refreshing live GPS location & nearby mandis...'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
+                            final homeState = context
+                                .findAncestorStateOfType<_HomeScreenState>();
+                            homeState?._showLocationPromptSheet();
                           },
                           borderRadius: BorderRadius.circular(20),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.15),
+                              color: locProv.isDefaultLocation
+                                  ? const Color(0xFFF57F17).withValues(alpha: 0.35)
+                                  : Colors.black.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white24),
+                              border: Border.all(
+                                color: locProv.isDefaultLocation
+                                    ? const Color(0xFFFFD54F)
+                                    : Colors.white24,
+                                width: locProv.isDefaultLocation ? 1.5 : 1.0,
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -407,9 +439,13 @@ class _HomeTab extends StatelessWidget {
                                           color: AppTheme.harvestGold,
                                         ),
                                       )
-                                    : const Icon(
-                                        Icons.my_location_rounded,
-                                        color: AppTheme.harvestGold,
+                                    : Icon(
+                                        locProv.isDefaultLocation
+                                            ? Icons.location_searching_rounded
+                                            : Icons.my_location_rounded,
+                                        color: locProv.isDefaultLocation
+                                            ? const Color(0xFFFFD54F)
+                                            : AppTheme.harvestGold,
                                         size: 14,
                                       ),
                                 const SizedBox(width: 6),
@@ -418,9 +454,13 @@ class _HomeTab extends StatelessWidget {
                                   child: Text(
                                     locProv.isLoadingLocation
                                         ? 'Detecting GPS...'
-                                        : locProv.displayName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                        : (locProv.isDefaultLocation
+                                            ? 'Tap to set location'
+                                            : locProv.displayName),
+                                    style: TextStyle(
+                                      color: locProv.isDefaultLocation
+                                          ? const Color(0xFFFFF9C4)
+                                          : Colors.white,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -429,7 +469,7 @@ class _HomeTab extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 4),
-                                const Icon(Icons.refresh_rounded, color: Colors.white70, size: 13),
+                                const Icon(Icons.arrow_drop_down_rounded, color: Colors.white70, size: 16),
                               ],
                             ),
                           ),
@@ -448,6 +488,98 @@ class _HomeTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Location missing notice banner
+                  if (locProv.isDefaultLocation) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF8E1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFFFD54F), width: 1.2),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x14000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFECB3),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.location_searching_rounded,
+                              color: Color(0xFFE65100),
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  lang == 'te'
+                                      ? 'మీ పొలం స్థానాన్ని సెట్ చేయండి'
+                                      : (lang == 'hi'
+                                          ? 'खेत का स्थान सेट करें'
+                                          : 'Set Your Farm Location'),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFE65100),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  lang == 'te'
+                                      ? 'సమీప మండీలు & ఖచ్చితమైన లాభాల కోసం GPS ఆన్ చేయండి.'
+                                      : (lang == 'hi'
+                                          ? 'सटीक मंडी कीमतों के लिए GPS अनुमति दें।'
+                                          : 'Detect GPS for accurate local mandi prices & transport.'),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              final homeState = context
+                                  .findAncestorStateOfType<_HomeScreenState>();
+                              homeState?._showLocationPromptSheet();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.forestGreen,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              lang == 'te'
+                                  ? 'సెట్ చేయండి'
+                                  : (lang == 'hi' ? 'सेट करें' : 'Set GPS'),
+                              style: const TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   // Hero CTA
                   GestureDetector(
                     onTap: () {
@@ -994,6 +1126,306 @@ class _RecentChip extends StatelessWidget {
             const SizedBox(width: 6),
             Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Location Prompt Bottom Sheet ─────────────────────────────────────────────
+
+class _LocationPromptBottomSheet extends StatefulWidget {
+  final String lang;
+  final String Function(String) s;
+  final bool isAutoStartup;
+
+  const _LocationPromptBottomSheet({
+    required this.lang,
+    required this.s,
+    this.isAutoStartup = false,
+  });
+
+  @override
+  State<_LocationPromptBottomSheet> createState() => _LocationPromptBottomSheetState();
+}
+
+class _LocationPromptBottomSheetState extends State<_LocationPromptBottomSheet> {
+  bool _isDetecting = false;
+
+  Future<void> _detectGps() async {
+    setState(() => _isDetecting = true);
+    final locProv = context.read<LocationProvider>();
+    final success = await locProv.fetchCurrentLocation(force: true);
+    if (!mounted) return;
+    setState(() => _isDetecting = false);
+
+    if (success) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Expanded(child: Text('📍 GPS Detected: ${locProv.displayName}')),
+            ],
+          ),
+          backgroundColor: AppTheme.forestGreen,
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      final err = locProv.errorMessage ?? '';
+      if (err.contains('turned off') || err.contains('GPS')) {
+        _showGpsDisabledDialog();
+      } else if (err.contains('denied') || err.contains('permission')) {
+        _showPermissionDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(err.isNotEmpty ? err : 'Could not detect GPS signal.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showGpsDisabledDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.location_off, color: AppTheme.dangerRed),
+            SizedBox(width: 8),
+            Text('Turn On GPS'),
+          ],
+        ),
+        content: const Text(
+          'Location services (GPS) are turned off on your device. Please turn on GPS so RythuMitra can detect your nearest mandi.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              locationService.openLocationSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Location Permission Needed'),
+        content: const Text(
+          'Location permission was denied. Please allow location access in App Settings to detect your farm coordinates.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              locationService.openAppSettings();
+            },
+            child: const Text('App Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = widget.lang;
+    final title = lang == 'te'
+        ? 'మీ వ్యవసాయ స్థానాన్ని సెట్ చేయండి'
+        : (lang == 'hi' ? 'खेत का स्थान सेट करें' : 'Set Your Farm Location');
+    final subtitle = lang == 'te'
+        ? 'రైతుల కోసం ఖచ్చితమైన రవాణా ఖర్చులు, సమీప మండీలు మరియు క్రేతలను గుర్తించడానికి మీ స్థానం అవసరం.'
+        : (lang == 'hi'
+            ? 'सटीक परिवहन लागत, नज़दीकी मंडियों और खरीदारों के लिए अपना स्थान सेट करें।'
+            : 'RythuMitra calculates real transport cost, travel time, and finds nearest mandis & buyers based on your farm location.');
+
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.forestGreen.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.my_location_rounded,
+                      color: AppTheme.forestGreen,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          subtitle,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isDetecting ? null : _detectGps,
+                  icon: _isDetecting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.gps_fixed_rounded, color: Colors.white),
+                  label: Text(
+                    _isDetecting
+                        ? (lang == 'te'
+                            ? 'గుర్తిస్తున్నాం...'
+                            : (lang == 'hi' ? 'स्थान ढूंढ रहे हैं...' : 'Detecting GPS...'))
+                        : (lang == 'te'
+                            ? '📍 నా GPS స్థానాన్ని ఉపయోగించు'
+                            : (lang == 'hi'
+                                ? '📍 मेरा GPS स्थान उपयोग करें'
+                                : '📍 Use My GPS Location')),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.forestGreen,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      lang == 'te'
+                          ? 'లేదా పట్టణం/మండీని ఎంచుకోండి'
+                          : (lang == 'hi' ? 'या शहर / मंडी चुनें' : 'OR SELECT TOWN / MANDI'),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black45),
+                    ),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: AppConstants.presetLocations.map((loc) {
+                  return ActionChip(
+                    avatar: const Icon(Icons.location_city_rounded, size: 16, color: AppTheme.forestGreen),
+                    label: Text(
+                      loc['name'].toString(),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                    backgroundColor: const Color(0xFFF1F8E9),
+                    side: const BorderSide(color: Color(0xFFC8E6C9)),
+                    onPressed: () {
+                      final name = loc['name'].toString();
+                      final lat = (loc['lat'] as num).toDouble();
+                      final lng = (loc['lng'] as num).toDouble();
+                      context.read<LocationProvider>().setManualLocation(name, lat, lng);
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text('📍 Location set: $name')),
+                            ],
+                          ),
+                          backgroundColor: AppTheme.forestGreen,
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  );
+                }).toList(),
+              ),
+              if (widget.isAutoStartup) ...[
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      lang == 'te'
+                          ? 'తరువాత సెట్ చేయండి (హైదరాబాద్ డిఫాల్ట్)'
+                          : (lang == 'hi' ? 'बाद में सेट करें' : 'Continue with Hyderabad Default'),
+                      style: const TextStyle(fontSize: 12, color: Colors.black45),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

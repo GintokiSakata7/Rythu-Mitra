@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/language_provider.dart';
-import '../../providers/settings_provider.dart';
+import '../../providers/location_provider.dart';
 import '../language/language_screen.dart';
 import '../home/home_screen.dart';
 
@@ -34,6 +34,11 @@ class _SplashScreenState extends State<SplashScreen>
     );
     _controller.forward();
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Warm up GPS location acquisition early while splash animation displays
+      context.read<LocationProvider>().fetchCurrentLocation();
+    });
+
     _navigateNext();
   }
 
@@ -42,7 +47,6 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     final langProvider = context.read<LanguageProvider>();
-    final settingsProvider = context.read<SettingsProvider>();
     final hasLanguage = await langProvider.isLanguageSelected();
 
     if (!mounted) return;

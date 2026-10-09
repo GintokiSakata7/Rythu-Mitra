@@ -65,15 +65,16 @@ class LocationProvider extends ChangeNotifier {
   double get longitude => _currentLocation?.lng ?? 78.4867;
   String get displayName => _currentLocation?.displayName ?? 'Hyderabad, Telangana';
   bool get hasLocation => _currentLocation != null;
+  bool get isDefaultLocation => _currentLocation == null;
 
   LocationProvider() {
     // Automatically detect location upon provider initialization
     fetchCurrentLocation();
   }
 
-  Future<void> fetchCurrentLocation({bool force = false}) async {
-    if (_isLoadingLocation) return;
-    if (_currentLocation != null && !force) return;
+  Future<bool> fetchCurrentLocation({bool force = false}) async {
+    if (_isLoadingLocation) return hasLocation;
+    if (_currentLocation != null && !force) return true;
 
     _isLoadingLocation = true;
     _errorMessage = null;
@@ -86,20 +87,24 @@ class LocationProvider extends ChangeNotifier {
         _errorMessage = null;
         print('[LOCATION] Successfully acquired user GPS: ${_currentLocation!.displayName} (${_currentLocation!.lat}, ${_currentLocation!.lng})');
         await fetchNearbyData(_currentLocation!.lat, _currentLocation!.lng);
+        return true;
       } else if (loc.error != null) {
         _errorMessage = loc.error!.message;
         print('[LOCATION] [WARN] GPS acquisition issue: $_errorMessage. Using fallback default location.');
         // Still load nearby markets using default fallback coordinates
         await fetchNearbyData(latitude, longitude);
+        return false;
       }
     } catch (e) {
       _errorMessage = e.toString();
       print('[LOCATION] [ERROR] Location fetch exception: $e');
       await fetchNearbyData(latitude, longitude);
+      return false;
     } finally {
       _isLoadingLocation = false;
       notifyListeners();
     }
+    return false;
   }
 
   void setManualLocation(String name, double lat, double lng) {

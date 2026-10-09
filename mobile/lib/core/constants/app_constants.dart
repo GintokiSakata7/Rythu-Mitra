@@ -26,12 +26,17 @@ class AppConstants {
     {'id': 'Sesame', 'emoji': '🌰', 'en': 'Sesame', 'te': 'నువ్వులు', 'hi': 'तिल'},
   ];
 
-  // Preset locations (matching backend demo data)
+  // Preset locations (matching backend and APMC mandi centers)
   static const List<Map<String, dynamic>> presetLocations = [
-    {'name': 'Nalgonda', 'lat': 17.05, 'lng': 79.27},
-    {'name': 'Miryalaguda', 'lat': 16.87, 'lng': 79.56},
-    {'name': 'Suryapet', 'lat': 17.14, 'lng': 79.62},
-    {'name': 'Hyderabad', 'lat': 17.385, 'lng': 78.4867},
+    {'name': 'Warangal', 'lat': 17.9784, 'lng': 79.5941},
+    {'name': 'Nizamabad', 'lat': 18.6725, 'lng': 78.0941},
+    {'name': 'Khammam', 'lat': 17.2473, 'lng': 80.1514},
+    {'name': 'Mahabubnagar', 'lat': 16.7488, 'lng': 78.0035},
+    {'name': 'Nalgonda', 'lat': 17.0500, 'lng': 79.2700},
+    {'name': 'Suryapet', 'lat': 17.1400, 'lng': 79.6200},
+    {'name': 'Miryalaguda', 'lat': 16.8700, 'lng': 79.5600},
+    {'name': 'Bowenpally (Hyderabad)', 'lat': 17.4720, 'lng': 78.4830},
+    {'name': 'Gudimalkapur (Hyderabad)', 'lat': 17.3820, 'lng': 78.4410},
   ];
 
   // Quantity presets in kg

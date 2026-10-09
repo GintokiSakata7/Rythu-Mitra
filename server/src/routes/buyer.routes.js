@@ -5,7 +5,8 @@ export const buyerRouter = Router();
 
 buyerRouter.get('/requirements', async (req, res, next) => {
   try {
-    res.json({ requirements: await getBuyerRequirements({ crop: req.query.crop || '' }) });
+    const refresh = req.query.refresh === 'true' || req.query.fresh === 'true' || req.query.force === 'true';
+    res.json({ requirements: await getBuyerRequirements({ crop: req.query.crop || '', refresh }) });
   } catch (error) { next(error); }
 });
 
