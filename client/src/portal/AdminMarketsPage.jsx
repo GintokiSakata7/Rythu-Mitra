@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, ArrowLeft, CheckCircle2, AlertTriangle, Plus, Check, X, Search, PackagePlus } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Plus, Search, PackagePlus } from 'lucide-react';
 import { api } from '../lib/api.js';
 
 const POPULAR_COMMODITY_PRESETS = [

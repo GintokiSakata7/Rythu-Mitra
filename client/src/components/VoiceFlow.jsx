@@ -501,7 +501,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
         aud.currentTime = 0;
         aud.src = '';
         aud.load();
-      } catch {}
+      } catch {
+        /* ignore audio stop errors */
+      }
     });
     activeAudiosRef.current.clear();
 
@@ -512,7 +514,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
         currentAudioRef.current.currentTime = 0;
         currentAudioRef.current.src = '';
         currentAudioRef.current.load();
-      } catch {}
+      } catch {
+        /* ignore current audio stop errors */
+      }
       currentAudioRef.current = null;
     }
 
@@ -522,7 +526,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
         window.speechSynthesis.cancel();
         window.speechSynthesis.resume();
         window.speechSynthesis.cancel();
-      } catch {}
+      } catch {
+        /* ignore speech synthesis cancel errors */
+      }
     }
 
     synthRef.current = null;
@@ -537,7 +543,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
     if (recognitionRef.current) {
       try {
         recognitionRef.current.abort();
-      } catch {}
+      } catch {
+        /* ignore recognition abort errors */
+      }
       recognitionRef.current = null;
     }
     hasSpeechRef.current = false;
@@ -678,7 +686,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
     try {
       window.speechSynthesis.cancel();
       window.speechSynthesis.resume();
-    } catch {}
+    } catch {
+      /* ignore cancel error */
+    }
 
     const session = speechSessionRef.current;
     const utterance = new SpeechSynthesisUtterance(text);
@@ -753,7 +763,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
         if (currentAudioRef.current) {
           try {
             currentAudioRef.current.pause();
-          } catch {}
+          } catch {
+            /* ignore pause error */
+          }
           currentAudioRef.current = null;
         }
 
@@ -815,7 +827,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
                   audio.currentTime = 0;
                   audio.src = '';
                   audio.load();
-                } catch {}
+                } catch {
+                  /* ignore pause error */
+                }
                 activeAudiosRef.current.delete(audio);
                 if (currentAudioRef.current === audio) {
                   currentAudioRef.current = null;

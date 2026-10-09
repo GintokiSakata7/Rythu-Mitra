@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { 
-  Send, Save, AlertCircle, CheckCircle, ArrowLeft, Building2, 
-  Calendar, FileText, Plus, X, Sparkles, CheckCircle2, PackagePlus, ArrowRight 
+  Send, Save, AlertCircle, CheckCircle, ArrowLeft, 
+  Plus, X, CheckCircle2, PackagePlus 
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { api } from '../lib/api.js';
@@ -15,8 +15,7 @@ const POPULAR_CROPS = [
 ];
 
 export default function OfficialPriceSubmitPage() {
-  const { officialProfile, isVerifiedOfficial, user } = useAuth();
-  const navigate = useNavigate();
+  const { officialProfile, isVerifiedOfficial } = useAuth();
 
   const minPriceInputRef = useRef(null);
   const priceSectionRef = useRef(null);

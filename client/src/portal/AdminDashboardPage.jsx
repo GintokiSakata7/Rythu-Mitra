@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Users, CheckSquare, Layers, History, Clock, CheckCircle2, AlertTriangle, ArrowRight, TrendingUp, PackagePlus } from 'lucide-react';
+import { ShieldCheck, Users, CheckSquare, Layers, History, CheckCircle2, ArrowRight, PackagePlus } from 'lucide-react';
 import { api } from '../lib/api.js';
-import { useAuth } from '../contexts/AuthContext.jsx';
 
 export default function AdminDashboardPage() {
-  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
