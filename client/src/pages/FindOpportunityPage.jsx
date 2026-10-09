@@ -361,18 +361,10 @@ export default function FindOpportunityPage() {
                   <div className="empty-orbit">
                     <Navigation size={26} />
                   </div>
-                  <h3>Your search result will appear here</h3>
+                  <h3>Your Search Results Will Appear Here</h3>
                   <p>
-                    Try 5,000 kg of tomatoes in Nalgonda with no transport to see progressive search and direct-buyer matching.
+                    Select your crop, quantity, and location on the left, then click &ldquo;Find best option&rdquo; to compare live mandi prices and verified direct buyer contracts.
                   </p>
-                  <button
-                    className="button button-ghost"
-                    onClick={() => {
-                      setForm({ ...form, quantityKg: 5000, locationText: 'Nalgonda', hasTransport: false });
-                    }}
-                  >
-                    <RefreshCw size={15} /> Load demo values
-                  </button>
                 </div>
               ) : (
                 <>
@@ -414,19 +406,30 @@ export default function FindOpportunityPage() {
                     );
                   })()}
 
-                  <div className="results-top">
-                    <div>
-                      <span className="result-caption">Top opportunities</span>
-                      <h3>What the engine considered</h3>
-                    </div>
-                    <span className="pill">{result.search?.candidatesEvaluated} evaluated</span>
-                  </div>
+                  {(() => {
+                    const otherOptions = (result.alternatives || []).filter(
+                      alt => alt.id !== result.recommendation?.id &&
+                             (alt.companyName || alt.name) !== (result.recommendation?.companyName || result.recommendation?.name)
+                    );
 
-                  <div className="opportunity-list">
-                    {result.alternatives?.slice(0, 6).map((x, i) => (
-                      <OpportunityCard key={x.id || `${x.name}-${i}`} opportunity={x} highlight={i === 0} />
-                    ))}
-                  </div>
+                    return (
+                      <>
+                        <div className="results-top">
+                          <div>
+                            <span className="result-caption">Other Opportunities</span>
+                            <h3>Alternative markets &amp; buyers considered</h3>
+                          </div>
+                          <span className="pill">{result.search?.candidatesEvaluated} evaluated</span>
+                        </div>
+
+                        <div className="opportunity-list">
+                          {otherOptions.slice(0, 6).map((x, i) => (
+                            <OpportunityCard key={x.id || `${x.name}-${i}`} opportunity={x} highlight={false} />
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   <MarketMap opportunities={result.alternatives} farmer={coordinates} />
                   <OptimizerTrace search={result.search} />

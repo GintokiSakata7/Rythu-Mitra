@@ -20,14 +20,14 @@ export default function PostRequirementPage() {
 
   // Step 1: Verification Form
   const [verificationForm, setVerificationForm] = useState({
-    companyName: 'Deccan Fresh Foods Pvt Ltd',
+    companyName: '',
     type: 'Food Processor',
-    gstin: '36AABCB1234M1Z5',
-    fssai: '13621014000189',
-    cin: 'U15139TG2020PTC145678',
-    officerName: 'Suresh Reddy',
-    phone: '+91 98490 12345',
-    email: 'procurement@deccanfoods.in'
+    gstin: '',
+    fssai: '',
+    cin: '',
+    officerName: '',
+    phone: '',
+    email: ''
   });
   const [verifying, setVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState('');
@@ -37,54 +37,27 @@ export default function PostRequirementPage() {
   const [agreedGovtId, setAgreedGovtId] = useState(false);
   const [agreedFairTrade, setAgreedFairTrade] = useState(false);
   const [agreedGuaranteedPay, setAgreedGuaranteedPay] = useState(false);
-  const [signatoryName, setSignatoryName] = useState('Suresh Reddy');
-  const [signatoryDesignation, setSignatoryDesignation] = useState('Head of Agricultural Procurement');
+  const [signatoryName, setSignatoryName] = useState('');
+  const [signatoryDesignation, setSignatoryDesignation] = useState('');
   const [agreementError, setAgreementError] = useState('');
   const [agreementSigned, setAgreementSigned] = useState(false);
 
   // Step 3: Requirement Form
   const [reqForm, setReqForm] = useState({
-    crop: 'Tomato',
-    quantityKg: 5000,
+    crop: '',
+    quantityKg: '',
     grade: 'A',
-    offerPrice: 29,
-    city: 'Hyderabad',
-    latitude: 17.39,
-    longitude: 78.48,
-    pickupProvided: true,
-    requiredBy: '2026-10-15',
+    offerPrice: '',
+    city: '',
+    latitude: 17.385,
+    longitude: 78.486,
+    pickupProvided: false,
+    requiredBy: '',
     paymentDays: 3
   });
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
   const [publishedRecord, setPublishedRecord] = useState(null);
-
-  // Auto-fill sample enterprise
-  const loadSampleCredentials = (type = 'processor') => {
-    if (type === 'processor') {
-      setVerificationForm({
-        companyName: 'Deccan Fresh Foods Pvt Ltd',
-        type: 'Food Processor',
-        gstin: '36AABCB1234M1Z5',
-        fssai: '13621014000189',
-        cin: 'U15139TG2020PTC145678',
-        officerName: 'Suresh Reddy',
-        phone: '+91 98490 12345',
-        email: 'procurement@deccanfoods.in'
-      });
-    } else {
-      setVerificationForm({
-        companyName: 'Urban Bowl Kitchens Ltd',
-        type: 'Restaurant Group',
-        gstin: '36AAACU5678K1Z2',
-        fssai: '13622015000451',
-        cin: 'U55101TG2019PLC098234',
-        officerName: 'Vikram Joshi',
-        phone: '+91 94401 56789',
-        email: 'supplies@urbanbowl.com'
-      });
-    }
-  };
 
   // Handle Step 1 Verification
   const handleVerify = async (e) => {
@@ -212,24 +185,6 @@ export default function PostRequirementPage() {
                 Goods and Services Tax (GSTIN) and Food Safety (FSSAI) registrations.
               </p>
             </div>
-          </div>
-
-          <div className="demo-quickfill-bar">
-            <span>Test with Sample Credentials:</span>
-            <button
-              type="button"
-              className="quickfill-btn"
-              onClick={() => loadSampleCredentials('processor')}
-            >
-              <Sparkles size={13} /> Deccan Fresh Foods (Processing)
-            </button>
-            <button
-              type="button"
-              className="quickfill-btn"
-              onClick={() => loadSampleCredentials('kitchen')}
-            >
-              <Sparkles size={13} /> Urban Bowl Kitchens (Hospitality)
-            </button>
           </div>
 
           <form onSubmit={handleVerify} className="verification-form">
