@@ -41,10 +41,10 @@ marketRouter.get('/history', async (req, res, next) => {
     const crop = req.query.crop || 'Tomato';
     const yardCode = req.query.yardCode || null;
 
-    // Try per-market history from CSV
-    const csvHistory = getTelanganaMarketHistory({ crop, yardCode });
+    // Try per-market history from database
+    const csvHistory = await getTelanganaMarketHistory({ crop, yardCode });
     if (csvHistory.length) {
-      return res.json({ history: csvHistory, source: 'Telangana State CSV', count: csvHistory.length });
+      return res.json({ history: csvHistory, source: 'Supabase (telangana_market_prices)', count: csvHistory.length });
     }
 
     // Fallback to aggregated price history

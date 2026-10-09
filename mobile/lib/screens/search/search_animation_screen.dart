@@ -17,8 +17,7 @@ class SearchAnimationScreen extends StatefulWidget {
 }
 
 class _SearchAnimationScreenState extends State<SearchAnimationScreen> {
-  int _logIndex = 0;
-  List<String> _currentLogs = [];
+  final List<String> _currentLogs = [];
   bool _navigating = false;
 
   @override
@@ -51,7 +50,6 @@ class _SearchAnimationScreenState extends State<SearchAnimationScreen> {
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
       setState(() {
-        _logIndex = i;
         _currentLogs.insert(0, logs[i]);
       });
     }

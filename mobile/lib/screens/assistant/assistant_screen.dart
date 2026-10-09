@@ -4,7 +4,6 @@ import 'package:speech_to_text/speech_to_text.dart';
 import '../../core/theme/app_theme.dart';
 import '../../localization/app_strings.dart';
 import '../../providers/language_provider.dart';
-import '../../providers/search_provider.dart';
 import '../../models/app_models.dart';
 import '../../services/api_service.dart';
 import '../search/search_animation_screen.dart';

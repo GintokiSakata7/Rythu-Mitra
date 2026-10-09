@@ -4,7 +4,6 @@ import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../localization/app_strings.dart';
 import '../../providers/language_provider.dart';
-import '../../providers/search_provider.dart';
 import '../../models/app_models.dart';
 import 'search_animation_screen.dart';
 

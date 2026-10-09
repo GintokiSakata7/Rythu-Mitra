@@ -40,6 +40,7 @@ function evaluateBuyer(buyer, input) {
   });
   return {
     ...buyer,
+    name: buyer.companyName || buyer.name,
     distanceKm,
     type: 'Direct Buyer',
     pricePerKg: buyer.offerPrice,

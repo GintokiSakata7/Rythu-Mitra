@@ -451,6 +451,44 @@ export default function VoiceFlow({ onSwitchToManual }) {
   const interimDebounceRef = useRef(null);
   const voicesListRef = useRef([]);
 
+  // Live database commodities and markets
+  const [dbCrops, setDbCrops] = useState([]);
+  const [dbMarkets, setDbMarkets] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([api.commodities(), api.markets()])
+      .then(([cData, mData]) => {
+        if (!isMounted) return;
+        if (cData?.commodities?.length) setDbCrops(cData.commodities);
+        if (mData?.markets?.length) setDbMarkets(mData.markets);
+      })
+      .catch(console.error);
+    return () => { isMounted = false; };
+  }, []);
+
+  const activeCrops = useMemo(() => {
+    if (dbCrops.length > 0) {
+      return dbCrops.slice(0, 8).map(c => ({ id: c.name, label: c.name }));
+    }
+    return t.crops;
+  }, [dbCrops, t.crops]);
+
+  const activeLocations = useMemo(() => {
+    if (dbMarkets.length > 0) {
+      return dbMarkets.slice(0, 8).map(m => {
+        const cleanName = m.name.replace(/ market/i, '').trim();
+        return {
+          name: cleanName,
+          label: `${cleanName} (${m.district || 'Telangana'})`,
+          lat: m.latitude,
+          lng: m.longitude
+        };
+      });
+    }
+    return t.locations;
+  }, [dbMarkets, t.locations]);
+
   // Cache voices on mount
   useEffect(() => {
     if ('speechSynthesis' in window) {
@@ -937,7 +975,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
 
       // LOCATION
       if (currentStep === 3 && parsed.locationText) {
-        const location = t.locations.find((item) =>
+        const location = activeLocations.find((item) =>
           item.name.toLowerCase().includes(parsed.locationText.toLowerCase())
         );
         if (location) {
@@ -1346,7 +1384,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
           <p className="alexa-prompt-sub">{t.q1_sub}</p>
 
           <div className="alexa-quick-chips">
-            {t.crops.map(c => (
+            {activeCrops.map(c => (
               <button
                 key={c.id}
                 type="button"
@@ -1418,7 +1456,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
           </div>
 
           <div className="alexa-quick-chips">
-            {t.locations.map(loc => (
+            {activeLocations.map(loc => (
               <button
                 key={loc.name}
                 type="button"

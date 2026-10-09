@@ -23,52 +23,66 @@ export default function FindOpportunityPage() {
       setMode(currentRequestedMode);
     }
   }, [location.state, searchParams]);
-  const [locations, setLocations] = useState({
-    Nalgonda: { latitude: 17.05, longitude: 79.27 },
-    Miryalaguda: { latitude: 16.87, longitude: 79.56 },
-    Hyderabad: { latitude: 17.385, longitude: 78.4867 },
-    Suryapet: { latitude: 17.14, longitude: 79.62 },
-    Balapur: { latitude: 17.3117, longitude: 78.5146 }
-  });
-
+  const [locations, setLocations] = useState({});
   const [commodities, setCommodities] = useState([]);
-
-  useEffect(() => {
-    api.markets().then(data => {
-      if (data && data.markets) {
-        const newLocs = { ...locations };
-        data.markets.forEach(m => {
-          if (m.name) {
-            const cleanName = m.name.replace(/ market/i, '').trim();
-            newLocs[cleanName] = { latitude: m.latitude, longitude: m.longitude };
-          }
-          if (m.district) {
-            newLocs[m.district] = { latitude: m.latitude, longitude: m.longitude };
-          }
-        });
-        setLocations(newLocs);
-      }
-    }).catch(console.error);
-
-    api.commodities().then(data => {
-      if (data && data.commodities) {
-        setCommodities(data.commodities);
-      }
-    }).catch(console.error);
-  }, []);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const [form, setForm] = useState({
-    crop: 'Tomato',
+    crop: '',
     quantityKg: 5000,
-    locationText: 'Nalgonda',
-    latitude: 17.05,
-    longitude: 79.27,
+    locationText: '',
+    latitude: 0,
+    longitude: 0,
     quality: 'A',
     hasTransport: false,
     perishability: 'high',
     includeBuyers: true,
     language: 'en'
   });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    Promise.all([api.markets(), api.commodities()])
+      .then(([mktData, commData]) => {
+        if (!isMounted) return;
+
+        const newLocs = {};
+        let firstLoc = null;
+
+        if (mktData?.markets?.length) {
+          mktData.markets.forEach(m => {
+            if (m.name) {
+              const cleanName = m.name.replace(/ market/i, '').trim();
+              newLocs[cleanName] = { latitude: m.latitude, longitude: m.longitude };
+              if (!firstLoc) firstLoc = { name: cleanName, lat: m.latitude, lng: m.longitude };
+            }
+            if (m.district && !newLocs[m.district]) {
+              newLocs[m.district] = { latitude: m.latitude, longitude: m.longitude };
+            }
+          });
+          setLocations(newLocs);
+        }
+
+        const commList = commData?.commodities || [];
+        setCommodities(commList);
+
+        setForm(prev => ({
+          ...prev,
+          crop: prev.crop || commList[0]?.name || '',
+          locationText: prev.locationText || firstLoc?.name || '',
+          latitude: prev.latitude || firstLoc?.lat || 17.38,
+          longitude: prev.longitude || firstLoc?.lng || 78.48
+        }));
+
+        setDataLoaded(true);
+      })
+      .catch(err => {
+        console.error('Failed to load live database metadata:', err);
+      });
+
+    return () => { isMounted = false; };
+  }, []);
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -224,16 +238,17 @@ export default function FindOpportunityPage() {
               </div>
 
               <Field label="Crop">
-                <select value={form.crop} onChange={e => setForm({ ...form, crop: e.target.value })}>
-                  {commodities.length > 0 ? commodities.map(c => (
-                    <option key={c.code} value={c.name}>{c.name}</option>
-                  )) : (
-                    <>
-                      <option value="Chilli">Chilli</option>
-                      <option value="Potato">Potato</option>
-                      <option value="Tomato">Tomato</option>
-                      <option value="Onion">Onion</option>
-                    </>
+                <select 
+                  value={form.crop} 
+                  onChange={e => setForm({ ...form, crop: e.target.value })}
+                  disabled={commodities.length === 0}
+                >
+                  {commodities.length > 0 ? (
+                    commodities.map(c => (
+                      <option key={c.code || c.name} value={c.name}>{c.name}</option>
+                    ))
+                  ) : (
+                    <option value="">Loading commodities from database...</option>
                   )}
                 </select>
               </Field>

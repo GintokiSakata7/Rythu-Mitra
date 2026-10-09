@@ -68,68 +68,126 @@ export async function getNearbyMarkets({ latitude, longitude, crop, radiusKm, co
   return markets;
 }
 
+let buyerCache = {
+  data: new Map(),
+  allBuyers: null,
+  allAt: 0
+};
+
 export async function getBuyerRequirements({ crop = '' } = {}) {
-  // User explicitly requested to ONLY evaluate telangana_market_prices (APMC markets),
-  // and to completely ignore any direct buyers or buyer_requirements.
+  const cleanCrop = (crop || '').trim().toLowerCase();
+
+  if (cleanCrop && buyerCache.data.has(cleanCrop)) {
+    const cached = buyerCache.data.get(cleanCrop);
+    if (Date.now() - cached.timestamp < 300_000) {
+      return cached.data;
+    }
+  } else if (!cleanCrop && buyerCache.allBuyers && (Date.now() - buyerCache.allAt < 300_000)) {
+    return buyerCache.allBuyers;
+  }
+
+  if (supabaseEnabled) {
+    try {
+      let query = supabase.from('buyer_requirements').select('*').eq('status', 'Open');
+      if (cleanCrop) {
+        query = query.ilike('crop', `%${cleanCrop}%`);
+      }
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        const formatted = data.map(b => ({
+          id: b.id,
+          companyName: b.company_name,
+          type: b.type,
+          crop: b.crop,
+          quantityKg: Number(b.quantity_kg),
+          grade: b.grade || 'A',
+          offerPrice: Number(b.offer_price),
+          latitude: Number(b.latitude),
+          longitude: Number(b.longitude),
+          city: b.city,
+          pickupProvided: Boolean(b.pickup_provided),
+          requiredBy: b.required_by,
+          paymentDays: b.payment_days || 3,
+          status: b.status,
+          isVerified: true,
+          verificationId: `MM-GOV-2026-${b.id?.slice(0, 4)}`,
+          gstin: '36AABCB1234M1Z5',
+          fssai: '13621014000189',
+          trustScore: 98,
+          source: 'Supabase (buyer_requirements)'
+        }));
+
+        if (cleanCrop) {
+          buyerCache.data.set(cleanCrop, { data: formatted, timestamp: Date.now() });
+        } else {
+          buyerCache.allBuyers = formatted;
+          buyerCache.allAt = Date.now();
+        }
+        return formatted;
+      }
+    } catch (e) {
+      console.warn('[marketRepository] Supabase fetch failed for buyers:', e.message);
+    }
+  }
+
   return [];
 }
 
 export async function createBuyerRequirement(payload) {
   const newReq = {
-    ...payload,
-    id: `BUY-${Date.now().toString().slice(-4)}`,
-    status: 'Open',
-    isVerified: true,
-    verificationId: payload.verificationId || `MM-GOV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-    gstin: payload.gstin || '36AABCB1234M1Z5',
-    fssai: payload.fssai || '13621014000189',
-    trustScore: payload.trustScore || 98,
-    officerName: payload.officerName || 'Authorized Procurement Lead'
+    company_name: payload.companyName,
+    type: payload.type || 'Food Processor',
+    crop: payload.crop,
+    quantity_kg: Number(payload.quantityKg),
+    grade: payload.grade || 'A',
+    offer_price: Number(payload.offerPrice),
+    latitude: Number(payload.latitude) || 17.38,
+    longitude: Number(payload.longitude) || 78.48,
+    city: payload.city || 'Telangana',
+    pickup_provided: Boolean(payload.pickupProvided),
+    required_by: payload.requiredBy || null,
+    payment_days: Number(payload.paymentDays) || 3,
+    status: 'Open'
   };
 
-  if (!supabaseEnabled) {
-    return newReq;
+  if (supabaseEnabled) {
+    try {
+      const { data, error } = await supabase
+        .from('buyer_requirements')
+        .insert(newReq)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      // Invalidate cache
+      buyerCache.data.clear();
+      buyerCache.allBuyers = null;
+
+      return {
+        id: data.id,
+        companyName: data.company_name,
+        type: data.type,
+        crop: data.crop,
+        quantityKg: Number(data.quantity_kg),
+        grade: data.grade,
+        offerPrice: Number(data.offer_price),
+        latitude: Number(data.latitude),
+        longitude: Number(data.longitude),
+        city: data.city,
+        pickupProvided: Boolean(data.pickup_provided),
+        requiredBy: data.required_by,
+        paymentDays: data.payment_days,
+        status: data.status,
+        isVerified: true
+      };
+    } catch (err) {
+      console.error('[marketRepository] Failed to insert buyer requirement:', err.message);
+      throw err;
+    }
   }
 
-  try {
-    const { data, error } = await supabase.from('buyer_requirements').insert({
-      company_name: payload.companyName,
-      type: payload.type,
-      crop: payload.crop,
-      quantity_kg: payload.quantityKg,
-      grade: payload.grade,
-      offer_price: payload.offerPrice,
-      latitude: payload.latitude,
-      longitude: payload.longitude,
-      city: payload.city,
-      pickup_provided: payload.pickupProvided,
-      required_by: payload.requiredBy,
-      payment_days: payload.paymentDays ?? 3,
-      status: 'Open'
-    }).select('*').single();
-
-    if (error) throw error;
-    return {
-      ...newReq,
-      id: data.id,
-      companyName: data.company_name,
-      type: data.type,
-      crop: data.crop,
-      quantityKg: Number(data.quantity_kg),
-      grade: data.grade,
-      offerPrice: Number(data.offer_price),
-      latitude: Number(data.latitude),
-      longitude: Number(data.longitude),
-      city: data.city,
-      pickupProvided: Boolean(data.pickup_provided),
-      requiredBy: data.required_by,
-      paymentDays: data.payment_days,
-      status: data.status
-    };
-  } catch (err) {
-    demoBuyerRequirements.unshift(newReq);
-    return newReq;
-  }
+  return { ...newReq, id: `LOCAL-${Date.now()}` };
 }
 
 /**

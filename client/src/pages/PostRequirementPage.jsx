@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Building2, CheckCircle2, Factory, MapPinned, Truck, ShieldCheck,
   ShieldAlert, Lock, Unlock, BadgeCheck, FileText, ArrowRight,
@@ -10,6 +10,13 @@ import { api } from '../lib/api.js';
 
 export default function PostRequirementPage() {
   const [step, setStep] = useState(1); // 1: Govt Verification, 2: Farmer Agreement, 3: Publish Requirement, 4: Done
+  const [dbCrops, setDbCrops] = useState([]);
+
+  useEffect(() => {
+    api.commodities().then(res => {
+      if (res?.commodities?.length) setDbCrops(res.commodities);
+    }).catch(console.error);
+  }, []);
 
   // Step 1: Verification Form
   const [verificationForm, setVerificationForm] = useState({
@@ -576,11 +583,18 @@ export default function PostRequirementPage() {
                   value={reqForm.crop}
                   onChange={(e) => setReqForm({ ...reqForm, crop: e.target.value })}
                 >
-                  <option value="Tomato">Tomato (టమాట)</option>
-                  <option value="Onion">Onion (ఉల్లిపాయ)</option>
-                  <option value="Potato">Potato (బంగాళాదుంప)</option>
-                  <option value="Chilli">Chilli (మిరప)</option>
-                  <option value="Cotton">Cotton (పత్తి)</option>
+                  {dbCrops.length > 0 ? (
+                    dbCrops.map(c => (
+                      <option key={c.code || c.name} value={c.name}>{c.name}</option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Tomato">Tomato</option>
+                      <option value="Onions">Onions</option>
+                      <option value="Potato">Potato</option>
+                      <option value="Chilli">Chilli</option>
+                    </>
+                  )}
                 </select>
               </Field>
 

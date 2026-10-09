@@ -123,87 +123,112 @@ export function getTelanganaMarkets() {
 
 import { supabase, supabaseEnabled } from '../../lib/supabase.js';
 
+// In-memory cache for ultra-fast response times (5-minute TTL)
+const dbCache = {
+  commodities: null,
+  commoditiesAt: 0,
+  markets: null,
+  marketsAt: 0,
+  pricesByCrop: new Map(),
+  historyByCrop: new Map()
+};
+
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
 /**
- * Returns the latest CSV prices for a given commodity across all markets.
+ * Returns the latest prices for a given commodity across all markets from Supabase.
  * Prices are converted from Rs/Quintal to Rs/Kg.
  * @param {string} crop - The commodity name (e.g. "Tomato", "Onions")
- * @returns {Array} - [{market, district, state, commodity, variety, modalPrice, minPrice, maxPrice, date}]
+ * @returns {Array} - [{market, YardCode, latitude, longitude, district, state, commodity, variety, modalPrice, minPrice, maxPrice, date, source}]
  */
 export async function getTelanganaFallbackPrices({ crop = 'Tomato' } = {}) {
-  // Try to fetch from the new Supabase table first!
-  if (false) {
+  const cleanCrop = (crop || 'Tomato').trim();
+  const cacheKey = cleanCrop.toLowerCase();
+
+  const cached = dbCache.pricesByCrop.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  if (supabaseEnabled) {
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('telangana_market_prices')
         .select('*')
-        .ilike('commodity', `%${crop}%`)
-        .catch(e => ({ data: null, error: e }));
+        .ilike('commodity', `%${cleanCrop}%`);
 
-      let finalData = data;
-      let secondError = null;
       if (!data || data.length === 0) {
         const res2 = await supabase
           .from('telangana_market_prices')
           .select('*')
-          .ilike('CommName', `%${crop}%`)
-          .catch(e => ({ data: null, error: e }));
-        finalData = res2.data;
-        secondError = res2.error;
+          .ilike('commodity', `${cleanCrop}%`);
+        data = res2.data;
       }
-        
-      if (finalData && finalData.length > 0) {
-        try {
-          return finalData.map(row => {
-            const yardCode = row.yard_code || row.YardCode;
-            const geo = YARD_GEO[yardCode] || { lat: row.latitude, lng: row.longitude };
-            return {
-              market: row.yard_name || row.YardName,
-              YardCode: yardCode,
-              latitude: geo.lat || 17.38,
-              longitude: geo.lng || 78.48,
-              district: geo.district || row.AmcName || 'Telangana',
-              state: 'Telangana',
-              commodity: row.commodity || row.CommName,
-              variety: row.variety || row.VarityName,
-              modalPrice: parseFloat(row.modal_price || row.Model || 0) / 100,
-              minPrice: parseFloat(row.min_price || row.Minimum || 0) / 100,
-              maxPrice: parseFloat(row.max_price || row.Maximum || 0) / 100,
-              date: row.date || row.DDate,
-              source: 'Supabase (telangana_market_prices)'
-            };
-          });
-        } catch (e) {
-          return { error: 'map_failed', message: e.message };
+
+      if (data && data.length > 0) {
+        // Group by yard_code and keep the latest date record for each market
+        const latestByYard = new Map();
+        for (const row of data) {
+          const yCode = row.yard_code || row.YardCode;
+          if (!latestByYard.has(yCode) || row.date > latestByYard.get(yCode).date) {
+            latestByYard.set(yCode, row);
+          }
         }
-      } else {
-        return { error: 'no_data', data, firstError: error, secondError };
+
+        const formatted = Array.from(latestByYard.values()).map(row => {
+          const yardCode = row.yard_code || row.YardCode;
+          const geo = YARD_GEO[yardCode] || {};
+          const lat = Number(row.latitude) || geo.lat || 17.38;
+          const lng = Number(row.longitude) || geo.lng || 78.48;
+          const district = geo.district || 'Telangana';
+
+          return {
+            market: row.yard_name || row.YardName,
+            YardCode: yardCode,
+            latitude: lat,
+            longitude: lng,
+            district,
+            state: 'Telangana',
+            commodity: row.commodity || cleanCrop,
+            variety: row.variety || 'Common',
+            modalPrice: parseFloat(row.modal_price || 0) / 100, // Rs/Quintal to Rs/Kg
+            minPrice: parseFloat(row.min_price || 0) / 100,
+            maxPrice: parseFloat(row.max_price || 0) / 100,
+            date: row.date,
+            source: 'Supabase (telangana_market_prices)'
+          };
+        });
+
+        dbCache.pricesByCrop.set(cacheKey, { data: formatted, timestamp: Date.now() });
+        return formatted;
       }
     } catch (e) {
-      console.warn('[telanganaData] Supabase fetch failed:', e.message);
+      console.warn('[telanganaData] Supabase price fetch failed:', e.message);
     }
   }
 
-  // Fallback to reading from the local loaded CSV if DB is empty or fails
+  // Graceful fallback to local loaded CSV only if database is completely offline
   ensureParsed();
   const results = [];
-  const lowerCrop = crop.toLowerCase();
+  const lowerCrop = cleanCrop.toLowerCase();
 
   for (const row of Object.values(csvLatestPrices)) {
     if (row.commodity && row.commodity.toLowerCase().includes(lowerCrop)) {
+      const geo = YARD_GEO[row.yard_code] || {};
       results.push({
         market: row.yard_name,
         YardCode: row.yard_code,
-        latitude: parseFloat(row.latitude) || 17.38,
-        longitude: parseFloat(row.longitude) || 78.48,
-        district: 'Telangana',
+        latitude: parseFloat(row.latitude) || geo.lat || 17.38,
+        longitude: parseFloat(row.longitude) || geo.lng || 78.48,
+        district: geo.district || 'Telangana',
         state: 'Telangana',
         commodity: row.commodity,
-        variety: row.variety,
-        modalPrice: parseFloat(row.modal_price || 0) / 100, // Assuming CSV data is in Rs/Quintal
+        variety: row.variety || 'Common',
+        modalPrice: parseFloat(row.modal_price || 0) / 100,
         minPrice: parseFloat(row.min_price || 0) / 100,
         maxPrice: parseFloat(row.max_price || 0) / 100,
         date: row.date,
-        source: 'CSV Fallback'
+        source: 'CSV Backup'
       });
     }
   }
@@ -212,23 +237,44 @@ export async function getTelanganaFallbackPrices({ crop = 'Tomato' } = {}) {
 }
 
 export async function getTelanganaCommmodities() {
-  if (false) {
+  if (dbCache.commodities && Date.now() - dbCache.commoditiesAt < CACHE_TTL_MS) {
+    return dbCache.commodities;
+  }
+
+  if (supabaseEnabled) {
     try {
-      const { data, error } = await supabase.from('telangana_market_prices').select('commodity, CommName');
-      if (!error && data) {
-        const set = new Set();
-        data.forEach(row => {
-          const val = row.commodity || row.CommName;
-          if (val) set.add(val);
+      const { data, error } = await supabase
+        .from('telangana_market_prices')
+        .select('commodity');
+
+      if (!error && data && data.length > 0) {
+        const uniqueSet = new Set();
+        data.forEach(r => {
+          if (r.commodity && r.commodity.trim()) {
+            uniqueSet.add(r.commodity.trim());
+          }
         });
-        return Array.from(set).map(name => ({ code: name, name })).sort((a, b) => a.name.localeCompare(b.name));
+
+        const topCrops = ['Tomato', 'Chilli', 'Cotton', 'Onions', 'Potato', 'Paddy', 'Maize'];
+        const list = Array.from(uniqueSet).map(name => ({ code: name, name })).sort((a, b) => {
+          const idxA = topCrops.indexOf(a.name);
+          const idxB = topCrops.indexOf(b.name);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          if (idxA !== -1) return -1;
+          if (idxB !== -1) return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        dbCache.commodities = list;
+        dbCache.commoditiesAt = Date.now();
+        return list;
       }
     } catch (e) {
-      console.warn('[telanganaData] Supabase fetch failed for commodities:', e.message);
+      console.warn('[telanganaData] Supabase commodities fetch failed:', e.message);
     }
   }
 
-  // Fallback to reading from the local loaded CSV if DB is empty or fails
+  // Fallback to reading from CSV only if DB is unavailable
   ensureParsed();
   const set = new Map();
   for (const row of csvAllRecords) {
@@ -236,37 +282,119 @@ export async function getTelanganaCommmodities() {
       set.set(row.commodity, { code: row.commodity, name: row.commodity });
     }
   }
-  const topCrops = ['Chilli', 'Potato', 'Tomato'];
+  const topCrops = ['Tomato', 'Chilli', 'Cotton', 'Onions', 'Potato', 'Paddy'];
   return Array.from(set.values()).sort((a, b) => {
     const idxA = topCrops.indexOf(a.name);
     const idxB = topCrops.indexOf(b.name);
-    
     if (idxA !== -1 && idxB !== -1) return idxA - idxB;
     if (idxA !== -1) return -1;
     if (idxB !== -1) return 1;
-    
     return a.name.localeCompare(b.name);
   });
 }
 
 /**
- * Returns price history for a commodity at a specific market (by yardCode).
- * Useful for building trend charts.
+ * Returns all active Telangana markets from Supabase.
  */
-export function getTelanganaMarketHistory({ crop = 'Tomato', yardCode = null } = {}) {
+export async function getLiveTelanganaMarkets() {
+  if (dbCache.markets && Date.now() - dbCache.marketsAt < CACHE_TTL_MS) {
+    return dbCache.markets;
+  }
+
+  if (supabaseEnabled) {
+    try {
+      const { data, error } = await supabase
+        .from('telangana_market_prices')
+        .select('yard_name, yard_code, latitude, longitude');
+
+      if (!error && data && data.length > 0) {
+        const uniqueYards = new Map();
+        for (const row of data) {
+          const code = row.yard_code;
+          if (!uniqueYards.has(code)) {
+            const geo = YARD_GEO[code] || {};
+            uniqueYards.set(code, {
+              id: `TS-${code}`,
+              name: `${row.yard_name} Market`,
+              amcName: row.yard_name,
+              district: geo.district || 'Telangana',
+              state: 'Telangana',
+              latitude: Number(row.latitude) || geo.lat || 17.38,
+              longitude: Number(row.longitude) || geo.lng || 78.48,
+              yardCode: code,
+              source: 'Supabase (telangana_market_prices)'
+            });
+          }
+        }
+        const list = Array.from(uniqueYards.values());
+        dbCache.markets = list;
+        dbCache.marketsAt = Date.now();
+        return list;
+      }
+    } catch (e) {
+      console.warn('[telanganaData] Supabase markets fetch failed:', e.message);
+    }
+  }
+
+  ensureParsed();
+  return csvMarkets;
+}
+
+/**
+ * Returns price history for a commodity at a specific market from Supabase.
+ */
+export async function getTelanganaMarketHistory({ crop = 'Tomato', yardCode = null } = {}) {
+  const cleanCrop = (crop || 'Tomato').trim();
+  const cacheKey = `${cleanCrop.toLowerCase()}|${yardCode || 'all'}`;
+
+  const cached = dbCache.historyByCrop.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  if (supabaseEnabled) {
+    try {
+      let query = supabase
+        .from('telangana_market_prices')
+        .select('*')
+        .ilike('commodity', `%${cleanCrop}%`);
+      if (yardCode) {
+        query = query.eq('yard_code', yardCode);
+      }
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        const formatted = data.map(row => ({
+          date: row.date,
+          price: parseFloat(row.modal_price || 0) / 100, // per Kg
+          minPrice: parseFloat(row.min_price || 0) / 100,
+          maxPrice: parseFloat(row.max_price || 0) / 100,
+          market: row.yard_name,
+          arrivals: 0,
+          source: 'Supabase (telangana_market_prices)'
+        })).sort((a, b) => a.date.localeCompare(b.date));
+
+        dbCache.historyByCrop.set(cacheKey, { data: formatted, timestamp: Date.now() });
+        return formatted;
+      }
+    } catch (e) {
+      console.warn('[telanganaData] Supabase market history fetch failed:', e.message);
+    }
+  }
+
   ensureParsed();
   const results = [];
   for (const row of csvAllRecords) {
     if (!row.commodity) continue;
-    if (row.commodity.toLowerCase() !== crop.toLowerCase()) continue;
+    if (row.commodity.toLowerCase() !== cleanCrop.toLowerCase()) continue;
     if (yardCode && row.yard_code !== yardCode) continue;
     results.push({
       date: row.date,
-      price: parseFloat(row.modal_price) / 100, // per Kg
+      price: parseFloat(row.modal_price) / 100,
       minPrice: parseFloat(row.min_price) / 100,
       maxPrice: parseFloat(row.max_price) / 100,
       market: row.yard_name,
-      arrivals: 0 // Not present in optimized CSV
+      arrivals: 0,
+      source: 'CSV Backup'
     });
   }
   return results.sort((a, b) => a.date.localeCompare(b.date));

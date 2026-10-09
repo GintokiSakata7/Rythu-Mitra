@@ -39,15 +39,7 @@ export default function BuyerPage() {
 
   const crops = [
     { id: '', label: 'All Crops' },
-    ...(dbCrops.length > 0 
-      ? dbCrops.map(c => ({ id: c.name, label: c.name }))
-      : [
-          { id: 'Tomato', label: '🍅 Tomato' },
-          { id: 'Onion', label: '🧅 Onion' },
-          { id: 'Potato', label: '🥔 Potato' },
-          { id: 'Chilli', label: '🌶️ Chilli' }
-        ]
-    )
+    ...dbCrops.map(c => ({ id: c.name, label: c.name }))
   ];
 
   return (
