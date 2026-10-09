@@ -18,12 +18,16 @@ function evaluateMarket(market, input) {
     hasTransport: input.hasTransport,
     perishability: input.perishability
   });
+  const qty = Math.max(input.quantityKg, 1);
   return {
     ...market,
     type: 'Market',
     pricePerKg: market.modalPrice,
     ...econ,
-    expectedNetPerKg: Number((econ.netRealization / input.quantityKg).toFixed(2)),
+    expectedNetPerKg: Number((econ.netRealization / qty).toFixed(2)),
+    expectedNetPerKgMin: Number((econ.netRealizationMin / qty).toFixed(2)),
+    expectedNetPerKgMax: Number((econ.netRealizationMax / qty).toFixed(2)),
+    expectedNetPerKgRange: `₹${Number((econ.netRealizationMin / qty).toFixed(1))} – ₹${Number((econ.netRealizationMax / qty).toFixed(1))}`,
     trendPct: Number((market.trend * 100).toFixed(1)),
     stabilityPct: Math.round(market.stability * 100)
   };
@@ -31,11 +35,14 @@ function evaluateMarket(market, input) {
 
 function evaluateBuyer(buyer, input) {
   const distanceKm = haversineKm(input.latitude, input.longitude, buyer.latitude, buyer.longitude);
+  const isBuyerPickup = buyer.pickupProvided === true;
+  const targetQty = Math.max(Math.min(input.quantityKg, buyer.quantityKg), 1);
   const econ = calculateMarketEconomics({
-    quantityKg: Math.min(input.quantityKg, buyer.quantityKg),
+    quantityKg: targetQty,
     pricePerKg: buyer.offerPrice,
     distanceKm,
-    hasTransport: buyer.pickupProvided || input.hasTransport,
+    hasTransport: isBuyerPickup ? false : input.hasTransport,
+    isBuyerPickup,
     perishability: input.perishability
   });
   return {
@@ -45,8 +52,11 @@ function evaluateBuyer(buyer, input) {
     type: 'Direct Buyer',
     pricePerKg: buyer.offerPrice,
     ...econ,
-    expectedNetPerKg: Number((econ.netRealization / Math.min(input.quantityKg, buyer.quantityKg)).toFixed(2)),
-    pickupProvided: buyer.pickupProvided
+    expectedNetPerKg: Number((econ.netRealization / targetQty).toFixed(2)),
+    expectedNetPerKgMin: Number((econ.netRealizationMin / targetQty).toFixed(2)),
+    expectedNetPerKgMax: Number((econ.netRealizationMax / targetQty).toFixed(2)),
+    expectedNetPerKgRange: `₹${Number((econ.netRealizationMin / targetQty).toFixed(1))} – ₹${Number((econ.netRealizationMax / targetQty).toFixed(1))}`,
+    pickupProvided: isBuyerPickup
   };
 }
 

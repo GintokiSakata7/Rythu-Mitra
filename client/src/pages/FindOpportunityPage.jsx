@@ -401,8 +401,13 @@ export default function FindOpportunityPage() {
                         <div className="banner-value">
                           <span>{isLoss ? 'Expected net loss' : 'Expected net'}</span>
                           <strong className={isLoss ? 'loss-num' : ''}>
-                            ₹{Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}
+                            {result.recommendation?.netRange || `₹${Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}`}
                           </strong>
+                          {result.recommendation?.vehicleName && (
+                            <div style={{ fontSize: '0.8rem', marginTop: '4px', opacity: 0.95 }}>
+                              🚚 {result.recommendation.vehicleName} ({result.recommendation.transportRange || 'Free'})
+                            </div>
+                          )}
                           <small>AI: {result.aiProvider}</small>
                         </div>
                       </div>
@@ -429,7 +434,7 @@ export default function FindOpportunityPage() {
                   <div className="assumption-strip">
                     <Check size={16} />
                     <span>
-                      Prototype assumptions: transport ₹18/km, time ₹300/hr, configurable risk coefficient.
+                      Dynamic vehicle tier: {result.recommendation?.vehicleName || 'Load-based freight'} ({result.recommendation?.transportRange || 'Dynamic rates'}) · Round-trip distance & time economics factored.
                     </span>
                   </div>
                 </>

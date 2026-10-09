@@ -31,7 +31,7 @@ class MarketDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().langCode;
-    final s = (String k) => AppStrings.get(k, lang);
+    String s(String k) => AppStrings.get(k, lang);
 
     return Scaffold(
       appBar: AppBar(
@@ -64,13 +64,31 @@ class MarketDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    CurrencyFormatter.format(market.netRealization),
-                    style: const TextStyle(
+                    market.netRange ?? CurrencyFormatter.format(market.netRealization),
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 36,
+                      fontSize: market.netRange != null ? 26 : 36,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  if (market.vehicleName != null || market.pickupProvided == true) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '🚚 ${market.localizedVehicleName(lang)} (${market.transportRange ?? "Free"})',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -147,7 +165,19 @@ class MarketDetailsScreen extends StatelessWidget {
                 children: [
                   _LedgerRow(s('gross_revenue'), market.saleValue, isPositive: true),
                   const Divider(height: 24),
-                  _LedgerRow(s('transport_cost'), market.transportCost, isPositive: false),
+                  _LedgerRow(
+                    market.localizedVehicleName(lang),
+                    market.transportCost,
+                    isPositive: market.transportCost == 0,
+                    sub: market.pickupProvided == true
+                        ? 'Free Farmgate Pickup'
+                        : 'Round-trip logistics',
+                    customValue: market.transportRange != null
+                        ? (market.transportCost == 0
+                            ? market.transportRange
+                            : '− ${market.transportRange}')
+                        : null,
+                  ),
                   _LedgerRow(s('time_cost'), market.timeCost, isPositive: false),
                   _LedgerRow(s('expected_loss'), market.riskCost, isPositive: false),
                   const Divider(height: 24, thickness: 2),
@@ -160,9 +190,9 @@ class MarketDetailsScreen extends StatelessWidget {
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        CurrencyFormatter.format(market.netRealization),
+                        market.netRange ?? CurrencyFormatter.format(market.netRealization),
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.successGreen,
                         ),
@@ -216,8 +246,16 @@ class _LedgerRow extends StatelessWidget {
   final String label;
   final double amount;
   final bool isPositive;
+  final String? customValue;
+  final String? sub;
 
-  const _LedgerRow(this.label, this.amount, {required this.isPositive});
+  const _LedgerRow(
+    this.label,
+    this.amount, {
+    required this.isPositive,
+    this.customValue,
+    this.sub,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -226,10 +264,20 @@ class _LedgerRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: const TextStyle(fontSize: 15, color: Colors.black87)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87)),
+                if (sub != null)
+                  Text(sub!,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+          ),
           Text(
-            '${isPositive ? "" : "− "}${CurrencyFormatter.format(amount)}',
+            customValue ?? '${isPositive ? "" : "− "}${CurrencyFormatter.format(amount)}',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,

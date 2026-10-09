@@ -11,36 +11,38 @@ function fallbackExplanation({ recommendation, search }, lang = 'en') {
     return 'No suitable opportunity was found from the configured candidate set.';
   }
   const isLoss = (recommendation.netRealization ?? 0) < 0;
-  const netStr = `₹${Math.round(recommendation.netRealization).toLocaleString('en-IN')}`;
+  const netStr = recommendation.netRange || `₹${Math.round(recommendation.netRealization).toLocaleString('en-IN')}`;
   const priceStr = `₹${recommendation.pricePerKg}/kg`;
   const name = recommendation.name || recommendation.companyName;
+  const vehicle = (lang === 'te' ? recommendation.vehicleNameTe : lang === 'hi' ? recommendation.vehicleNameHi : recommendation.vehicleName) || recommendation.vehicleName || 'వాహనం';
+  const transportStr = recommendation.transportRange || `₹${Math.round(recommendation.transportCost || 0).toLocaleString('en-IN')}`;
 
   if (isLoss) {
     if (lang === 'te') {
-      return `హెచ్చరిక: రవాణా మరియు ప్రయాణ ఖర్చులు (₹${Math.round(recommendation.transportCost || 0)}) పంట విలువ కంటే ఎక్కువగా ఉండటం వల్ల నికర నష్టం ${netStr} వచ్చింది. తక్కువ పరిమాణానికి దూరపు హోల్‌సేల్ మార్కెట్లకు వెళ్లడం కంటే స్థానిక గ్రామంలో విక్రయించడం లేదా పొరుగు రైతులతో కలిసి సరుకు తరలించడం శ్రేయస్కరం.`;
+      return `హెచ్చరిక: ${vehicle} రవాణా ఖర్చు (${transportStr}) పంట విలువ కంటే ఎక్కువగా ఉండటం వల్ల నికర నష్టం (${netStr}) వచ్చే అవకాశం ఉంది. తక్కువ పరిమాణానికి దూరపు మార్కెట్లకు వెళ్లకుండా స్థానికంగా విక్రయించడం లేదా ఇతర రైతులతో కలిసి వాహనం మాట్లాడుకోవడం శ్రేయస్కరం.`;
     }
     if (lang === 'hi') {
-      return `चेतावनी: ढुलाई और यात्रा खर्च (₹${Math.round(recommendation.transportCost || 0)}) फसल मूल्य से अधिक होने के कारण ₹${Math.round(recommendation.netRealization)} का शुद्ध घाटा हो रहा है। इतनी छोटी मात्रा के लिए दूर की थोक मंडी जाने के बजाय स्थानीय बाज़ार में बेचें या साथी किसानों के साथ मिलकर माल भेजें।`;
+      return `चेतावनी: ${vehicle} ढुलाई खर्च (${transportStr}) फसल मूल्य से अधिक होने के कारण अनुमानित घाटा (${netStr}) हो सकता है। इतनी कम मात्रा के लिए दूर की मंडी जाने के बजाय स्थानीय स्तर पर बेचें या अन्य किसानों के साथ मिलकर वाहन साझा करें।`;
     }
-    return `Warning: Freight and travel costs (₹${Math.round(recommendation.transportCost || 0)}) exceed total harvest value, resulting in a net loss of ${netStr}. For small quantities, avoid individual wholesale transit; sell locally at the farmgate or pool freight with neighboring farmers.`;
+    return `Warning: ${vehicle} transport freight (${transportStr}) exceeds harvest value, resulting in an estimated net loss (${netStr}). For this volume, sell locally at the farmgate or pool transport with neighbors instead of hiring a vehicle alone.`;
   }
 
   if (lang === 'te') {
     return recommendation.type === 'Direct Buyer'
-      ? `${name} నేరుగా కొనుగోలుదారు, ${priceStr} ధర అందిస్తున్నారు${recommendation.pickupProvided ? ' (పికప్ సదుపాయం ఉంది)' : ''}. రవాణా, సమయం, నష్టభయం లెక్కించిన తర్వాత మీ నికర ఆదాయం ${netStr}. ఇంజిన్ మొత్తం ${search?.candidatesEvaluated || 5} అవకాశాలను విశ్లేషించి రవాణా నష్టాలను తప్పించింది.`
-      : `${name}లో మోడల్ ధర ${priceStr}. రవాణా మరియు సమయ ఖర్చులు పోను మీకు చేతికందే నికర మొత్తం ${netStr}. దూరం పెరిగే కొద్దీ రవాణా ఖర్చులు పెరగకుండా ఇంజిన్ ఉత్తమ మార్కెట్‌ను ఎంపిక చేసింది.`;
+      ? `${name} నేరుగా కొనుగోలుదారు, ${priceStr} ధర అందిస్తున్నారు (${vehicle}, రవాణా ఖర్చు: ${transportStr}). అన్ని ఖర్చులు పోను మీ అంచనా నికర ఆదాయం ${netStr}. ఇంజిన్ మొత్తం ${search?.candidatesEvaluated || 5} అవకాశాలను విశ్లేషించి లాభదాయకమైన ఎంపికను ఇచ్చింది.`
+      : `${name} మార్కెట్‌లో ధర ${priceStr}. సిఫార్సు చేసిన రవాణా: ${vehicle} (ఖర్చు: ${transportStr}). రవాణా మరియు సమయం పోను చేతికందే నికర మొత్తం ${netStr}. దూరం మరియు వాహన ఖర్చులను లెక్కించి ఇది ఉత్తమమైనదిగా నిర్ణయించబడింది.`;
   }
 
   if (lang === 'hi') {
     return recommendation.type === 'Direct Buyer'
-      ? `${name} डायरेक्ट खरीदार हैं जो ${priceStr} का ऑफर दे रहे हैं${recommendation.pickupProvided ? ' (पिकअप उपलब्ध)' : ''}। ढुलाई, समय और जोखिम घटाने के बाद आपका अनुमानित शुद्ध मुनाफा ${netStr} है। सिस्टम ने ${search?.candidatesEvaluated || 5} विकल्पों का मूल्यांकन करके अनावश्यक यात्रा से बचाया।`
-      : `${name} में भाव ${priceStr} है। ढुलाई, यात्रा समय और जोखिम के बाद आपकी शुद्ध आय ${netStr} रहेगी। दूर की मंडियों में भाड़ा और नुकसान से बचाने के लिए यह सबसे किफायती विकल्प है।`;
+      ? `${name} डायरेक्ट खरीदार हैं जो ${priceStr} का भाव दे रहे हैं (${vehicle}, ढुलाई: ${transportStr})। सभी खर्चों के बाद आपका अनुमानित शुद्ध मुनाफा ${netStr} रहेगा। सिस्टम ने ${search?.candidatesEvaluated || 5} विकल्पों में से सबसे फायदेमंद सौदा चुना है।`
+      : `${name} मंडी में भाव ${priceStr} है। अनुशंसित वाहन: ${vehicle} (अनुमानित भाड़ा: ${transportStr})। ढुलाई और समय लागत के बाद आपकी शुद्ध आय ${netStr} रहेगी।`;
   }
 
   const buyerLine = recommendation.type === 'Direct Buyer'
-    ? `${name} is a direct buyer offering ${priceStr}${recommendation.pickupProvided ? ' with pickup provided' : ''}.`
-    : `${name} has a modal price of ${priceStr}.`;
-  return `${buyerLine} After transport, travel time and risk, the estimated net realization is ${netStr}. The optimizer evaluated ${search?.candidatesEvaluated || 5} relevant opportunities across ${search?.levelsUsed || 1} search level(s) and stopped early to avoid unnecessary travel.`;
+    ? `${name} is a direct buyer offering ${priceStr} (${vehicle}, freight: ${transportStr}).`
+    : `${name} offers ${priceStr} via ${vehicle} (est. freight: ${transportStr}).`;
+  return `${buyerLine} After estimated transit and risk, your expected net realization is ${netStr}. The optimizer evaluated ${search?.candidatesEvaluated || 5} opportunities across ${search?.levelsUsed || 1} search level(s) to maximize your farm earnings.`;
 }
 
 export async function explainRecommendation(payload) {
@@ -51,7 +53,7 @@ export async function explainRecommendation(payload) {
   if (lang === 'te') langInstruction = 'CRITICAL: Respond fluently and naturally in Telugu script (తెలుగు) so a Telugu-speaking farmer understands immediately.';
   else if (lang === 'hi') langInstruction = 'CRITICAL: Respond fluently and naturally in Hindi script (हिंदी) so a Hindi-speaking farmer understands immediately.';
 
-  const system = `You are RythuMitra, an expert and empathetic agricultural market decision assistant for Indian farmers. Explain recommendations from structured calculations clearly. Never invent market prices or facts. Emphasize expected net realization, transport costs, travel time, and risk, explaining why this choice pays best after travel. If the expected net realization is negative (less than 0), explicitly warn the farmer that freight and travel costs exceed the total crop value for this small harvest quantity, and advise selling locally at the farmgate or aggregating loads with neighboring farmers rather than traveling solo to a distant mandi. Keep the explanation under 90 words. Use Indian rupee formatting (₹). If the recommendation is a direct buyer, mention the buyer and pickup terms. ${langInstruction}`;
+  const system = `You are RythuMitra, an expert and empathetic agricultural market decision assistant for Indian farmers. Explain recommendations from structured calculations clearly. Never invent market prices or facts. Emphasize expected net realization range (netRange), realistic vehicle tier (vehicleName), and estimated freight cost range (transportRange), explaining why this vehicle and mandi choice yields the highest net return after round-trip logistics. If expected net realization is negative, warn the farmer against hiring a solo vehicle for small tonnage and advise local pooling or farmgate sale. Keep the explanation concise under 85 words. Use Indian rupee formatting (₹). If the recommendation is a direct buyer, highlight farmgate pickup terms. ${langInstruction}`;
   try {
     const completion = await client.chat.completions.create({
       model: env.groqModel,

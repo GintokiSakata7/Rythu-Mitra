@@ -10,10 +10,20 @@ class MarketModel {
   final double pricePerKg;
   final double saleValue;
   final double transportCost;
+  final double? transportCostMin;
+  final double? transportCostMax;
+  final String? transportRange;
+  final String? vehicleName;
+  final String? vehicleNameTe;
+  final String? vehicleNameHi;
   final double timeCost;
   final double riskCost;
   final double netRealization;
+  final double? netRealizationMin;
+  final double? netRealizationMax;
+  final String? netRange;
   final double expectedNetPerKg;
+  final String? expectedNetPerKgRange;
   final double travelHours;
   final bool? pickupProvided;
   final String? companyName;
@@ -28,10 +38,20 @@ class MarketModel {
     required this.pricePerKg,
     required this.saleValue,
     required this.transportCost,
+    this.transportCostMin,
+    this.transportCostMax,
+    this.transportRange,
+    this.vehicleName,
+    this.vehicleNameTe,
+    this.vehicleNameHi,
     required this.timeCost,
     required this.riskCost,
     required this.netRealization,
+    this.netRealizationMin,
+    this.netRealizationMax,
+    this.netRange,
     required this.expectedNetPerKg,
+    this.expectedNetPerKgRange,
     required this.travelHours,
     this.pickupProvided,
     this.companyName,
@@ -39,6 +59,16 @@ class MarketModel {
 
   String get displayName => companyName ?? name;
   String get displayLocation => city ?? district ?? '';
+
+  String localizedVehicleName(String lang) {
+    if (lang == 'te' && vehicleNameTe != null && vehicleNameTe!.isNotEmpty) {
+      return vehicleNameTe!;
+    }
+    if (lang == 'hi' && vehicleNameHi != null && vehicleNameHi!.isNotEmpty) {
+      return vehicleNameHi!;
+    }
+    return vehicleName ?? (pickupProvided == true ? 'Free Farmgate Pickup' : 'Transport');
+  }
 
   static MarketModel fromJson(Map<String, dynamic> json) {
     return MarketModel(
@@ -51,10 +81,20 @@ class MarketModel {
       pricePerKg: (json['pricePerKg'] ?? 0).toDouble(),
       saleValue: (json['saleValue'] ?? 0).toDouble(),
       transportCost: (json['transportCost'] ?? 0).toDouble(),
+      transportCostMin: (json['transportCostMin'] as num?)?.toDouble(),
+      transportCostMax: (json['transportCostMax'] as num?)?.toDouble(),
+      transportRange: json['transportRange']?.toString(),
+      vehicleName: json['vehicleName']?.toString(),
+      vehicleNameTe: json['vehicleNameTe']?.toString(),
+      vehicleNameHi: json['vehicleNameHi']?.toString(),
       timeCost: (json['timeCost'] ?? 0).toDouble(),
       riskCost: (json['riskCost'] ?? 0).toDouble(),
       netRealization: (json['netRealization'] ?? 0).toDouble(),
+      netRealizationMin: (json['netRealizationMin'] as num?)?.toDouble(),
+      netRealizationMax: (json['netRealizationMax'] as num?)?.toDouble(),
+      netRange: json['netRange']?.toString(),
       expectedNetPerKg: (json['expectedNetPerKg'] ?? 0).toDouble(),
+      expectedNetPerKgRange: json['expectedNetPerKgRange']?.toString(),
       travelHours: (json['travelHours'] ?? 0).toDouble(),
       pickupProvided: json['pickupProvided'] as bool?,
       companyName: json['companyName']?.toString(),

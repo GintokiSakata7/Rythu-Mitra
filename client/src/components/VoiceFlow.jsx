@@ -1573,12 +1573,12 @@ export default function VoiceFlow({ onSwitchToManual }) {
                       <div className={`winner-net-pill ${isLoss ? 'negative-loss' : ''}`}>
                         <span>{isLoss ? t.loss_net_label : t.net_realization}</span>
                         <strong className={`giant-rupee ${isLoss ? 'loss-text' : ''}`}>
-                          ₹{Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}
+                          {result.recommendation?.netRange || `₹${Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}`}
                         </strong>
                         <small>
                           {isLoss
-                            ? `⚠️ ₹${result.recommendation?.expectedNetPerKg} / kg ${t.loss_per_kg || 'net loss'}`
-                            : `₹${result.recommendation?.expectedNetPerKg} / kg net in hand`}
+                            ? `⚠️ ${result.recommendation?.expectedNetPerKgRange || ('₹' + result.recommendation?.expectedNetPerKg)} / kg ${t.loss_per_kg || 'net loss'}`
+                            : `${result.recommendation?.expectedNetPerKgRange || ('₹' + result.recommendation?.expectedNetPerKg)} / kg net in hand`}
                         </small>
                       </div>
                     </div>
@@ -1615,9 +1615,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
                         <small>@ ₹{result.recommendation?.pricePerKg}/kg</small>
                       </div>
                       <div className="ledger-cell negative">
-                        <span>{t.transport_cost}</span>
-                        <strong>-₹{Math.round(result.recommendation?.transportCost || 0).toLocaleString('en-IN')}</strong>
-                        <small>{result.recommendation?.pickupProvided ? 'Pickup Provided' : 'Freight deduction'}</small>
+                        <span>{result.recommendation?.vehicleName || t.transport_cost}</span>
+                        <strong>{result.recommendation?.transportRange ? (result.recommendation.transportCost === 0 ? result.recommendation.transportRange : `-${result.recommendation.transportRange}`) : `-₹${Math.round(result.recommendation?.transportCost || 0).toLocaleString('en-IN')}`}</strong>
+                        <small>{result.recommendation?.pickupProvided ? 'Free Pickup Provided' : (result.recommendation?.vehicleName || 'Freight estimate')}</small>
                       </div>
                       <div className="ledger-cell negative">
                         <span>{t.time_cost}</span>

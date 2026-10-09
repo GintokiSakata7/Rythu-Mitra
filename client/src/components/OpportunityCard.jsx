@@ -45,20 +45,21 @@ export default function OpportunityCard({ opportunity, highlight = false }) {
       </div>
       <div className={`opp-net ${isLoss ? 'opp-net-loss' : ''}`}>
         <span>{isLoss ? '⚠️ Expected net loss' : 'Expected net realization'}</span>
-        <strong className={isLoss ? 'text-loss' : ''}>{money(opportunity.netRealization)}</strong>
+        <strong className={isLoss ? 'text-loss' : ''}>{opportunity.netRange || money(opportunity.netRealization)}</strong>
         <small className={isLoss ? 'text-loss-muted' : ''}>
           {isLoss
-            ? `⚠️ ₹${Number(opportunity.expectedNetPerKg || 0).toFixed(2)}/kg net loss`
-            : `≈ ₹${Number(opportunity.expectedNetPerKg || 0).toFixed(2)}/kg after costs`}
+            ? `⚠️ ${opportunity.expectedNetPerKgRange || ('₹' + Number(opportunity.expectedNetPerKg || 0).toFixed(2))}/kg net loss`
+            : `≈ ${opportunity.expectedNetPerKgRange || ('₹' + Number(opportunity.expectedNetPerKg || 0).toFixed(2))}/kg after costs`}
         </small>
       </div>
       <div className="opp-grid">
         <Mini icon={<TrendingUp size={15}/>} label="Offer / modal" value={`₹${Number(opportunity.pricePerKg).toFixed(2)}/kg`} />
-        <Mini icon={<Truck size={15}/>} label="Transport" value={money(opportunity.transportCost)} />
+        <Mini icon={<Truck size={15}/>} label={opportunity.vehicleName ? (opportunity.vehicleName.length > 14 ? 'Logistics' : opportunity.vehicleName) : 'Transport'} value={opportunity.transportRange || money(opportunity.transportCost)} />
         <Mini icon={<Timer size={15}/>} label="Travel time" value={`${opportunity.travelHours} h`} />
         <Mini icon={<MapPin size={15}/>} label="Risk" value={money(opportunity.riskCost)} />
       </div>
-      {opportunity.pickupProvided && <div className="pickup-note"><Truck size={15}/> Buyer pickup included</div>}
+      {opportunity.pickupProvided && <div className="pickup-note"><Truck size={15}/> Buyer farmgate pickup included (Free)</div>}
+      {!opportunity.pickupProvided && opportunity.vehicleName && <div className="pickup-note" style={{ background: '#f8fafc', color: '#475569', borderColor: '#e2e8f0' }}><Truck size={15}/> Assigned: {opportunity.vehicleName} ({opportunity.transportRange})</div>}
       <div className="opp-footer"><span>Score {Math.round((opportunity.score || 0) * 100)}%</span><ArrowUpRight size={16}/></div>
     </article>
   );
