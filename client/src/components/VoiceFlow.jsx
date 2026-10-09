@@ -724,11 +724,28 @@ export default function VoiceFlow({ onSwitchToManual }) {
         const audio = new Audio(audioUrl);
         currentAudioRef.current = audio;
 
+        let hasStartedPlaying = false;
+        const loadTimer = setTimeout(() => {
+          if (!hasStartedPlaying && currentAudioRef.current === audio) {
+            console.warn('Audio stream network timeout, falling back to speech synthesis');
+            try { audio.pause(); } catch {}
+            currentAudioRef.current = null;
+            speakWithBrowserSynth(text, finish);
+          }
+        }, 4500);
+
+        audio.onplaying = () => {
+          hasStartedPlaying = true;
+          clearTimeout(loadTimer);
+        };
+
         audio.onended = () => {
+          clearTimeout(loadTimer);
           finish();
         };
 
         audio.onerror = () => {
+          clearTimeout(loadTimer);
           // If network stream fails, seamlessly fall back to browser speech synthesis
           currentAudioRef.current = null;
           speakWithBrowserSynth(text, finish);
@@ -737,6 +754,7 @@ export default function VoiceFlow({ onSwitchToManual }) {
         const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromise.catch((e) => {
+            clearTimeout(loadTimer);
             console.warn('Audio stream play blocked, falling back to speech synthesis:', e);
             currentAudioRef.current = null;
             speakWithBrowserSynth(text, finish);
@@ -1223,10 +1241,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
 
             // First voice interaction starts from Step 0
             if (step === 0) {
+              getSharedVoiceAudioContext();
               setStep(1);
-              setTimeout(() => {
-                speakText(`${t.welcome} ${t.q1}`, { autoListen: true });
-              }, 80);
+              speakText(`${t.welcome} ${t.q1}`, { autoListen: true });
               return;
             }
 

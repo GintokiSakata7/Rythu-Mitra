@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import HomePage from './pages/HomePage.jsx';
@@ -6,8 +7,14 @@ import BuyerPage from './pages/BuyerPage.jsx';
 import PostRequirementPage from './pages/PostRequirementPage.jsx';
 import AssistantPage from './pages/AssistantPage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
+import { api } from './lib/api.js';
 
 export default function App() {
+  useEffect(() => {
+    // Silently warm up the Render backend on initial app load to eliminate cold-start delay
+    api.health().catch(() => {});
+  }, []);
+
   return (
     <div className="mobile-app-shell">
       <Navbar />

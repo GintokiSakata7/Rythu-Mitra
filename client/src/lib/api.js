@@ -1,4 +1,5 @@
-const BASE = import.meta.env.VITE_API_BASE_URL || 'https://mandi-mitra-nbtv.onrender.com/api';
+const rawBase = (import.meta.env.VITE_API_BASE_URL || 'https://mandi-mitra-nbtv.onrender.com/api').trim().replace(/\/+$/, '');
+const BASE = rawBase.endsWith('/api') ? rawBase : `${rawBase}/api`;
 
 async function request(path, options = {}) {
   const response = await fetch(`${BASE}${path}`, {
