@@ -357,35 +357,9 @@ export default function OfficialPriceSubmitPage() {
           {/* Commodity & Grade */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
-                  Commodity *
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setItemModalError('');
-                    setShowAddModal(true);
-                  }}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    color: '#047857',
-                    background: '#ecfdf5',
-                    border: '1px solid #a7f3d0',
-                    padding: '2px 8px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Add a new crop or commodity to catalog"
-                >
-                  <Plus size={13} /> Add More Items
-                </button>
-              </div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                Commodity *
+              </label>
               <select
                 ref={commoditySelectRef}
                 name="commodityName"
