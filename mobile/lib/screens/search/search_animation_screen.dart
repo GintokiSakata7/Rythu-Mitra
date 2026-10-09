@@ -7,10 +7,13 @@ import '../../localization/app_strings.dart';
 import '../../widgets/search_radar_animation.dart';
 import 'results_screen.dart';
 
+import 'package:flutter_tts/flutter_tts.dart';
+
 class SearchAnimationScreen extends StatefulWidget {
   final RecommendationRequest request;
+  final bool fromVoice;
 
-  const SearchAnimationScreen({super.key, required this.request});
+  const SearchAnimationScreen({super.key, required this.request, this.fromVoice = false});
 
   @override
   State<SearchAnimationScreen> createState() => _SearchAnimationScreenState();
@@ -19,6 +22,7 @@ class SearchAnimationScreen extends StatefulWidget {
 class _SearchAnimationScreenState extends State<SearchAnimationScreen> {
   final List<String> _currentLogs = [];
   bool _navigating = false;
+  final _tts = FlutterTts();
 
   @override
   void initState() {
@@ -61,6 +65,33 @@ class _SearchAnimationScreenState extends State<SearchAnimationScreen> {
     _navigating = true;
 
     if (searchProv.state == SearchState.done && searchProv.result != null) {
+      if (widget.fromVoice) {
+        final rec = searchProv.result!.recommendation;
+        final marketName = rec.name;
+        final distance = rec.distanceKm.toStringAsFixed(1);
+        final transportCost = rec.transportCost.toStringAsFixed(0);
+        final profit = rec.netRealization.toStringAsFixed(0);
+
+        final text = lang == 'te' 
+            ? "ఉత్తమ మార్కెట్ $marketName. ఇది $distance కిలోమీటర్ల దూరంలో ఉంది. రవాణా ఖర్చు $transportCost రూపాయలు, మరియు మీ నికర లాభం $profit రూపాయలు." 
+            : lang == 'hi' 
+                ? "सबसे अच्छा बाज़ार $marketName है। यह $distance किलोमीटर दूर है। परिवहन खर्च $transportCost रुपये है और आपका शुद्ध लाभ $profit रुपये होगा।" 
+                : "The best market is $marketName. It is $distance kilometers away. The transport cost is $transportCost rupees, and your net profit will be $profit rupees.";
+        
+        String ttsLang = 'en-US';
+        if (lang == 'te') ttsLang = 'te-IN';
+        if (lang == 'hi') ttsLang = 'hi-IN';
+        
+        try {
+          final res = await _tts.setLanguage(ttsLang);
+          if (res != 1 && res != true) {
+            await _tts.setLanguage('en-IN');
+          }
+          // Do not await speak so that navigation happens immediately
+          _tts.speak(text);
+        } catch (_) {}
+      }
+
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(

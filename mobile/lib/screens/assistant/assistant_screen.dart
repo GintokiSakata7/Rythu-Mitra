@@ -86,11 +86,11 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
     }
   }
 
-  void _addBotMessage(String text) {
+  Future<void> _addBotMessage(String text) async {
     setState(() {
       _messages.insert(0, {'isBot': true, 'text': text});
     });
-    _speak(text);
+    await _speak(text);
   }
 
   void _addUserMessage(String text) {
@@ -136,7 +136,12 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
             _isListening = false;
             _partialText = '';
           });
-          _addBotMessage("Sorry, I didn't catch that. Please try again.");
+          final l = context.read<LanguageProvider>().langCode;
+          _addBotMessage(l == 'te' 
+              ? "క్షమించండి, నాకు అర్థం కాలేదు. దయచేసి మళ్ళీ మాట్లాడండి." 
+              : l == 'hi' 
+                  ? "क्षमा करें, मैं समझ नहीं पाया। कृपया पुनः प्रयास करें।" 
+                  : "Sorry, I didn't catch that. Please try again.");
         }
       },
       onDone: () {
@@ -167,39 +172,40 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
 
       // Handle direct navigation intents
       if (intent.type == IntentType.searchBuyers) {
-        _addBotMessage(lang == 'te' ? "కొనుగోలుదారుల నెట్‌వర్క్‌ని తెరుస్తున్నాను..." : lang == 'hi' ? "खरीदार नेटवर्क खोल रहा हूँ..." : "Navigating to the Buyer Network...");
+        await _addBotMessage(lang == 'te' ? "కొనుగోలుదారుల నెట్‌వర్క్‌ని తెరుస్తున్నాను..." : lang == 'hi' ? "खरीदार नेटवर्क खोल रहा हूँ..." : "Navigating to the Buyer Network...");
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const BuyerListScreen()));
       } else if (intent.type == IntentType.postDemand) {
-        _addBotMessage(lang == 'te' ? "డిమాండ్ స్క్రీన్‌ని తెరుస్తున్నాను..." : lang == 'hi' ? "डिमांड स्क्रीन खोल रहा हूँ..." : "Opening Post Demand screen...");
+        await _addBotMessage(lang == 'te' ? "డిమాండ్ స్క్రీన్‌ని తెరుస్తున్నాను..." : lang == 'hi' ? "डिमांड स्क्रीन खोल रहा हूँ..." : "Opening Post Demand screen...");
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const PostDemandScreen()));
       } else if (intent.type == IntentType.showProfile) {
-        _addBotMessage("Opening profile...");
+        await _addBotMessage(lang == 'te' ? "ప్రొఫైల్ తెరుస్తున్నాను..." : lang == 'hi' ? "प्रोफाइल खोल रहा हूँ..." : "Opening profile...");
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
       } else if (intent.type == IntentType.showNotifications) {
-        _addBotMessage("Opening notifications...");
+        await _addBotMessage(lang == 'te' ? "నోటిఫికేషన్‌లు తెరుస్తున్నాను..." : lang == 'hi' ? "नोटिफिकेशन खोल रहा हूँ..." : "Opening notifications...");
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
       } else if (intent.type == IntentType.openSettings) {
-        _addBotMessage("Opening settings...");
+        await _addBotMessage(lang == 'te' ? "సెట్టింగ్‌లు తెరుస్తున్నాను..." : lang == 'hi' ? "सेटिंग्स खोल रहा हूँ..." : "Opening settings...");
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
       } else {
         // Handle conversational intents
         if (intent.useGps == true) {
-          _addBotMessage(lang == 'te' ? "లొకేషన్ తీసుకుంటున్నాను..." : lang == 'hi' ? "स्थान प्राप्त कर रहा हूँ..." : "Fetching your location...");
+          await _addBotMessage(lang == 'te' ? "లొకేషన్ తీసుకుంటున్నాను..." : lang == 'hi' ? "स्थान प्राप्त कर रहा हूँ..." : "Fetching your location...");
           final loc = await locationService.getCurrentLocation();
           if (loc.result != null) {
             manager.setGpsLocation(loc.result!.lat, loc.result!.lng, loc.result!.displayName ?? 'Current Location');
           } else {
-            _addBotMessage(loc.error?.message ?? "Could not get location. Using Nalgonda as default.");
+            final errorMsg = lang == 'te' ? "లొకేషన్ తీసుకోలేకపోయాము. డిఫాల్ట్ లొకేషన్ వాడుతున్నాను." : lang == 'hi' ? "स्थान प्राप्त नहीं हो सका। डिफ़ॉल्ट स्थान का उपयोग कर रहा हूँ।" : "Could not get location. Using default location.";
+            await _addBotMessage(loc.error?.message ?? errorMsg);
             manager.setGpsLocation(17.05, 79.27, 'Nalgonda');
           }
         } else if (manager.step == ConvStep.needLocation && intent.rawText.trim().isNotEmpty) {
           // The user provided a town name! Let's find its latitude and longitude!
-          _addBotMessage(lang == 'te' ? "లొకేషన్ వెతుకుతున్నాను..." : lang == 'hi' ? "स्थान खोज रहा हूँ..." : "Locating ${intent.rawText.trim()}...");
+          await _addBotMessage(lang == 'te' ? "లొకేషన్ వెతుకుతున్నాను..." : lang == 'hi' ? "स्थान खोज रहा हूँ..." : "Locating ${intent.rawText.trim()}...");
           final loc = await locationService.getLocationFromAddress(intent.rawText.trim());
           if (loc != null) {
              manager.setGpsLocation(loc.lat, loc.lng, loc.displayName ?? intent.rawText.trim());
@@ -212,21 +218,26 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
         final nextQuestion = manager.processIntent(intent, lang);
         
         if (nextQuestion != null) {
-          _addBotMessage(nextQuestion);
+          await _addBotMessage(nextQuestion);
         } else if (manager.isReadyToSearch) {
-          _addBotMessage(manager.confirmationMessage(lang));
+          await _addBotMessage(manager.confirmationMessage(lang));
           await Future.delayed(const Duration(seconds: 2));
           if (mounted) {
             final req = manager.buildRequest(lang);
             manager.reset();
-            Navigator.push(context, MaterialPageRoute(builder: (_) => SearchAnimationScreen(request: req)));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => SearchAnimationScreen(request: req, fromVoice: true)));
           }
         } else {
-          _addBotMessage(lang == 'te' ? "దయచేసి మీరు ఏ పంట అమ్ముతున్నారో చెప్పండి." : lang == 'hi' ? "कृपया बताएं कि आप कौन सी फसल बेचना चाहते हैं।" : "I am RythuMitra assistant. Just say 'I have tomato to sell'.");
+          await _addBotMessage(lang == 'te' ? "దయచేసి మీరు ఏ పంట అమ్ముతున్నారో చెప్పండి." : lang == 'hi' ? "कृपया बताएं कि आप कौन सी फसल बेचना चाहते हैं।" : "I am RythuMitra assistant. Just say 'I have tomato to sell'.");
         }
       }
     } catch (e) {
-      _addBotMessage("Sorry, I encountered an error. Please try again.");
+      final l = context.read<LanguageProvider>().langCode;
+      await _addBotMessage(l == 'te' 
+          ? "క్షమించండి, పొరపాటు జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి." 
+          : l == 'hi' 
+              ? "क्षमा करें, कोई त्रुटि हुई। कृपया पुनः प्रयास करें।" 
+              : "Sorry, I encountered an error. Please try again.");
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -311,9 +322,24 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                         )
                       ],
                     ),
-                    child: Text(
-                      msg['text'],
-                      style: const TextStyle(fontSize: 15, color: Colors.black87),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            msg['text'],
+                            style: const TextStyle(fontSize: 15, color: Colors.black87),
+                          ),
+                        ),
+                        if (isBot) ...[
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => _speak(msg['text']),
+                            child: const Icon(Icons.volume_up, size: 18, color: AppTheme.forestGreen),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 );

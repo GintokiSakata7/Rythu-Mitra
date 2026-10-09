@@ -14,15 +14,27 @@ class MarketDetailsScreen extends StatelessWidget {
   const MarketDetailsScreen({super.key, required this.market, this.explanation});
 
   Future<void> _launchMaps() async {
-    // Standard geo URI intent for Android
-    final q = Uri.encodeComponent('${market.displayName}, ${market.displayLocation}');
-    final url = Uri.parse('geo:0,0?q=$q');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
+    if (market.latitude != null && market.longitude != null) {
+      final lat = market.latitude!;
+      final lng = market.longitude!;
+      
+      // Try Android navigation intent
+      final url = Uri.parse('google.navigation:q=$lat,$lng');
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url);
+      } else {
+        // Fallback to web directions (works on iOS and Android)
+        final webUrl = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+        await launchUrl(webUrl, mode: LaunchMode.externalApplication);
+      }
     } else {
-      // Fallback to web Maps URL
-      final webUrl = Uri.parse('https://maps.google.com/?q=$q');
-      if (await canLaunchUrl(webUrl)) {
+      // Fallback to name search if coordinates are missing
+      final q = Uri.encodeComponent('${market.displayName}, ${market.displayLocation}');
+      final url = Uri.parse('geo:0,0?q=$q');
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url);
+      } else {
+        final webUrl = Uri.parse('https://maps.google.com/?q=$q');
         await launchUrl(webUrl, mode: LaunchMode.externalApplication);
       }
     }

@@ -27,6 +27,8 @@ class MarketModel {
   final double travelHours;
   final bool? pickupProvided;
   final String? companyName;
+  final double? latitude;
+  final double? longitude;
 
   MarketModel({
     required this.id,
@@ -55,6 +57,8 @@ class MarketModel {
     required this.travelHours,
     this.pickupProvided,
     this.companyName,
+    this.latitude,
+    this.longitude,
   });
 
   String get displayName => companyName ?? name;
@@ -98,6 +102,8 @@ class MarketModel {
       travelHours: (json['travelHours'] ?? 0).toDouble(),
       pickupProvided: json['pickupProvided'] as bool?,
       companyName: json['companyName']?.toString(),
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
     );
   }
 }

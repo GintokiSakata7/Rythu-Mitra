@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../localization/app_strings.dart';
@@ -135,6 +136,43 @@ class MarketResultCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () async {
+                      final tts = FlutterTts();
+                      final marketName = market.name;
+                      final distance = market.distanceKm.toStringAsFixed(1);
+                      final transportCost = market.transportCost.toStringAsFixed(0);
+                      final profit = market.netRealization.toStringAsFixed(0);
+
+                      final text = lang == 'te' 
+                          ? "${isBest ? "ఉత్తమ " : ""}మార్కెట్ $marketName. ఇది $distance కిలోమీటర్ల దూరంలో ఉంది. రవాణా ఖర్చు $transportCost రూపాయలు, మరియు మీ నికర లాభం $profit రూపాయలు." 
+                          : lang == 'hi' 
+                              ? "${isBest ? "सबसे अच्छा " : ""}बाज़ार $marketName है। यह $distance किलोमीटर दूर है। परिवहन खर्च $transportCost रुपये है और आपका शुद्ध लाभ $profit रुपये होगा।" 
+                              : "The ${isBest ? "best " : ""}market is $marketName. It is $distance kilometers away. The transport cost is $transportCost rupees, and your net profit will be $profit rupees.";
+                      
+                      String ttsLang = 'en-US';
+                      if (lang == 'te') ttsLang = 'te-IN';
+                      if (lang == 'hi') ttsLang = 'hi-IN';
+                      
+                      try {
+                        final res = await tts.setLanguage(ttsLang);
+                        if (res != 1 && res != true) {
+                          await tts.setLanguage('en-IN');
+                        }
+                        await tts.speak(text);
+                      } catch (_) {}
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: isBest ? Colors.white.withValues(alpha: 0.2) : AppTheme.forestGreen.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.volume_up, color: isBest ? Colors.white : AppTheme.forestGreen, size: 24),
+                    ),
+                  ),
+
                 ],
               ),
             ),
