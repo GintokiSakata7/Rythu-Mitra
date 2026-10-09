@@ -34,10 +34,7 @@ export default function OfficialDashboardPage() {
   if (activeView === 'submit') {
     return (
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <button onClick={() => setActiveView('overview')} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', marginBottom: '15px' }}>
-          ← Back to Dashboard
-        </button>
-        <OfficialPriceSubmitPage />
+        <OfficialPriceSubmitPage embedded={true} onBack={() => setActiveView('overview')} />
       </div>
     );
   }

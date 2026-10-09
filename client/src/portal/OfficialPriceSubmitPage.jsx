@@ -14,7 +14,7 @@ const POPULAR_CROPS = [
   'Carrot', 'Coriander', 'Mustard', 'Brinjal', 'Bitter Gourd'
 ];
 
-export default function OfficialPriceSubmitPage({ embedded = false }) {
+export default function OfficialPriceSubmitPage({ embedded = false, onBack }) {
   const { officialProfile, isVerifiedOfficial } = useAuth();
 
   const minPriceInputRef = useRef(null);
@@ -76,6 +76,20 @@ export default function OfficialPriceSubmitPage({ embedded = false }) {
     }
     loadCommodities();
   }, []);
+
+  // Auto-calculate modal price as average of min and max
+  useEffect(() => {
+    if (formData.minPrice && formData.maxPrice) {
+      const min = Number(formData.minPrice);
+      const max = Number(formData.maxPrice);
+      if (!isNaN(min) && !isNaN(max) && min <= max) {
+        setFormData(prev => ({
+          ...prev,
+          modalPrice: Math.round((min + max) / 2).toString()
+        }));
+      }
+    }
+  }, [formData.minPrice, formData.maxPrice]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -259,11 +273,15 @@ export default function OfficialPriceSubmitPage({ embedded = false }) {
     <div style={{ maxWidth: '780px', margin: '0 auto' }}>
       <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          {!embedded && (
+          {onBack ? (
+            <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '6px', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <ArrowLeft size={14} /> Back to Dashboard
+            </button>
+          ) : !embedded ? (
             <Link to="/portal/official" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '6px' }}>
               <ArrowLeft size={14} /> Back to Official Desk
             </Link>
-          )}
+          ) : null}
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
             Daily Mandi Price Update
           </h1>
@@ -295,7 +313,7 @@ export default function OfficialPriceSubmitPage({ embedded = false }) {
                 Reference ID: <strong>{successInfo.submissionId}</strong>
               </p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {!embedded && (
+                {!embedded && !onBack && (
                   <Link
                     to="/portal/official/submissions"
                     style={{ padding: '6px 12px', background: '#166534', color: '#fff', borderRadius: '6px', fontSize: '0.82rem', textDecoration: 'none', fontWeight: 600 }}
@@ -525,6 +543,9 @@ export default function OfficialPriceSubmitPage({ embedded = false }) {
                   placeholder="e.g. 150"
                   style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                 />
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', lineHeight: '1.3' }}>
+                  Total quantity brought today (1 Quintal = 100 kg)
+                </div>
               </div>
             </div>
 
