@@ -21,15 +21,20 @@ class ApiService {
 
   Future<Map<String, dynamic>> get(String path, {Map<String, String>? query}) async {
     dynamic lastError;
+    final sw = Stopwatch()..start();
     for (final base in [_activeBaseUrl, ..._baseUrls.where((u) => u != _activeBaseUrl)]) {
       try {
         Uri uri = Uri.parse('$base$path');
         if (query != null) uri = uri.replace(queryParameters: query);
+        print('[HTTP] --> GET $uri');
         final response = await http.get(uri).timeout(_timeout);
+        sw.stop();
+        print('[HTTP] <-- ${response.statusCode} $uri (${sw.elapsedMilliseconds}ms)');
         final result = _handleResponse(response);
         _activeBaseUrl = base;
         return result;
       } catch (e) {
+        print('[HTTP] [WARN] GET $base$path failed: $e. Trying fallback endpoint...');
         lastError = e;
       }
     }
@@ -39,18 +44,23 @@ class ApiService {
 
   Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
     dynamic lastError;
+    final sw = Stopwatch()..start();
     for (final base in [_activeBaseUrl, ..._baseUrls.where((u) => u != _activeBaseUrl)]) {
       try {
         final uri = Uri.parse('$base$path');
+        print('[HTTP] --> POST $uri');
         final response = await http.post(
           uri,
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(body),
         ).timeout(_timeout);
+        sw.stop();
+        print('[HTTP] <-- ${response.statusCode} $uri (${sw.elapsedMilliseconds}ms)');
         final result = _handleResponse(response);
         _activeBaseUrl = base;
         return result;
       } catch (e) {
+        print('[HTTP] [WARN] POST $base$path failed: $e. Trying fallback endpoint...');
         lastError = e;
       }
     }
