@@ -141,12 +141,16 @@ class ProfileScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE0E0E0)),
       ),
-      child: ListTile(
-        leading: Icon(icon, color: textColor == AppTheme.dangerRed ? AppTheme.dangerRed : AppTheme.forestGreen),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: textColor)),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        onTap: onTap,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: ListTile(
+          leading: Icon(icon, color: textColor == AppTheme.dangerRed ? AppTheme.dangerRed : AppTheme.forestGreen),
+          title: Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: textColor)),
+          trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          onTap: onTap,
+        ),
       ),
     );
   }

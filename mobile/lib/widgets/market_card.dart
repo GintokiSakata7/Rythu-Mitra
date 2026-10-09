@@ -90,6 +90,8 @@ class MarketResultCard extends StatelessWidget {
                           ),
                         Text(
                           market.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
@@ -102,11 +104,15 @@ class MarketResultCard extends StatelessWidget {
                                 size: 13,
                                 color: isBest ? Colors.white70 : Colors.grey),
                             const SizedBox(width: 2),
-                            Text(
-                              '${market.distanceKm.toStringAsFixed(1)} ${AppStrings.get('km', lang)} • ${market.displayLocation}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isBest ? Colors.white70 : Colors.grey,
+                            Expanded(
+                              child: Text(
+                                '${market.distanceKm.toStringAsFixed(1)} ${AppStrings.get('km', lang)} • ${market.displayLocation}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isBest ? Colors.white70 : Colors.grey,
+                                ),
                               ),
                             ),
                           ],
@@ -114,13 +120,14 @@ class MarketResultCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
                         market.netRange ?? CurrencyFormatter.format(market.netRealization),
                         style: TextStyle(
-                          fontSize: market.netRange != null ? 14 : 20,
+                          fontSize: market.netRange != null ? 14 : 18,
                           fontWeight: FontWeight.bold,
                           color: isBest ? Colors.white : AppTheme.successGreen,
                         ),
@@ -136,7 +143,7 @@ class MarketResultCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () async {
                       final tts = FlutterTts();
