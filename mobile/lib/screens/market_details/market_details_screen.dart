@@ -44,6 +44,7 @@ class MarketDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().langCode;
     String s(String k) => AppStrings.get(k, lang);
+    final isLoss = market.netRealization < 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -58,11 +59,11 @@ class MarketDetailsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppTheme.forestGreen,
+                color: isLoss ? const Color(0xFFC62828) : AppTheme.forestGreen,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.forestGreen.withValues(alpha: 0.3),
+                    color: (isLoss ? const Color(0xFFC62828) : AppTheme.forestGreen).withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   )
@@ -71,7 +72,7 @@ class MarketDetailsScreen extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    s('net_realization'),
+                    s(isLoss ? 'net_loss' : 'net_realization'),
                     style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 4),
@@ -79,7 +80,7 @@ class MarketDetailsScreen extends StatelessWidget {
                     market.netRange ?? CurrencyFormatter.format(market.netRealization),
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: market.netRange != null ? 26 : 36,
+                      fontSize: market.netRange != null ? 24 : 36,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -131,23 +132,23 @@ class MarketDetailsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.harvestGold.withValues(alpha: 0.1),
+                  color: isLoss ? Colors.amber.shade50 : AppTheme.harvestGold.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.harvestGold.withValues(alpha: 0.3)),
+                  border: Border.all(color: isLoss ? Colors.amber.shade400 : AppTheme.harvestGold.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.auto_awesome,
-                            color: AppTheme.harvestGold, size: 20),
+                        Icon(isLoss ? Icons.warning_amber_rounded : Icons.auto_awesome,
+                            color: isLoss ? Colors.amber.shade900 : AppTheme.harvestGold, size: 20),
                         const SizedBox(width: 8),
                         Text(
                           s('why_recommended'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: isLoss ? Colors.amber.shade900 : Colors.black87,
                           ),
                         ),
                       ],
@@ -197,16 +198,16 @@ class MarketDetailsScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        s('net_realization'),
+                        s(isLoss ? 'net_loss' : 'net_realization'),
                         style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       Text(
                         market.netRange ?? CurrencyFormatter.format(market.netRealization),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.successGreen,
+                          color: isLoss ? AppTheme.dangerRed : AppTheme.successGreen,
                         ),
                       ),
                     ],

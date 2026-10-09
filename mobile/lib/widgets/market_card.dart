@@ -24,6 +24,7 @@ class MarketResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = context.watch<LanguageProvider>().langCode;
+    final isLoss = market.netRealization < 0;
 
     return GestureDetector(
       onTap: onTap,
@@ -34,13 +35,15 @@ class MarketResultCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isBest ? AppTheme.harvestGold : const Color(0xFFE8F5E9),
+            color: isBest
+                ? (isLoss ? Colors.red.shade400 : AppTheme.harvestGold)
+                : (isLoss ? Colors.red.shade200 : const Color(0xFFE8F5E9)),
             width: isBest ? 2.5 : 1,
           ),
           boxShadow: [
             BoxShadow(
               color: isBest
-                  ? AppTheme.harvestGold.withValues(alpha: 0.15)
+                  ? (isLoss ? Colors.red.withValues(alpha: 0.15) : AppTheme.harvestGold.withValues(alpha: 0.15))
                   : const Color(0x0A000000),
               blurRadius: isBest ? 16 : 8,
               offset: const Offset(0, 4),
@@ -54,16 +57,19 @@ class MarketResultCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: isBest ? AppTheme.forestGreen : Colors.transparent,
+                color: isBest
+                    ? (isLoss ? const Color(0xFFC62828) : AppTheme.forestGreen)
+                    : (isLoss ? Colors.red.shade50 : Colors.transparent),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(18),
                   topRight: Radius.circular(18),
                 ),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (isBest) ...[
-                    const Text('🏆', style: TextStyle(fontSize: 20)),
+                    Text(isLoss ? '⚠️' : '🏆', style: const TextStyle(fontSize: 20)),
                     const SizedBox(width: 8),
                   ],
                   Expanded(
@@ -76,28 +82,31 @@ class MarketResultCard extends StatelessWidget {
                                 horizontal: 8, vertical: 2),
                             margin: const EdgeInsets.only(bottom: 4),
                             decoration: BoxDecoration(
-                              color: AppTheme.harvestGold,
+                              color: isLoss ? Colors.white.withValues(alpha: 0.25) : AppTheme.harvestGold,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              AppStrings.get('best_option', lang),
-                              style: const TextStyle(
+                              isLoss
+                                  ? AppStrings.get('net_loss_warning', lang)
+                                  : AppStrings.get('best_option', lang),
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: isLoss ? Colors.white : Colors.black87,
                               ),
                             ),
                           ),
                         Text(
                           market.displayName,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 17,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: isBest ? Colors.white : Colors.black87,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Row(
                           children: [
                             Icon(Icons.location_on,
@@ -129,16 +138,22 @@ class MarketResultCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: market.netRange != null ? 14 : 18,
                           fontWeight: FontWeight.bold,
-                          color: isBest ? Colors.white : AppTheme.successGreen,
+                          color: isBest
+                              ? Colors.white
+                              : (isLoss ? AppTheme.dangerRed : AppTheme.successGreen),
                         ),
                       ),
                       Text(
                         market.expectedNetPerKgRange != null
                             ? '${market.expectedNetPerKgRange}/kg'
-                            : AppStrings.get('net_realization', lang),
+                            : (isLoss
+                                ? AppStrings.get('net_loss', lang)
+                                : AppStrings.get('net_realization', lang)),
                         style: TextStyle(
                           fontSize: 11,
-                          color: isBest ? Colors.white70 : Colors.grey,
+                          color: isBest
+                              ? Colors.white70
+                              : (isLoss ? AppTheme.dangerRed.withValues(alpha: 0.8) : Colors.grey),
                         ),
                       ),
                     ],
@@ -147,16 +162,22 @@ class MarketResultCard extends StatelessWidget {
                   GestureDetector(
                     onTap: () async {
                       final tts = FlutterTts();
-                      final marketName = market.name;
+                      final marketName = market.displayName;
                       final distance = market.distanceKm.toStringAsFixed(1);
                       final transportCost = market.transportCost.toStringAsFixed(0);
-                      final profit = market.netRealization.toStringAsFixed(0);
+                      final profit = market.netRealization.abs().toStringAsFixed(0);
 
                       final text = lang == 'te' 
-                          ? "${isBest ? "ఉత్తమ " : ""}మార్కెట్ $marketName. ఇది $distance కిలోమీటర్ల దూరంలో ఉంది. రవాణా ఖర్చు $transportCost రూపాయలు, మరియు మీ నికర లాభం $profit రూపాయలు." 
+                          ? (isLoss
+                              ? "హెచ్చరిక: $marketName వద్ద రవాణా ఖర్చు $transportCost రూపాయలు. దీని వలన మీకు దాదాపు $profit రూపాయల నికర నష్టం వచ్చే అవకాశం ఉంది. చిన్న పంటకు ఒంటరి వాహనం తీసుకోవద్దు."
+                              : "${isBest ? "ఉత్తమ " : ""}మార్కెట్ $marketName. ఇది $distance కిలోమీటర్ల దూరంలో ఉంది. రవాణా ఖర్చు $transportCost రూపాయలు, మరియు మీ నికర లాభం $profit రూపాయలు.") 
                           : lang == 'hi' 
-                              ? "${isBest ? "सबसे अच्छा " : ""}बाज़ार $marketName है। यह $distance किलोमीटर दूर है। परिवहन खर्च $transportCost रुपये है और आपका शुद्ध लाभ $profit रुपये होगा।" 
-                              : "The ${isBest ? "best " : ""}market is $marketName. It is $distance kilometers away. The transport cost is $transportCost rupees, and your net profit will be $profit rupees.";
+                              ? (isLoss
+                                  ? "चेतावनी: $marketName पर ढुलाई खर्च $transportCost रुपये है। इससे आपको लगभग $profit रुपये का शुद्ध नुकसान हो सकता है।"
+                                  : "${isBest ? "सबसे अच्छा " : ""}बाज़ार $marketName है। यह $distance किलोमीटर दूर है। परिवहन खर्च $transportCost रुपये है और आपका शुद्ध लाभ $profit रुपये होगा।") 
+                              : (isLoss
+                                  ? "Warning: Transport to $marketName costs $transportCost rupees, resulting in an estimated net loss of $profit rupees."
+                                  : "The ${isBest ? "best " : ""}market is $marketName. It is $distance kilometers away. The transport cost is $transportCost rupees, and your net profit will be $profit rupees.");
                       
                       String ttsLang = 'en-US';
                       if (lang == 'te') ttsLang = 'te-IN';
@@ -173,10 +194,10 @@ class MarketResultCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: isBest ? Colors.white.withValues(alpha: 0.2) : AppTheme.forestGreen.withValues(alpha: 0.1),
+                        color: isBest ? Colors.white.withValues(alpha: 0.2) : (isLoss ? Colors.red.withValues(alpha: 0.1) : AppTheme.forestGreen.withValues(alpha: 0.1)),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.volume_up, color: isBest ? Colors.white : AppTheme.forestGreen, size: 24),
+                      child: Icon(Icons.volume_up, color: isBest ? Colors.white : (isLoss ? AppTheme.dangerRed : AppTheme.forestGreen), size: 24),
                     ),
                   ),
 
@@ -189,6 +210,34 @@ class MarketResultCard extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  if (isLoss) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded,
+                              color: Colors.red.shade800, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              AppStrings.get('loss_advisory', lang),
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Colors.red.shade900,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   _breakdownRow(
                     AppStrings.get('gross_revenue', lang),
                     market.saleValue,
@@ -224,16 +273,18 @@ class MarketResultCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        AppStrings.get('net_realization', lang),
+                        isLoss
+                            ? AppStrings.get('net_loss', lang)
+                            : AppStrings.get('net_realization', lang),
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                       Text(
                         market.netRange ?? CurrencyFormatter.format(market.netRealization),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          color: AppTheme.successGreen,
+                          color: isLoss ? AppTheme.dangerRed : AppTheme.successGreen,
                         ),
                       ),
                     ],
@@ -278,12 +329,12 @@ class MarketResultCard extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: onTap,
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppTheme.forestGreen),
-                          foregroundColor: AppTheme.forestGreen,
+                          side: BorderSide(color: isLoss ? Colors.red.shade700 : AppTheme.forestGreen),
+                          foregroundColor: isLoss ? Colors.red.shade700 : AppTheme.forestGreen,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('View Details'),
+                        child: Text(AppStrings.get('view_details', lang)),
                       ),
                     ),
                   ],

@@ -42,6 +42,8 @@ class _FindBestScreenState extends State<FindBestScreen> {
   bool? _hasTransport;
   bool _isDetectingLocation = false;
   bool _isGpsSelected = false;
+  final TextEditingController _districtSearchCtrl = TextEditingController();
+  String _districtSearchQuery = '';
 
   @override
   void initState() {
@@ -183,6 +185,7 @@ class _FindBestScreenState extends State<FindBestScreen> {
   void dispose() {
     _pageController.dispose();
     _quantityController.dispose();
+    _districtSearchCtrl.dispose();
     super.dispose();
   }
 
@@ -680,52 +683,138 @@ class _FindBestScreenState extends State<FindBestScreen> {
                 ),
               ),
             ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           const Row(
             children: [
               Expanded(child: Divider()),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('OR CHOOSE TOWN / MANDI',
+                child: Text('OR CHOOSE DISTRICT / MANDI',
                     style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
               Expanded(child: Divider()),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          // Real-time Search Bar for Telangana Districts
+          TextField(
+            controller: _districtSearchCtrl,
+            decoration: InputDecoration(
+              hintText: s('search_district'),
+              prefixIcon: const Icon(Icons.search, color: AppTheme.forestGreen, size: 20),
+              suffixIcon: _districtSearchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        _districtSearchCtrl.clear();
+                        setState(() => _districtSearchQuery = '');
+                      },
+                    )
+                  : null,
+              isDense: true,
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppTheme.forestGreen, width: 2),
+              ),
+            ),
+            onChanged: (val) {
+              setState(() => _districtSearchQuery = val.trim());
+            },
+          ),
+          const SizedBox(height: 10),
+          if (_districtSearchQuery.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Text(
+                    s('popular_districts'),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
-            child: ListView(
-              children: AppConstants.presetLocations.map((loc) {
-                final isSelected = !_isGpsSelected && _locationName == loc['name'];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: isSelected ? AppTheme.forestGreen : Colors.white,
-                        width: isSelected ? 2 : 0,
+            child: () {
+              final query = _districtSearchQuery.toLowerCase();
+              final list = _districtSearchQuery.isEmpty
+                  ? AppConstants.topPresetLocations
+                  : AppConstants.telanganaDistricts.where((loc) {
+                      final name = (loc['name'] as String).toLowerCase();
+                      final te = (loc['te'] as String? ?? '').toLowerCase();
+                      return name.contains(query) || te.contains(query);
+                    }).toList();
+
+              if (list.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.search_off, size: 40, color: Colors.grey),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No Telangana district matching "$_districtSearchQuery"',
+                        style: const TextStyle(fontSize: 13, color: Colors.grey),
                       ),
-                    ),
-                    tileColor: Colors.white,
-                    leading: Icon(Icons.location_city, color: isSelected ? AppTheme.forestGreen : Colors.grey),
-                    title: Text(loc['name']!, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                    subtitle: Text('Lat: ${loc['lat']}, Lng: ${loc['lng']}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                    trailing: isSelected
-                        ? const Icon(Icons.check_circle, color: AppTheme.forestGreen)
-                        : null,
-                    onTap: () {
-                      setState(() {
-                        _isGpsSelected = false;
-                        _locationName = loc['name'];
-                        _lat = (loc['lat'] as num).toDouble();
-                        _lng = (loc['lng'] as num).toDouble();
-                      });
-                    },
+                    ],
                   ),
                 );
-              }).toList(),
-            ),
+              }
+
+              return ListView.builder(
+                itemCount: list.length,
+                itemBuilder: (context, index) {
+                  final loc = list[index];
+                  final isSelected = !_isGpsSelected && _locationName == loc['name'];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: isSelected ? AppTheme.forestGreen : Colors.white,
+                          width: isSelected ? 2 : 0,
+                        ),
+                      ),
+                      tileColor: Colors.white,
+                      leading: Icon(Icons.location_city, color: isSelected ? AppTheme.forestGreen : Colors.grey),
+                      title: Text(
+                        loc['name']!,
+                        style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+                      ),
+                      subtitle: Text(
+                        loc['te'] != null
+                            ? '${loc['te']} • Lat: ${loc['lat']}, Lng: ${loc['lng']}'
+                            : 'Lat: ${loc['lat']}, Lng: ${loc['lng']}',
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_circle, color: AppTheme.forestGreen)
+                          : null,
+                      onTap: () {
+                        setState(() {
+                          _isGpsSelected = false;
+                          _locationName = loc['name'];
+                          _lat = (loc['lat'] as num).toDouble();
+                          _lng = (loc['lng'] as num).toDouble();
+                        });
+                      },
+                    ),
+                  );
+                },
+              );
+            }(),
           ),
           const SizedBox(height: 16),
           Row(

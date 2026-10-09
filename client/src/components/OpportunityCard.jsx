@@ -1,6 +1,6 @@
 import { ArrowUpRight, Factory, MapPin, Timer, Truck, TrendingUp, AlertTriangle } from 'lucide-react';
 
-const money = (n) => `₹${Math.round(n || 0).toLocaleString('en-IN')}`;
+const money = (n) => (n < 0 ? `−₹${Math.abs(Math.round(n || 0)).toLocaleString('en-IN')}` : `₹${Math.round(n || 0).toLocaleString('en-IN')}`);
 
 export default function OpportunityCard({ opportunity, highlight = false }) {
   if (!opportunity) return null;

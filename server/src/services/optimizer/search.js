@@ -10,6 +10,14 @@ const LEVELS = [
   { level: 3, radiusKm: env.level3RadiusKm, count: env.level3Count }
 ];
 
+function formatNetPerKg(val) {
+  const rounded = Number(val.toFixed(1));
+  if (rounded < 0) {
+    return `−₹${Math.abs(rounded)}`;
+  }
+  return `₹${rounded}`;
+}
+
 function evaluateMarket(market, input) {
   const econ = calculateMarketEconomics({
     quantityKg: input.quantityKg,
@@ -27,7 +35,7 @@ function evaluateMarket(market, input) {
     expectedNetPerKg: Number((econ.netRealization / qty).toFixed(2)),
     expectedNetPerKgMin: Number((econ.netRealizationMin / qty).toFixed(2)),
     expectedNetPerKgMax: Number((econ.netRealizationMax / qty).toFixed(2)),
-    expectedNetPerKgRange: `₹${Number((econ.netRealizationMin / qty).toFixed(1))} – ₹${Number((econ.netRealizationMax / qty).toFixed(1))}`,
+    expectedNetPerKgRange: `${formatNetPerKg(econ.netRealizationMin / qty)} – ${formatNetPerKg(econ.netRealizationMax / qty)}`,
     trendPct: Number((market.trend * 100).toFixed(1)),
     stabilityPct: Math.round(market.stability * 100)
   };
@@ -55,7 +63,7 @@ function evaluateBuyer(buyer, input) {
     expectedNetPerKg: Number((econ.netRealization / targetQty).toFixed(2)),
     expectedNetPerKgMin: Number((econ.netRealizationMin / targetQty).toFixed(2)),
     expectedNetPerKgMax: Number((econ.netRealizationMax / targetQty).toFixed(2)),
-    expectedNetPerKgRange: `₹${Number((econ.netRealizationMin / targetQty).toFixed(1))} – ₹${Number((econ.netRealizationMax / targetQty).toFixed(1))}`,
+    expectedNetPerKgRange: `${formatNetPerKg(econ.netRealizationMin / targetQty)} – ${formatNetPerKg(econ.netRealizationMax / targetQty)}`,
     pickupProvided: isBuyerPickup
   };
 }
@@ -93,7 +101,7 @@ export async function optimizeSellingOpportunity(input) {
     const ranked = rankMarkets([...allEvaluated.values(), ...buyerEvaluated]);
     const best = ranked[0];
     const second = ranked[1];
-    const gap = second ? (best.netRealization - second.netRealization) / Math.max(Math.abs(best.netRealization), 1) : 1;
+    const gap = second ? (best.netRealization - second.netRealization) / Math.max(Math.abs(best.netRealization), 1) : 0;
 
     trace.push({
       level: level.level,
@@ -120,12 +128,14 @@ export async function optimizeSellingOpportunity(input) {
 
     const maxKnownPrice = Math.max(...[...allEvaluated.values()].map((x) => x.pricePerKg), best.pricePerKg);
     const clearWinner = gap >= env.searchClearGap;
+    const isProfitable = best.netRealization > 0;
+    const hasEnoughCandidates = allEvaluated.size >= 3;
 
-    if (level.level === 1 && clearWinner && maxKnownPrice < currentBestBreakEven) {
+    if (level.level === 1 && clearWinner && isProfitable && hasEnoughCandidates && maxKnownPrice < currentBestBreakEven) {
       stopReason = 'Level 1 winner already has a clear economic lead; farther markets would need an unusually high break-even price.';
       break;
     }
-    if (level.level === 2 && clearWinner && maxKnownPrice < currentBestBreakEven) {
+    if (level.level === 2 && clearWinner && isProfitable && hasEnoughCandidates && maxKnownPrice < currentBestBreakEven) {
       stopReason = 'Expanded search did not reveal a price capable of justifying further travel.';
       break;
     }
@@ -142,7 +152,7 @@ export async function optimizeSellingOpportunity(input) {
   return {
     input,
     recommendation: top,
-    alternatives: ranked.slice(0, 8),
+    alternatives: ranked.filter((x) => (x.id || x.name) !== (top?.id || top?.name)).slice(0, 8),
     search: {
       apiLikeCalls: requestCount,
       candidatesEvaluated: allEvaluated.size + buyerEvaluated.length,

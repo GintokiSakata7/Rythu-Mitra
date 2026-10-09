@@ -14,18 +14,26 @@ class CurrencyFormatter {
   );
 
   static String format(double amount) {
+    if (amount < 0) {
+      return '−₹${_inrFormat.format(amount.abs()).replaceAll('₹', '').trim()}';
+    }
     return _inrFormat.format(amount);
   }
 
   static String formatDecimal(double amount) {
+    if (amount < 0) {
+      return '−₹${_inrDecimalFormat.format(amount.abs()).replaceAll('₹', '').trim()}';
+    }
     return _inrDecimalFormat.format(amount);
   }
 
   static String formatCompact(double amount) {
-    if (amount >= 100000) {
-      return '₹${(amount / 100000).toStringAsFixed(1)}L';
-    } else if (amount >= 1000) {
-      return '₹${(amount / 1000).toStringAsFixed(1)}K';
+    final prefix = amount < 0 ? '−₹' : '₹';
+    final absAmount = amount.abs();
+    if (absAmount >= 100000) {
+      return '$prefix${(absAmount / 100000).toStringAsFixed(1)}L';
+    } else if (absAmount >= 1000) {
+      return '$prefix${(absAmount / 1000).toStringAsFixed(1)}K';
     }
     return format(amount);
   }

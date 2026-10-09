@@ -45,6 +45,35 @@ class AssistantIntent {
 
 /// Maps crop names in all three languages to their canonical crop id
 final _cropKeywords = <String, String>{
+  // Colloquial Telugu Transliteration (Everyday Farmer Speech in Roman script)
+  'vari': 'Paddy', 'vaari': 'Paddy', 'vadlu': 'Paddy', 'vadloo': 'Paddy', 'wadlu': 'Paddy',
+  'dhanyam': 'Paddy', 'dhaanyam': 'Paddy', 'biyyam': 'Paddy',
+  'palli': 'Groundnut', 'pallilu': 'Groundnut', 'palii': 'Groundnut', 'palleelu': 'Groundnut',
+  'verusenaga': 'Groundnut', 'verusanaga': 'Groundnut', 'verushenaga': 'Groundnut',
+  'mirchi': 'Chilli', 'mirapa': 'Chilli', 'mirapakaya': 'Chilli', 'mirapakayalu': 'Chilli',
+  'ulli': 'Onion', 'ullipaya': 'Onion', 'ullipayalu': 'Onion', 'erragaddalu': 'Onion',
+  'makka': 'Maize', 'makkajonna': 'Maize', 'mokkajonna': 'Maize', 'mokka jonna': 'Maize',
+  'patti': 'Cotton', 'patthi': 'Cotton',
+  'pasupu': 'Turmeric',
+  'kandi': 'Red Gram', 'kandulu': 'Red Gram', 'kandipappu': 'Red Gram',
+  'pesara': 'Green Gram', 'pesalu': 'Green Gram', 'pesarapappu': 'Green Gram',
+  'minumu': 'Black Gram', 'minumulu': 'Black Gram', 'minapappu': 'Black Gram',
+  'aloo': 'Potato', 'alu': 'Potato', 'bangaladumpa': 'Potato',
+  'vankaya': 'Brinjal', 'vankayalu': 'Brinjal',
+  'tamata': 'Tomato', 'tamato': 'Tomato',
+  'mamidi': 'Mango', 'mamidikaya': 'Mango',
+  'arati': 'Banana', 'aratikaya': 'Banana',
+  'draksha': 'Grapes',
+  'godhuma': 'Wheat', 'godhumalu': 'Wheat',
+  'cheraku': 'Sugarcane',
+  'nuvvulu': 'Sesame',
+  'benda': 'Ladies Finger', 'bendakaya': 'Ladies Finger', 'bendakayalu': 'Ladies Finger',
+  'kakara': 'Bitter Gourd', 'kakarakaya': 'Bitter Gourd',
+  'dosa': 'Cucumber', 'dosakaya': 'Cucumber',
+  'beera': 'Ridge Gourd', 'beerakaya': 'Ridge Gourd',
+  'sora': 'Bottle Gourd', 'sorakaya': 'Bottle Gourd', 'anapakaya': 'Bottle Gourd',
+  'senagalu': 'Bengal Gram', 'chenagalu': 'Bengal Gram', 'chana': 'Bengal Gram',
+
   // English
   'tomato': 'Tomato', 'tomatoes': 'Tomato',
   'paddy': 'Paddy', 'rice': 'Paddy',
@@ -52,16 +81,16 @@ final _cropKeywords = <String, String>{
   'onion': 'Onion', 'onions': 'Onion',
   'maize': 'Maize', 'corn': 'Maize',
   'cotton': 'Cotton',
-  'groundnut': 'Groundnut', 'peanut': 'Groundnut',
+  'groundnut': 'Groundnut', 'groundnuts': 'Groundnut', 'peanut': 'Groundnut', 'peanuts': 'Groundnut',
   'turmeric': 'Turmeric',
-  'soybean': 'Soybean', 'soya': 'Soybean',
+  'soybean': 'Soybean', 'soybeans': 'Soybean', 'soya': 'Soybean',
   'potato': 'Potato', 'potatoes': 'Potato',
-  'brinjal': 'Brinjal', 'eggplant': 'Brinjal', 'baingan': 'Brinjal',
+  'brinjal': 'Brinjal', 'eggplant': 'Brinjal',
   'cabbage': 'Cabbage',
   'cauliflower': 'Cauliflower',
   'carrot': 'Carrot', 'carrots': 'Carrot',
-  'mango': 'Mango',
-  'banana': 'Banana',
+  'mango': 'Mango', 'mangoes': 'Mango',
+  'banana': 'Banana', 'bananas': 'Banana',
   'grapes': 'Grapes', 'grape': 'Grapes',
   'wheat': 'Wheat',
   'red gram': 'Red Gram', 'arhar': 'Red Gram', 'toor': 'Red Gram',
@@ -70,37 +99,52 @@ final _cropKeywords = <String, String>{
   'sugarcane': 'Sugarcane',
   'sunflower': 'Sunflower',
   'sesame': 'Sesame', 'gingelly': 'Sesame',
-  // Telugu
+  'okra': 'Ladies Finger', 'ladies finger': 'Ladies Finger',
+  'bitter gourd': 'Bitter Gourd',
+  'cucumber': 'Cucumber',
+  'ridge gourd': 'Ridge Gourd',
+  'bottle gourd': 'Bottle Gourd',
+  'bengal gram': 'Bengal Gram',
+
+  // Telugu Script
   'టమాట': 'Tomato', 'టమాటా': 'Tomato', 'టమాటాలు': 'Tomato',
-  'వరి': 'Paddy', 'ధాన్యం': 'Paddy',
-  'మిరప': 'Chilli', 'మిరపకాయలు': 'Chilli',
-  'ఉల్లిపాయ': 'Onion', 'ఉల్లిపాయలు': 'Onion',
-  'మొక్కజొన్న': 'Maize',
+  'వరి': 'Paddy', 'ధాన్యం': 'Paddy', 'వరి ధాన్యం': 'Paddy', 'వడ్లు': 'Paddy', 'వడ్ల': 'Paddy', 'బియ్యం': 'Paddy',
+  'మిరప': 'Chilli', 'మిరపకాయలు': 'Chilli', 'మిర్చి': 'Chilli',
+  'ఉల్లిపాయ': 'Onion', 'ఉల్లిపాయలు': 'Onion', 'ఉల్లి': 'Onion', 'ఎర్రగడ్డలు': 'Onion',
+  'మొక్కజొన్న': 'Maize', 'మక్క': 'Maize', 'మక్కజొన్న': 'Maize',
   'పత్తి': 'Cotton',
-  'వేరుశనగ': 'Groundnut',
-  'పసుపు': 'Turmeric',
-  'సోయాబీన్': 'Soybean',
-  'బంగాళాదుంప': 'Potato',
-  'వంకాయ': 'Brinjal',
+  'వేరుశనగ': 'Groundnut', 'వేరుశెనగ': 'Groundnut', 'వేరుసెనగ': 'Groundnut',
+  'పల్లి': 'Groundnut', 'పల్లీ': 'Groundnut', 'పల్లీలు': 'Groundnut', 'పల్లికాయలు': 'Groundnut',
+  'పసుపు': 'Turmeric', 'పసుపు కొమ్ములు': 'Turmeric',
+  'సోయాబీన్': 'Soybean', 'సోయా': 'Soybean',
+  'బంగాళాదుంప': 'Potato', 'ఆలు': 'Potato', 'ఆలూ': 'Potato',
+  'వంకాయ': 'Brinjal', 'వంకాయలు': 'Brinjal',
   'క్యాబేజీ': 'Cabbage',
   'కాలీఫ్లవర్': 'Cauliflower',
   'క్యారెట్': 'Carrot',
-  'మామిడి': 'Mango',
-  'అరటి': 'Banana',
+  'మామిడి': 'Mango', 'మామిడికాయ': 'Mango',
+  'అరటి': 'Banana', 'అరటికాయ': 'Banana',
   'ద్రాక్ష': 'Grapes',
-  'గోధుమ': 'Wheat',
-  'కందిపప్పు': 'Red Gram',
-  'పెసరపప్పు': 'Green Gram',
-  'మినపప్పు': 'Black Gram',
+  'గోధుమ': 'Wheat', 'గోధుమలు': 'Wheat',
+  'కందిపప్పు': 'Red Gram', 'కంది': 'Red Gram', 'కందులు': 'Red Gram',
+  'పెసరపప్పు': 'Green Gram', 'పెసర': 'Green Gram', 'పెసలు': 'Green Gram',
+  'మినపప్పు': 'Black Gram', 'మినుము': 'Black Gram', 'మినుములు': 'Black Gram',
+  'శనగలు': 'Bengal Gram', 'సెనగలు': 'Bengal Gram', 'శనగపప్పు': 'Bengal Gram',
   'చెరకు': 'Sugarcane',
   'పొద్దుతిరుగుడు': 'Sunflower',
   'నువ్వులు': 'Sesame',
-  // Hindi
+  'బెండకాయ': 'Ladies Finger', 'బెండ': 'Ladies Finger',
+  'కాకరకాయ': 'Bitter Gourd', 'కాకర': 'Bitter Gourd',
+  'దోసకాయ': 'Cucumber', 'దోస': 'Cucumber',
+  'బీరకాయ': 'Ridge Gourd', 'బీర': 'Ridge Gourd',
+  'సొరకాయ': 'Bottle Gourd', 'ఆనపకాయ': 'Bottle Gourd',
+
+  // Hindi Script
   'टमाटर': 'Tomato', 'टमाटा': 'Tomato',
   'धान': 'Paddy', 'चावल': 'Paddy',
   'मिर्च': 'Chilli', 'मिर्ची': 'Chilli',
   'प्याज': 'Onion', 'प्याजा': 'Onion',
-  'मक्का': 'Maize', 'मकई': 'Maize',
+  'मक्का': 'Maize', 'मकई': 'Maize', 'भुट्टा': 'Maize',
   'कपास': 'Cotton',
   'मूंगफली': 'Groundnut',
   'हल्दी': 'Turmeric',
@@ -117,9 +161,14 @@ final _cropKeywords = <String, String>{
   'अरहर': 'Red Gram', 'तूर': 'Red Gram',
   'मूंग': 'Green Gram',
   'उड़द': 'Black Gram',
+  'चना': 'Bengal Gram',
   'गन्ना': 'Sugarcane',
   'सूरजमुखी': 'Sunflower',
   'तिल': 'Sesame',
+  'भिंडी': 'Ladies Finger',
+  'करेला': 'Bitter Gourd',
+  'खीरा': 'Cucumber',
+  'लौकी': 'Bottle Gourd',
 };
 
 /// GPS trigger words in all three languages
@@ -172,10 +221,25 @@ class IntentEngine {
 
     // --- Detect crop ---
     String? detectedCrop;
-    for (final entry in _cropKeywords.entries) {
-      if (lower.contains(entry.key.toLowerCase())) {
-        detectedCrop = entry.value;
-        break;
+    // Sort keys by descending length so multi-word keys match before short substrings
+    final sortedKeys = _cropKeywords.keys.toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
+
+    for (final key in sortedKeys) {
+      final keyLower = key.toLowerCase();
+      // For ASCII alphabet words (e.g. 'vari', 'palli', 'rice'), use word boundary matching
+      if (RegExp(r'^[a-z0-9 ]+$').hasMatch(keyLower)) {
+        final pattern = RegExp('(^|\\s|[^a-z0-9])${RegExp.escape(keyLower)}(\$|\\s|[^a-z0-9])');
+        if (pattern.hasMatch(lower)) {
+          detectedCrop = _cropKeywords[key];
+          break;
+        }
+      } else {
+        // Indic script substring matching
+        if (lower.contains(keyLower)) {
+          detectedCrop = _cropKeywords[key];
+          break;
+        }
       }
     }
 

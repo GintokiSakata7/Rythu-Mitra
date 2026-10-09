@@ -11,7 +11,9 @@ function fallbackExplanation({ recommendation, search }, lang = 'en') {
     return 'No suitable opportunity was found from the configured candidate set.';
   }
   const isLoss = (recommendation.netRealization ?? 0) < 0;
-  const netStr = recommendation.netRange || `₹${Math.round(recommendation.netRealization).toLocaleString('en-IN')}`;
+  const netStr = recommendation.netRange || (recommendation.netRealization < 0
+    ? `−₹${Math.abs(Math.round(recommendation.netRealization)).toLocaleString('en-IN')}`
+    : `₹${Math.round(recommendation.netRealization).toLocaleString('en-IN')}`);
   const priceStr = `₹${recommendation.pricePerKg}/kg`;
   const name = recommendation.name || recommendation.companyName;
   const vehicle = (lang === 'te' ? recommendation.vehicleNameTe : lang === 'hi' ? recommendation.vehicleNameHi : recommendation.vehicleName) || recommendation.vehicleName || 'వాహనం';
@@ -53,7 +55,7 @@ export async function explainRecommendation(payload) {
   if (lang === 'te') langInstruction = 'CRITICAL: Respond fluently and naturally in Telugu script (తెలుగు) so a Telugu-speaking farmer understands immediately.';
   else if (lang === 'hi') langInstruction = 'CRITICAL: Respond fluently and naturally in Hindi script (हिंदी) so a Hindi-speaking farmer understands immediately.';
 
-  const system = `You are RythuMitra, an expert and empathetic agricultural market decision assistant for Indian farmers. Explain recommendations from structured calculations clearly. Never invent market prices or facts. Emphasize expected net realization range (netRange), realistic vehicle tier (vehicleName), and estimated freight cost range (transportRange), explaining why this vehicle and mandi choice yields the highest net return after round-trip logistics. If expected net realization is negative, warn the farmer against hiring a solo vehicle for small tonnage and advise local pooling or farmgate sale. Keep the explanation concise under 85 words. Use Indian rupee formatting (₹). If the recommendation is a direct buyer, highlight farmgate pickup terms. ${langInstruction}`;
+  const system = `You are RythuMitra, an expert and empathetic agricultural market decision assistant for Indian farmers. Explain recommendations from structured calculations clearly. Never invent market prices or facts. Emphasize expected net realization range (netRange), realistic vehicle tier (vehicleName), and estimated freight cost range (transportRange), explaining why this vehicle and mandi choice yields the highest net return after round-trip logistics. If expected net realization is negative, warn the farmer against hiring a solo vehicle for small tonnage and advise local pooling or farmgate sale. Keep the explanation concise under 85 words. Use Indian rupee formatting (₹). Never output malformed currency like '₹-100', always use '−₹100' or '-₹100'. If the recommendation is a direct buyer, highlight farmgate pickup terms. ${langInstruction}`;
   try {
     const completion = await client.chat.completions.create({
       model: env.groqModel,
@@ -63,7 +65,9 @@ export async function explainRecommendation(payload) {
         { role: 'user', content: JSON.stringify(payload) }
       ]
     });
-    return { text: completion.choices?.[0]?.message?.content?.trim() || fallbackExplanation(payload, lang), provider: 'groq' };
+    let text = completion.choices?.[0]?.message?.content?.trim() || fallbackExplanation(payload, lang);
+    text = text.replace(/₹\s*-\s*/g, '−₹');
+    return { text, provider: 'groq' };
   } catch {
     return { text: fallbackExplanation(payload, lang), provider: 'fallback' };
   }
@@ -89,10 +93,52 @@ export async function parseHarvestText({ text }) {
 }
 
 function localParse(text = '') {
-  const crop = /tomato|tomatoes|టమాట/i.test(text) ? 'Tomato' : null;
-  const match = text.match(/([\d,.]+)\s*(kg|kgs|ton|tons|tonnes|కిలోలు)/i);
+  let crop = null;
+  if (/(\b(paddy|rice|vari|vaari|vadlu|vadloo|wadlu|chawal|dhan)\b|వరి|వడ్లు|ధాన్యం|धान|चावल)/i.test(text)) {
+    crop = 'Paddy';
+  } else if (/(\b(groundnut|peanut|peanuts|palli|pallilu|palii|verusenaga|verusanaga|mungfali)\b|వేరుశనగ|వేరుశెనగ|పల్లి|పల్లీ|పల్లీలు|मूंगफली)/i.test(text)) {
+    crop = 'Groundnut';
+  } else if (/(\b(chilli|chili|mirchi|mirapa|mirch)\b|మిరప|మిరపకాయలు|మిర్చి|मिर्च|मिर्ची)/i.test(text)) {
+    crop = 'Chilli';
+  } else if (/(\b(onion|onions|ulli|ullipaya|pyaz|kanda)\b|ఉల్లి|ఉల్లిపాయ|प्याज)/i.test(text)) {
+    crop = 'Onion';
+  } else if (/(\b(maize|corn|makka|makkajonna|mokkajonna|bhutta)\b|మొక్కజొన్న|మక్క|మక్కజొన్న|मक्का)/i.test(text)) {
+    crop = 'Maize';
+  } else if (/(\b(cotton|patti|patthi|kapas)\b|పత్తి|कपास)/i.test(text)) {
+    crop = 'Cotton';
+  } else if (/(\b(turmeric|pasupu|haldi)\b|పసుపు|हल्दी)/i.test(text)) {
+    crop = 'Turmeric';
+  } else if (/(\b(potato|potatoes|aloo|alu|bangaladumpa)\b|బంగాళాదుంప|ఆలు|आलू)/i.test(text)) {
+    crop = 'Potato';
+  } else if (/(\b(brinjal|vankaya|baingan|eggplant)\b|వంకాయ|बैंगन)/i.test(text)) {
+    crop = 'Brinjal';
+  } else if (/(\b(red gram|toor|arhar|kandi|kandulu)\b|కంది|కందులు|अरहर)/i.test(text)) {
+    crop = 'Red Gram';
+  } else if (/(\b(green gram|moong|pesara|pesalu)\b|పెసర|పెసలు|मूंग)/i.test(text)) {
+    crop = 'Green Gram';
+  } else if (/(\b(black gram|urad|minumu|minumulu)\b|మినుము|మినుములు|उड़द)/i.test(text)) {
+    crop = 'Black Gram';
+  } else if (/(\b(bengal gram|chana|senagalu)\b|శనగలు|चना)/i.test(text)) {
+    crop = 'Bengal Gram';
+  } else if (/(\b(tomato|tomatoes|tamata|tamatar)\b|టమాట|టమాటా|टमाटर)/i.test(text)) {
+    crop = 'Tomato';
+  }
+
+  const match = text.match(/([\d,.]+)\s*(kg|kgs|ton|tons|tonnes|quintal|quintals|qtl|qtls|కిలోలు|క్వింటాల్|క్వింటాళ్ళు|టన్ను|टन|क्विंटल|किलो)/i);
   const raw = match ? Number(match[1].replace(/,/g, '')) : null;
-  const quantityKg = match ? (/ton|tonnes/i.test(match[2]) ? raw * 1000 : raw) : null;
-  const hasTransport = /have transport|own vehicle|వాహనం ఉంది/i.test(text) ? true : /no transport|need transport|వాహనం లేదు/i.test(text) ? false : null;
+  let quantityKg = null;
+  if (raw && match) {
+    const unitStr = match[2].toLowerCase();
+    if (/ton|టన్ను|टन/.test(unitStr)) quantityKg = raw * 1000;
+    else if (/quintal|qtl|క్వింటాల్|క్వింటాళ్ళు|क्विंटल/.test(unitStr)) quantityKg = raw * 100;
+    else quantityKg = raw;
+  }
+
+  const hasTransport = /have transport|own vehicle|స్వంత వాహనం|వాహనం ఉంది|गाड़ी है/i.test(text)
+    ? true
+    : /no transport|need transport|వాహనం లేదు|गाड़ी नहीं/i.test(text)
+      ? false
+      : null;
+
   return { crop, quantityKg, locationText: null, quality: null, hasTransport, perishability: 'high' };
 }

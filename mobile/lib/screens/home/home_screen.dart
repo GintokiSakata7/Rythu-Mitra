@@ -12,8 +12,6 @@ import '../profile/profile_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/location_provider.dart';
-import '../../models/app_models.dart';
-import '../search/search_animation_screen.dart';
 import '../../location/location_service.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -56,16 +54,33 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkShowcase();
-      _checkInitialLocation();
+      _checkShowcaseOrLocation();
     });
   }
 
-  Future<void> _checkInitialLocation() async {
+  Future<void> _checkShowcaseOrLocation() async {
+    final settingsProvider = context.read<SettingsProvider>();
     final locProv = context.read<LocationProvider>();
-    if (!locProv.hasLocation) {
-      final success = await locProv.fetchCurrentLocation(force: true);
-      if (!success && mounted && !locProv.hasLocation) {
+
+    if (!settingsProvider.isOnboardingComplete && mounted) {
+      await settingsProvider.completeOnboarding();
+      if (!mounted) return;
+      ShowCaseWidget.of(context).startShowCase([
+        _homeKey,
+        _findBestKey,
+        _voiceKey,
+        _buyersKey,
+        _trendsKey,
+        _notificationsKey,
+        _profileKey,
+      ]);
+      return;
+    }
+
+    // Only prompt for location if no saved location exists and not dismissed before
+    if (!locProv.hasLocation && !settingsProvider.isLocationPromptDismissed && mounted) {
+      final success = await locProv.fetchCurrentLocation(force: false);
+      if (!success && mounted && !locProv.hasLocation && !settingsProvider.isLocationPromptDismissed) {
         _showLocationPromptSheet(isAutoStartup: true);
       }
     }
@@ -85,22 +100,6 @@ class _HomeScreenState extends State<HomeScreen> {
         isAutoStartup: isAutoStartup,
       ),
     );
-  }
-  
-  Future<void> _checkShowcase() async {
-    final settingsProvider = context.read<SettingsProvider>();
-    if (!settingsProvider.isOnboardingComplete && mounted) {
-      ShowCaseWidget.of(context).startShowCase([
-        _homeKey,
-        _findBestKey,
-        _voiceKey,
-        _buyersKey,
-        _trendsKey,
-        _notificationsKey,
-        _profileKey,
-      ]);
-      await settingsProvider.completeOnboarding();
-    }
   }
 
   @override
@@ -284,30 +283,6 @@ class _HomeTab extends StatelessWidget {
     required this.notificationsKey,
   });
 
-  void _runQuickPrediction(
-    BuildContext context, {
-    required String crop,
-    required double qtyKg,
-    required LocationProvider locProv,
-    required String lang,
-  }) {
-    final request = RecommendationRequest(
-      crop: crop,
-      quantityKg: qtyKg.toInt(),
-      latitude: locProv.latitude,
-      longitude: locProv.longitude,
-      locationText: locProv.displayName,
-      hasTransport: false,
-      language: lang,
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SearchAnimationScreen(request: request),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -736,9 +711,9 @@ class _HomeTab extends StatelessWidget {
                             style: const TextStyle(
                                 fontSize: 17, fontWeight: FontWeight.bold),
                           ),
-                          const Text(
-                            'Tap any crop to run instant profit calculation',
-                            style: TextStyle(fontSize: 11, color: Colors.grey),
+                          Text(
+                            s('mandi_prices_sub'),
+                            style: const TextStyle(fontSize: 11, color: Colors.grey),
                           ),
                         ],
                       ),
@@ -772,7 +747,7 @@ class _HomeTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Dynamic Mandi Prices List
+                  // Dynamic Mandi Prices List (Static informational chips)
                   SizedBox(
                     height: 86,
                     child: ListView.builder(
@@ -784,15 +759,6 @@ class _HomeTab extends StatelessWidget {
                           crop: '${item.emoji} ${item.crop}',
                           price: item.priceRange,
                           trend: item.trend,
-                          onTap: () {
-                            _runQuickPrediction(
-                              context,
-                              crop: item.crop,
-                              qtyKg: 1500, // 15 Quintals default
-                              locProv: locProv,
-                              lang: lang,
-                            );
-                          },
                         );
                       },
                     ),
@@ -846,15 +812,6 @@ class _HomeTab extends StatelessWidget {
                         name: m.name,
                         dist: '${m.distanceKm.toStringAsFixed(1)} km',
                         price: '₹${m.pricePerKg.toStringAsFixed(0)}/kg',
-                        onTap: () {
-                          _runQuickPrediction(
-                            context,
-                            crop: 'Tomato',
-                            qtyKg: 1500,
-                            locProv: locProv,
-                            lang: lang,
-                          );
-                        },
                       );
                     }),
 
@@ -873,39 +830,12 @@ class _HomeTab extends StatelessWidget {
                     children: [
                       _RecentChip(
                         text: '🍅 Tomato • ${locProv.displayName} • 1500 kg',
-                        onTap: () {
-                          _runQuickPrediction(
-                            context,
-                            crop: 'Tomato',
-                            qtyKg: 1500,
-                            locProv: locProv,
-                            lang: lang,
-                          );
-                        },
                       ),
                       _RecentChip(
                         text: '🧅 Onion • ${locProv.displayName} • 2500 kg',
-                        onTap: () {
-                          _runQuickPrediction(
-                            context,
-                            crop: 'Onion',
-                            qtyKg: 2500,
-                            locProv: locProv,
-                            lang: lang,
-                          );
-                        },
                       ),
                       _RecentChip(
                         text: '🌾 Cotton • ${locProv.displayName} • 1000 kg',
-                        onTap: () {
-                          _runQuickPrediction(
-                            context,
-                            crop: 'Cotton',
-                            qtyKg: 1000,
-                            locProv: locProv,
-                            lang: lang,
-                          );
-                        },
                       ),
                     ],
                   ),
@@ -959,60 +889,48 @@ class _PriceChip extends StatelessWidget {
   final String crop;
   final String price;
   final String trend;
-  final VoidCallback onTap;
 
   const _PriceChip({
     required this.crop,
     required this.price,
     required this.trend,
-    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final isPositive = trend.startsWith('+');
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE8F5E9)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x06000000),
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(crop, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 2),
-            Text(price,
-                style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.successGreen)),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(trend,
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: isPositive ? AppTheme.successGreen : AppTheme.dangerRed)),
-                const SizedBox(width: 4),
-                const Icon(Icons.touch_app_outlined, size: 12, color: Colors.grey),
-              ],
-            ),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE8F5E9)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(crop, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(price,
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.successGreen)),
+          Text(trend,
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isPositive ? AppTheme.successGreen : AppTheme.dangerRed)),
+        ],
       ),
     );
   }
@@ -1022,80 +940,75 @@ class _MarketPreviewCard extends StatelessWidget {
   final String name;
   final String dist;
   final String price;
-  final VoidCallback onTap;
 
   const _MarketPreviewCard({
     required this.name,
     required this.dist,
     required this.price,
-    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE8F5E9)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x04000000),
-              blurRadius: 4,
-              offset: Offset(0, 2),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE8F5E9)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x04000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F5E9),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.store, color: AppTheme.forestGreen, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      const Icon(Icons.near_me_outlined, size: 12, color: Colors.grey),
-                      const SizedBox(width: 2),
-                      Text(dist,
-                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            child: const Icon(Icons.store, color: AppTheme.forestGreen, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(price,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: AppTheme.successGreen)),
-                const Text('Check Net >',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.forestGreen)),
+                Text(name,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.near_me_outlined, size: 12, color: Colors.grey),
+                    const SizedBox(width: 2),
+                    Text(dist,
+                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(price,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppTheme.successGreen)),
+              const Text('APMC Rate',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey)),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1103,30 +1016,25 @@ class _MarketPreviewCard extends StatelessWidget {
 
 class _RecentChip extends StatelessWidget {
   final String text;
-  final VoidCallback onTap;
 
-  const _RecentChip({required this.text, required this.onTap});
+  const _RecentChip({required this.text});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.history, size: 13, color: Colors.grey),
-            const SizedBox(width: 6),
-            Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.history, size: 13, color: Colors.grey),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        ],
       ),
     );
   }
@@ -1151,6 +1059,14 @@ class _LocationPromptBottomSheet extends StatefulWidget {
 
 class _LocationPromptBottomSheetState extends State<_LocationPromptBottomSheet> {
   bool _isDetecting = false;
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _detectGps() async {
     setState(() => _isDetecting = true);
@@ -1160,6 +1076,7 @@ class _LocationPromptBottomSheetState extends State<_LocationPromptBottomSheet> 
     setState(() => _isDetecting = false);
 
     if (success) {
+      if (mounted) context.read<SettingsProvider>().dismissLocationPrompt();
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1374,47 +1291,111 @@ class _LocationPromptBottomSheetState extends State<_LocationPromptBottomSheet> 
                 ],
               ),
               const SizedBox(height: 12),
+              TextField(
+                controller: _searchCtrl,
+                decoration: InputDecoration(
+                  hintText: widget.s('search_district'),
+                  prefixIcon: const Icon(Icons.search, size: 20, color: AppTheme.forestGreen),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+                onChanged: (val) => setState(() => _searchQuery = val.trim()),
+              ),
+              const SizedBox(height: 10),
+              if (_searchQuery.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Text(
+                        widget.s('popular_districts'),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: AppConstants.presetLocations.map((loc) {
-                  return ActionChip(
-                    avatar: const Icon(Icons.location_city_rounded, size: 16, color: AppTheme.forestGreen),
-                    label: Text(
-                      loc['name'].toString(),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                    backgroundColor: const Color(0xFFF1F8E9),
-                    side: const BorderSide(color: Color(0xFFC8E6C9)),
-                    onPressed: () {
-                      final name = loc['name'].toString();
-                      final lat = (loc['lat'] as num).toDouble();
-                      final lng = (loc['lng'] as num).toDouble();
-                      context.read<LocationProvider>().setManualLocation(name, lat, lng);
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-                              const SizedBox(width: 8),
-                              Expanded(child: Text('📍 Location set: $name')),
-                            ],
+                children: () {
+                  final list = _searchQuery.isEmpty
+                      ? AppConstants.topPresetLocations
+                      : AppConstants.telanganaDistricts.where((d) {
+                          final q = _searchQuery.toLowerCase();
+                          final n = (d['name'] as String).toLowerCase();
+                          final te = (d['te'] as String? ?? '').toLowerCase();
+                          return n.contains(q) || te.contains(q);
+                        }).toList();
+                  if (list.isEmpty) {
+                    return <Widget>[
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Text('No matching district found', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ),
+                    ];
+                  }
+                  return list.map((loc) {
+                    return ActionChip(
+                      avatar: const Icon(Icons.location_city_rounded, size: 16, color: AppTheme.forestGreen),
+                      label: Text(
+                        loc['name'].toString(),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                      backgroundColor: const Color(0xFFF1F8E9),
+                      side: const BorderSide(color: Color(0xFFC8E6C9)),
+                      onPressed: () {
+                        final name = loc['name'].toString();
+                        final lat = (loc['lat'] as num).toDouble();
+                        final lng = (loc['lng'] as num).toDouble();
+                        context.read<LocationProvider>().setManualLocation(name, lat, lng);
+                        context.read<SettingsProvider>().dismissLocationPrompt();
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(child: Text('📍 Location set: $name')),
+                              ],
+                            ),
+                            backgroundColor: AppTheme.forestGreen,
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
                           ),
-                          backgroundColor: AppTheme.forestGreen,
-                          duration: const Duration(seconds: 2),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                  );
-                }).toList(),
+                        );
+                      },
+                    );
+                  }).toList();
+                }(),
               ),
               if (widget.isAutoStartup) ...[
                 const SizedBox(height: 16),
                 Center(
                   child: TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      context.read<SettingsProvider>().dismissLocationPrompt();
+                      Navigator.pop(context);
+                    },
                     child: Text(
                       lang == 'te'
                           ? 'తరువాత సెట్ చేయండి (హైదరాబాద్ డిఫాల్ట్)'

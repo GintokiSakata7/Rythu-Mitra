@@ -21,9 +21,17 @@ class ResultsScreen extends StatelessWidget {
     final s = (String k, {Map<String, String>? params}) =>
         AppStrings.get(k, lang, params: params);
 
+    final isLoss = result.recommendation.netRealization < 0;
+
+    final cleanAlternatives = result.alternatives
+        .where((alt) =>
+            (alt.id.isEmpty || alt.id != result.recommendation.id) &&
+            alt.displayName != result.recommendation.displayName)
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(s('best_option')),
+        title: Text(isLoss ? s('recommendation_warning') : s('best_option')),
         actions: [
           IconButton(
             icon: const Icon(Icons.close),
@@ -44,22 +52,28 @@ class ResultsScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: AppTheme.forestGreen.withValues(alpha: 0.1),
+                color: isLoss
+                    ? Colors.red.withValues(alpha: 0.1)
+                    : AppTheme.forestGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.analytics, size: 14, color: AppTheme.forestGreen),
+                  Icon(
+                    isLoss ? Icons.warning_amber_rounded : Icons.analytics,
+                    size: 14,
+                    color: isLoss ? AppTheme.dangerRed : AppTheme.forestGreen,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     s('candidates_evaluated', params: {
                       'count': result.search.candidatesEvaluated.toString()
                     }),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.forestGreen,
+                      color: isLoss ? AppTheme.dangerRed : AppTheme.forestGreen,
                     ),
                   ),
                 ],
@@ -84,30 +98,32 @@ class ResultsScreen extends StatelessWidget {
               },
             ),
 
-            const SizedBox(height: 24),
-            Text(
-              s('alternatives'),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-
-            // Alternatives
-            ...result.alternatives.map(
-              (alt) => MarketResultCard(
-                market: alt,
-                isBest: false,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MarketDetailsScreen(
-                        market: alt,
-                      ),
-                    ),
-                  );
-                },
+            if (cleanAlternatives.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              Text(
+                s('alternatives'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
+              const SizedBox(height: 12),
+
+              // Alternatives
+              ...cleanAlternatives.map(
+                (alt) => MarketResultCard(
+                  market: alt,
+                  isBest: false,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MarketDetailsScreen(
+                          market: alt,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
 
             const SizedBox(height: 32),
             SizedBox(

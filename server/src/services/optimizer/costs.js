@@ -135,7 +135,14 @@ export function calculateMarketEconomics({
   const netRealization = saleValue - transportCost - timeCost - riskCost;
   const netRealizationMin = saleValue - transportCostMax - timeCost - riskCost;
   const netRealizationMax = saleValue - transportCostMin - timeCost - riskCost;
-  const netRange = `₹${Math.round(netRealizationMin).toLocaleString('en-IN')} – ₹${Math.round(netRealizationMax).toLocaleString('en-IN')}`;
+  const fmtInr = (val) => {
+    const rounded = Math.round(val);
+    if (rounded < 0) {
+      return `−₹${Math.abs(rounded).toLocaleString('en-IN')}`;
+    }
+    return `₹${rounded.toLocaleString('en-IN')}`;
+  };
+  const netRange = `${fmtInr(netRealizationMin)} – ${fmtInr(netRealizationMax)}`;
 
   return {
     saleValue,

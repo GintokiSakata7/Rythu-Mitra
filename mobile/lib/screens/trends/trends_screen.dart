@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/trends_provider.dart';
+import '../../providers/location_provider.dart';
 import '../../models/trend_model.dart';
 
 class TrendsScreen extends StatefulWidget {
@@ -15,14 +16,15 @@ class TrendsScreen extends StatefulWidget {
 class _TrendsScreenState extends State<TrendsScreen> {
   final List<Map<String, String>> _popularCrops = [
     {'name': 'Tomato', 'emoji': '🍅'},
-    {'name': 'Green Chillies', 'emoji': '🌶️'},
+    {'name': 'Chilli', 'emoji': '🌶️'},
+    {'name': 'Paddy', 'emoji': '🌾'},
+    {'name': 'Cotton', 'emoji': '🌾'},
     {'name': 'Onion', 'emoji': '🧅'},
-    {'name': 'Potato', 'emoji': '🥔'},
-    {'name': 'Bengal Gram', 'emoji': '🌾'},
     {'name': 'Maize', 'emoji': '🌽'},
-    {'name': 'Groundnut pods', 'emoji': '🥜'},
+    {'name': 'Groundnut', 'emoji': '🥜'},
+    {'name': 'Bengal Gram', 'emoji': '🌾'},
+    {'name': 'Red Gram', 'emoji': '🌾'},
     {'name': 'Cucumber', 'emoji': '🥒'},
-    {'name': 'Bitter Gourd', 'emoji': '🥬'},
   ];
 
   final List<String> _popularMarkets = [
@@ -35,22 +37,36 @@ class _TrendsScreenState extends State<TrendsScreen> {
     'Wanaparthy',
   ];
 
+  final TextEditingController _searchCtrl = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TrendsProvider>().loadTrends();
+      final locProv = context.read<LocationProvider>();
+      final localMarket = _resolveLocalMarket(locProv);
+      context.read<TrendsProvider>().initLocationTrends(localMarket);
     });
   }
 
-  void _showTrendDetailsSheet(BuildContext context, MarketTrendItem item) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _TrendDetailsSheet(item: item),
-    );
+  String _resolveLocalMarket(LocationProvider locProv) {
+    if (locProv.nearbyMarkets.isNotEmpty) {
+      return locProv.nearbyMarkets.first.name;
+    }
+    final name = locProv.displayName;
+    final parts = name.split(',');
+    if (parts.isNotEmpty) {
+      return parts.first.trim();
+    }
+    return '';
   }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +123,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           Text(
-                            'Live APMC daily market arrivals & auction rates',
+                            prov.isLocalFilterActive && prov.userLocalMarket.isNotEmpty
+                                ? 'Showing nearest market prices for ${prov.userLocalMarket}'
+                                : 'Live APMC daily market arrivals & auction rates',
                             style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                           ),
                         ],
@@ -136,6 +154,113 @@ class _TrendsScreenState extends State<TrendsScreen> {
               ),
             ),
 
+            // Location Scope Selection Bar (Local Mandis vs All Mandis)
+            SliverToBoxAdapter(
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      if (prov.userLocalMarket.isNotEmpty) ...[
+                        ChoiceChip(
+                          avatar: Icon(
+                            Icons.my_location_rounded,
+                            size: 14,
+                            color: prov.isLocalFilterActive ? Colors.white : AppTheme.forestGreen,
+                          ),
+                          label: Text(
+                            lang == 'te'
+                                ? '📍 ${prov.userLocalMarket} (స్థానిక మండీ)'
+                                : '📍 ${prov.userLocalMarket} (Local Mandi)',
+                          ),
+                          selected: prov.isLocalFilterActive,
+                          onSelected: (_) {
+                            prov.toggleLocationFilter(true);
+                          },
+                          selectedColor: AppTheme.forestGreen,
+                          labelStyle: TextStyle(
+                            color: prov.isLocalFilterActive ? Colors.white : Colors.black87,
+                            fontSize: 12,
+                            fontWeight: prov.isLocalFilterActive ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      ChoiceChip(
+                        avatar: Icon(
+                          Icons.public,
+                          size: 14,
+                          color: !prov.isLocalFilterActive ? Colors.white : Colors.black54,
+                        ),
+                        label: Text(
+                          lang == 'te' ? '🌐 అన్ని తెలంగాణ మండీలు' : '🌐 All Telangana Mandis',
+                        ),
+                        selected: !prov.isLocalFilterActive,
+                        onSelected: (_) {
+                          prov.toggleLocationFilter(false);
+                        },
+                        selectedColor: AppTheme.forestGreen,
+                        labelStyle: TextStyle(
+                          color: !prov.isLocalFilterActive ? Colors.white : Colors.black87,
+                          fontSize: 12,
+                          fontWeight: !prov.isLocalFilterActive ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Crop-Focused Search Bar
+            SliverToBoxAdapter(
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: lang == 'te'
+                        ? 'పంట పేరును వెతకండి (ఉదా: వరి, పత్తి, టమాట, మిర్చి...)'
+                        : (lang == 'hi'
+                            ? 'फसल का नाम खोजें (उदा. धान, कपास, टमाटर, मिर्च...)'
+                            : 'Search crop (e.g. Paddy, Cotton, Tomato, Chilli...)'),
+                    prefixIcon: const Icon(Icons.search, size: 20, color: AppTheme.forestGreen),
+                    suffixIcon: _searchCtrl.text.isNotEmpty || prov.selectedCrop.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              prov.searchCrop('');
+                            },
+                          )
+                        : null,
+                    isDense: true,
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTheme.forestGreen, width: 2),
+                    ),
+                  ),
+                  onChanged: (val) {
+                    prov.searchCrop(val);
+                  },
+                ),
+              ),
+            ),
+
             // Crop Filter Pills (Horizontal)
             SliverToBoxAdapter(
               child: Container(
@@ -153,7 +278,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
                         child: ChoiceChip(
                           label: const Text('All Crops'),
                           selected: isSelected,
-                          onSelected: (_) => prov.selectCrop(''),
+                          onSelected: (_) {
+                            _searchCtrl.clear();
+                            prov.selectCrop('');
+                          },
                           selectedColor: AppTheme.forestGreen,
                           labelStyle: TextStyle(
                             color: isSelected ? Colors.white : Colors.black87,
@@ -171,7 +299,15 @@ class _TrendsScreenState extends State<TrendsScreen> {
                         avatar: Text(crop['emoji']!, style: const TextStyle(fontSize: 13)),
                         label: Text(crop['name']!),
                         selected: isSelected,
-                        onSelected: (_) => prov.selectCrop(isSelected ? '' : crop['name']!),
+                        onSelected: (_) {
+                          if (isSelected) {
+                            _searchCtrl.clear();
+                            prov.selectCrop('');
+                          } else {
+                            _searchCtrl.text = crop['name']!;
+                            prov.selectCrop(crop['name']!);
+                          }
+                        },
                         selectedColor: AppTheme.forestGreen,
                         labelStyle: TextStyle(
                           color: isSelected ? Colors.white : Colors.black87,
@@ -302,8 +438,8 @@ class _TrendsScreenState extends State<TrendsScreen> {
                       const SizedBox(height: 16),
                       OutlinedButton(
                         onPressed: () {
-                          prov.selectCrop('');
-                          prov.selectMarket('');
+                          _searchCtrl.clear();
+                          prov.clearAllFilters();
                         },
                         child: const Text('Show All Market Prices'),
                       ),
@@ -322,41 +458,79 @@ class _TrendsScreenState extends State<TrendsScreen> {
                 ),
 
               // Section Title
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Recent Market Arrivals (${prov.items.length})',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        'Tap item for full details',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              () {
+                final displayedItems = prov.items;
 
-              // Recent Prices List
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final item = prov.items[index];
-                      return _TrendCard(
-                        item: item,
-                        onTap: () => _showTrendDetailsSheet(context, item),
-                      );
-                    },
-                    childCount: prov.items.length,
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Recent Market Arrivals (${displayedItems.length})',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          prov.isLocalFilterActive && prov.userLocalMarket.isNotEmpty
+                              ? 'Local Arrivals'
+                              : 'APMC Daily Arrivals',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              }(),
+
+              // Recent Prices List or Filtered Empty State
+              () {
+                final displayedItems = prov.items;
+
+                if (displayedItems.isEmpty) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.search_off, size: 44, color: Colors.grey),
+                            const SizedBox(height: 10),
+                            Text(
+                              prov.selectedCrop.isNotEmpty
+                                  ? 'No records found for "${prov.selectedCrop}"'
+                                  : 'No records found for current filters',
+                              style: const TextStyle(fontSize: 14, color: Colors.black54),
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton(
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                prov.clearAllFilters();
+                              },
+                              child: const Text('Clear Filters & Show All Mandis'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final item = displayedItems[index];
+                        return _TrendCard(item: item);
+                      },
+                      childCount: displayedItems.length,
+                    ),
+                  ),
+                );
+              }(),
 
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
@@ -480,147 +654,137 @@ class _SummaryCard extends StatelessWidget {
 
 class _TrendCard extends StatelessWidget {
   final MarketTrendItem item;
-  final VoidCallback onTap;
 
-  const _TrendCard({required this.item, required this.onTap});
+  const _TrendCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE8F0E9)),
-            boxShadow: const [
-              BoxShadow(color: Color(0x04000000), blurRadius: 6, offset: Offset(0, 2)),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        border: Border.all(color: const Color(0xFFE8F0E9)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x04000000), blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.storefront, color: AppTheme.forestGreen, size: 16),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${item.market} APMC',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              Text(
-                                '${item.crop} (${item.variety}) • ${item.date}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.storefront, color: AppTheme.forestGreen, size: 16),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '₹${item.modalPriceKg.toStringAsFixed(1)}/kg',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.successGreen,
-                        ),
-                      ),
-                      Text(
-                        '₹${item.modalPriceQuintal.toStringAsFixed(0)} / qtl',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Text(
-                          '₹${item.minPriceKg.toStringAsFixed(1)} - ₹${item.maxPriceKg.toStringAsFixed(1)}/kg',
-                          style: const TextStyle(fontSize: 11.5, color: Colors.black54),
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            '• ${item.arrivalsQuintal.toStringAsFixed(0)} qtl',
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${item.market} APMC',
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
-                        ),
-                      ],
+                          Text(
+                            '${item.crop} (${item.variety}) • ${item.date}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '₹${item.modalPriceKg.toStringAsFixed(1)}/kg',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.successGreen,
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F8F3),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFC8E6C9)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.info_outline, size: 12, color: AppTheme.forestGreen),
-                        SizedBox(width: 4),
-                        Text(
-                          'Details',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.forestGreen,
-                          ),
-                        ),
-                        SizedBox(width: 2),
-                        Icon(Icons.keyboard_arrow_right, size: 13, color: AppTheme.forestGreen),
-                      ],
-                    ),
+                  Text(
+                    '₹${item.modalPriceQuintal.toStringAsFixed(0)} / qtl',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
                 ],
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 10),
+          const Divider(height: 1),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Text(
+                      '₹${item.minPriceKg.toStringAsFixed(1)} - ₹${item.maxPriceKg.toStringAsFixed(1)}/kg',
+                      style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        '• ${item.arrivalsQuintal.toStringAsFixed(0)} qtl',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.verified, size: 12, color: AppTheme.forestGreen),
+                    SizedBox(width: 4),
+                    Text(
+                      'Live APMC',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.forestGreen,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
+// ignore: unused_element
 class _TrendDetailsSheet extends StatelessWidget {
   final MarketTrendItem item;
 

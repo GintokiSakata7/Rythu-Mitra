@@ -1627,7 +1627,9 @@ export default function VoiceFlow({ onSwitchToManual }) {
                       <div className={`winner-net-pill ${isLoss ? 'negative-loss' : ''}`}>
                         <span>{isLoss ? t.loss_net_label : t.net_realization}</span>
                         <strong className={`giant-rupee ${isLoss ? 'loss-text' : ''}`}>
-                          {result.recommendation?.netRange || `₹${Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}`}
+                          {result.recommendation?.netRange || ((result.recommendation?.netRealization || 0) < 0
+                            ? `−₹${Math.abs(Math.round(result.recommendation?.netRealization || 0)).toLocaleString('en-IN')}`
+                            : `₹${Math.round(result.recommendation?.netRealization || 0).toLocaleString('en-IN')}`)}
                         </strong>
                         <small>
                           {isLoss

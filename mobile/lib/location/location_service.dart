@@ -82,23 +82,21 @@ class LocationService {
       position = await Geolocator.getLastKnownPosition();
     } catch (_) {}
 
-    // Get fresh accurate position
-    try {
-      final fresh = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
-      position = fresh;
-    } catch (_) {
-      // High accuracy timed out or failed (e.g. indoors); try medium accuracy
-      if (position == null) {
+    // If no recent position, acquire fresh position with snappy timeouts
+    if (position == null) {
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 5),
+          ),
+        );
+      } catch (_) {
         try {
           position = await Geolocator.getCurrentPosition(
             locationSettings: const LocationSettings(
               accuracy: LocationAccuracy.medium,
-              timeLimit: Duration(seconds: 8),
+              timeLimit: Duration(seconds: 4),
             ),
           );
         } catch (_) {}
@@ -121,7 +119,7 @@ class LocationService {
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
-      ).timeout(const Duration(seconds: 4));
+      ).timeout(const Duration(milliseconds: 2500));
 
       if (placemarks.isNotEmpty) {
         final p = placemarks.first;

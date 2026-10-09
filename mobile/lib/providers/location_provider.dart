@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../location/location_service.dart';
 import '../services/api_service.dart';
 
@@ -40,6 +41,10 @@ class CropPriceSummary {
 }
 
 class LocationProvider extends ChangeNotifier {
+  static const _keyLocName = 'saved_location_name';
+  static const _keyLocLat = 'saved_location_lat';
+  static const _keyLocLng = 'saved_location_lng';
+
   LocationResult? _currentLocation;
   bool _isLoadingLocation = false;
   bool _isLoadingMarkets = false;
@@ -67,9 +72,49 @@ class LocationProvider extends ChangeNotifier {
   bool get hasLocation => _currentLocation != null;
   bool get isDefaultLocation => _currentLocation == null;
 
-  LocationProvider() {
-    // Automatically detect location upon provider initialization
-    fetchCurrentLocation();
+  LocationProvider([SharedPreferences? initialPrefs]) {
+    if (initialPrefs != null) {
+      final savedName = initialPrefs.getString(_keyLocName);
+      final savedLat = initialPrefs.getDouble(_keyLocLat);
+      final savedLng = initialPrefs.getDouble(_keyLocLng);
+      if (savedName != null && savedLat != null && savedLng != null) {
+        _currentLocation = LocationResult(
+          lat: savedLat,
+          lng: savedLng,
+          displayName: savedName,
+        );
+        fetchNearbyData(savedLat, savedLng);
+      }
+    } else {
+      _loadSavedLocation();
+    }
+  }
+
+  Future<void> _loadSavedLocation() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedName = prefs.getString(_keyLocName);
+      final savedLat = prefs.getDouble(_keyLocLat);
+      final savedLng = prefs.getDouble(_keyLocLng);
+      if (savedName != null && savedLat != null && savedLng != null) {
+        _currentLocation = LocationResult(
+          lat: savedLat,
+          lng: savedLng,
+          displayName: savedName,
+        );
+        notifyListeners();
+        fetchNearbyData(savedLat, savedLng);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _persistLocation(String name, double lat, double lng) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyLocName, name);
+      await prefs.setDouble(_keyLocLat, lat);
+      await prefs.setDouble(_keyLocLng, lng);
+    } catch (_) {}
   }
 
   Future<bool> fetchCurrentLocation({bool force = false}) async {
@@ -85,19 +130,16 @@ class LocationProvider extends ChangeNotifier {
       if (loc.result != null) {
         _currentLocation = loc.result;
         _errorMessage = null;
-        print('[LOCATION] Successfully acquired user GPS: ${_currentLocation!.displayName} (${_currentLocation!.lat}, ${_currentLocation!.lng})');
+        _persistLocation(_currentLocation!.displayName ?? 'GPS Location', _currentLocation!.lat, _currentLocation!.lng);
         await fetchNearbyData(_currentLocation!.lat, _currentLocation!.lng);
         return true;
       } else if (loc.error != null) {
         _errorMessage = loc.error!.message;
-        print('[LOCATION] [WARN] GPS acquisition issue: $_errorMessage. Using fallback default location.');
-        // Still load nearby markets using default fallback coordinates
         await fetchNearbyData(latitude, longitude);
         return false;
       }
     } catch (e) {
       _errorMessage = e.toString();
-      print('[LOCATION] [ERROR] Location fetch exception: $e');
       await fetchNearbyData(latitude, longitude);
       return false;
     } finally {
@@ -115,6 +157,7 @@ class LocationProvider extends ChangeNotifier {
     );
     _errorMessage = null;
     notifyListeners();
+    _persistLocation(name, lat, lng);
     fetchNearbyData(lat, lng);
   }
 
