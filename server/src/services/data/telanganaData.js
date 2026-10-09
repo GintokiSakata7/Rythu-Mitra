@@ -68,7 +68,7 @@ function ensureParsed() {
   csvParsed = true;
 
   try {
-    const csvPath = join(__dirname, '..', '..', 'data', 'market_prices.csv');
+    const csvPath = join(__dirname, '..', '..', 'data', 'optimized_market_prices.csv');
     const raw = readFileSync(csvPath, 'utf-8');
     const lines = raw.split('\n').filter(l => l.trim());
     const headers = lines[0].split(',');
@@ -83,23 +83,22 @@ function ensureParsed() {
       csvAllRecords.push(row);
 
       // Track latest price per yard+commodity
-      const key = `${row.YardCode}|${row.CommName}`;
-      if (!csvLatestPrices[key] || row.DDate > csvLatestPrices[key].DDate) {
+      const key = `${row.yard_code}|${row.commodity}`;
+      if (!csvLatestPrices[key] || row.date > csvLatestPrices[key].date) {
         csvLatestPrices[key] = row;
       }
 
       // Build unique yards
-      if (!yardsMap.has(row.YardCode)) {
-        const geo = YARD_GEO[row.YardCode] || { lat: 17.38, lng: 78.48, district: 'Unknown' };
-        yardsMap.set(row.YardCode, {
-          id: `TS-${row.YardCode}`,
-          name: `${row.YardName} Market`,
-          amcName: row.AmcName,
-          district: geo.district,
+      if (!yardsMap.has(row.yard_code)) {
+        yardsMap.set(row.yard_code, {
+          id: `TS-${row.yard_code}`,
+          name: `${row.yard_name} Market`,
+          amcName: row.yard_name,
+          district: 'Telangana', // Fallback district if needed
           state: 'Telangana',
-          latitude: geo.lat,
-          longitude: geo.lng,
-          yardCode: row.YardCode,
+          latitude: parseFloat(row.latitude) || 17.38,
+          longitude: parseFloat(row.longitude) || 78.48,
+          yardCode: row.yard_code,
           source: 'Telangana State Marketing Dept'
         });
       }
@@ -184,7 +183,32 @@ export async function getTelanganaFallbackPrices({ crop = 'Tomato' } = {}) {
     }
   }
 
-  return [];
+  // Fallback to reading from the local loaded CSV if DB is empty or fails
+  ensureParsed();
+  const results = [];
+  const lowerCrop = crop.toLowerCase();
+
+  for (const row of Object.values(csvLatestPrices)) {
+    if (row.commodity && row.commodity.toLowerCase().includes(lowerCrop)) {
+      results.push({
+        market: row.yard_name,
+        YardCode: row.yard_code,
+        latitude: parseFloat(row.latitude) || 17.38,
+        longitude: parseFloat(row.longitude) || 78.48,
+        district: 'Telangana',
+        state: 'Telangana',
+        commodity: row.commodity,
+        variety: row.variety,
+        modalPrice: parseFloat(row.modal_price || 0) / 100, // Assuming CSV data is in Rs/Quintal
+        minPrice: parseFloat(row.min_price || 0) / 100,
+        maxPrice: parseFloat(row.max_price || 0) / 100,
+        date: row.date,
+        source: 'CSV Fallback'
+      });
+    }
+  }
+
+  return results;
 }
 
 export async function getTelanganaCommmodities() {
@@ -208,8 +232,8 @@ export async function getTelanganaCommmodities() {
   ensureParsed();
   const set = new Map();
   for (const row of csvAllRecords) {
-    if (!set.has(row.CommCode)) {
-      set.set(row.CommCode, { code: row.CommCode, name: row.CommName });
+    if (row.commodity && !set.has(row.commodity)) {
+      set.set(row.commodity, { code: row.commodity, name: row.commodity });
     }
   }
   return Array.from(set.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -223,15 +247,16 @@ export function getTelanganaMarketHistory({ crop = 'Tomato', yardCode = null } =
   ensureParsed();
   const results = [];
   for (const row of csvAllRecords) {
-    if (row.CommName.toLowerCase() !== crop.toLowerCase()) continue;
-    if (yardCode && row.YardCode !== yardCode) continue;
+    if (!row.commodity) continue;
+    if (row.commodity.toLowerCase() !== crop.toLowerCase()) continue;
+    if (yardCode && row.yard_code !== yardCode) continue;
     results.push({
-      date: row.DDate,
-      price: parseFloat(row.Model) / 100, // per Kg
-      minPrice: parseFloat(row.Minimum) / 100,
-      maxPrice: parseFloat(row.Maximum) / 100,
-      market: row.YardName,
-      arrivals: parseFloat(row.Arrivals) || 0
+      date: row.date,
+      price: parseFloat(row.modal_price) / 100, // per Kg
+      minPrice: parseFloat(row.min_price) / 100,
+      maxPrice: parseFloat(row.max_price) / 100,
+      market: row.yard_name,
+      arrivals: 0 // Not present in optimized CSV
     });
   }
   return results.sort((a, b) => a.date.localeCompare(b.date));
