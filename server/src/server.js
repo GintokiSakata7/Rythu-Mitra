@@ -11,11 +11,23 @@ import { officialRouter } from './routes/official.routes.js';
 import { priceRouter } from './routes/price.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const clientDist = path.resolve(__dirname, '../../client/dist');
+
 const app = express();
 app.use(cors({ origin: '*', credentials: false }));
 app.use(express.json({ limit: '1mb' }));
 
-app.get('/', (_req, res) => res.json({ name: 'RythuMitra API', status: 'online' }));
+// Health check endpoints for UptimeRobot
+app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
+app.get('/ping', (_req, res) => res.status(200).send('pong'));
+
+// API Routes
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/official', officialRouter);
@@ -25,6 +37,19 @@ app.use('/api/markets', marketRouter);
 app.use('/api/recommendations', recommendationRouter);
 app.use('/api/buyers', buyerRouter);
 app.use('/api/ai', aiRouter);
+
+// Fullstack: serve frontend SPA if built, otherwise API fallback
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api') && req.path !== '/health' && req.path !== '/ping') {
+      return res.sendFile(path.join(clientDist, 'index.html'));
+    }
+    next();
+  });
+} else {
+  app.get('/', (_req, res) => res.json({ name: 'RythuMitra API', status: 'online' }));
+}
 
 app.use((error, _req, res, _next) => {
   console.error(error);
